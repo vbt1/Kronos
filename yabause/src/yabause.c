@@ -596,7 +596,14 @@ int YabauseEmulate(void) {
 
    MSH2->cycles = 0;
    SSH2->cycles = 0;
-
+int msh2cdiff = 0;
+int ssh2cdiff = 0;
+#ifdef DEBUG_ACCURACY
+int totalMSH2cyclesPerFrame = MSH2->cycles;
+int totalSSH2cyclesPerFrame = SSH2->cycles;
+int totalMSH2CyclesRequested = 0;
+int totalSSH2CyclesRequested = 0;
+#endif
    while (!oneframeexec)
    {
       PROFILE_START("Total Emulation");
@@ -606,26 +613,36 @@ int YabauseEmulate(void) {
          // Since we run the SCU with half the number of cycles we send
          // to SH2Exec(), we always compute an even number of cycles here
          // and leave any odd remainder in SH2CycleFrac.
-         u32 sh2cycles;
+         u32 msh2cycles, ssh2cycles;
          yabsys.SH2CycleFrac += cyclesinc;
-         sh2cycles = (yabsys.SH2CycleFrac >> (YABSYS_TIMING_BITS + 1)) << 1;
+         msh2cycles = ((yabsys.SH2CycleFrac + (msh2cdiff<<YABSYS_TIMING_BITS)) >> (YABSYS_TIMING_BITS + 1)) << 1;
+	 ssh2cycles = ((yabsys.SH2CycleFrac + (ssh2cdiff<<YABSYS_TIMING_BITS)) >> (YABSYS_TIMING_BITS + 1)) << 1;
          yabsys.SH2CycleFrac &= ((YABSYS_TIMING_MASK << 1) | 1);
 
          if (!yabsys.playing_ssf)
          {
            int i;
-           int step = sh2cycles;
-           for (i = 0; i < sh2cycles; i += step){
+	   int msh2start = MSH2->cycles;
+	   int ssh2start = SSH2->cycles;
+
              PROFILE_START("MSH2");
-             SH2Exec(MSH2, step);
+             SH2Exec(MSH2, msh2cycles);
+	     msh2cdiff = msh2cycles - (MSH2->cycles-msh2start);
+#ifdef DEBUG_ACCURACY
+	     totalMSH2CyclesRequested += msh2cycles - msh2cdiff;
+#endif
              PROFILE_STOP("MSH2");
 
              PROFILE_START("SSH2");
-             if (yabsys.IsSSH2Running)
-               SH2Exec(SSH2, step);
+             if (yabsys.IsSSH2Running) {
+               SH2Exec(SSH2, ssh2cycles);
+               ssh2cdiff = ssh2cycles - (SSH2->cycles-ssh2start);
+#ifdef DEBUG_ACCURACY
+	     totalSSH2CyclesRequested += ssh2cycles - ssh2cdiff;
+#endif
+}
              PROFILE_STOP("SSH2");
            }
-         }
 
 #ifdef USE_SCSP2
          PROFILE_START("SCSP");
@@ -643,9 +660,9 @@ int YabauseEmulate(void) {
          }
 
          PROFILE_START("SCU");
-         ScuExec(sh2cycles / 2);
-         PROFILE_STOP("SCU");
-
+         ScuExec(msh2cycles / 2);
+         PROFILE_START("SCU");
+ 
       } else {  // !DecilineMode
 
          const u32 decilinecycles = yabsys.DecilineStop >> YABSYS_TIMING_BITS;
@@ -773,6 +790,13 @@ int YabauseEmulate(void) {
 
       PROFILE_STOP("Total Emulation");
    }
+
+#ifdef DEBUG_ACCURACY
+	totalMSH2cyclesPerFrame =  MSH2->cycles - totalMSH2cyclesPerFrame;
+	totalSSH2cyclesPerFrame = SSH2->cycles - totalSSH2cyclesPerFrame;
+	printf("MSH2 Accuracy %d cycles (%.2f\%)\n", totalMSH2CyclesRequested, 100.0 - (totalMSH2cyclesPerFrame - totalMSH2CyclesRequested)*100.0/totalMSH2CyclesRequested);
+	printf("SSH2 Accuracy %d cycles (%.2f\%)\n", totalSSH2CyclesRequested, 100.0 - (totalSSH2cyclesPerFrame - totalSSH2CyclesRequested)*100.0/totalSSH2CyclesRequested);
+#endif
 
 #ifndef USE_SCSP2
    M68KSync();
