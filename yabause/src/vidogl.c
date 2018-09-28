@@ -1019,22 +1019,16 @@ void Vdp1ReadTexture_in_async(void *p)
 } 
 
 static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, YglTexture *texture, Vdp2 *varVdp2Regs) {
-YuiMsg("%d\n", 11);
    vdp1TextureTask *task = malloc(sizeof(vdp1TextureTask));
-YuiMsg("%d\n", 12);
    task->cmd = malloc(sizeof(vdp1cmd_struct));
    task->texture = malloc(sizeof(YglTexture)); 
    task->varVdp2Regs = malloc(sizeof(Vdp2));
-YuiMsg("%d\n", 13);
    memcpy(task->cmd, cmd, sizeof(vdp1cmd_struct));
    memcpy(task->texture, texture, sizeof(YglTexture)); 
    memcpy(task->varVdp2Regs, varVdp2Regs, sizeof(Vdp2));
-YuiMsg("%d\n", 14);
    task->w = sprite->w;
    task->h = sprite->h;
-YuiMsg("%d\n", 15);
    if (vdp1text_run == 0) {
-YuiMsg("%d\n", 16);
      vdp1text_run = 1;
      vdp1q = YabThreadCreateQueue(NB_MSG);
      vdp1q_end = YabThreadCreateQueue(NB_MSG);
@@ -1042,37 +1036,24 @@ YuiMsg("%d\n", 16);
      YabThreadStart(YAB_THREAD_VDP1_1, Vdp1ReadTexture_in_async, 0);
      YabThreadStart(YAB_THREAD_VDP1_2, Vdp1ReadTexture_in_async, 0);
      YabThreadStart(YAB_THREAD_VDP1_3, Vdp1ReadTexture_in_async, 0);
-YuiMsg("%d\n", 17);
    }
-YuiMsg("%d\n", 18);
    YabAddEventQueue(vdp1q_end, NULL);
-YuiMsg("%d\n", 19);
    YabAddEventQueue(vdp1q, task);
-YuiMsg("%d\n", 20);
    YabThreadYield();
-YuiMsg("%d\n", 21);
 }
 
 int waitVdp1Textures( int sync) {
-YuiMsg("%d\n", 22);
     int empty = 1;
-YuiMsg("%d\n", 23);
     if (vdp1q_end == NULL) return 1;
-YuiMsg("%d\n", 24);
     while (((empty = YaGetQueueSize(vdp1q_end))!=0) && (sync == 1))
     {
-YuiMsg("%d\n", 25);
       YabThreadYield();
-YuiMsg("%d\n", 26);
     }
-YuiMsg("%d\n", 27);
     return (empty == 0);
 }
 #else
 static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, YglTexture *texture, Vdp2 *varVdp2Regs) {
-YuiMsg("%d\n", 28);
    Vdp1ReadTexture_in_sync(cmd, sprite->w, sprite->h, texture, varVdp2Regs);
-YuiMsg("%d\n", 29);
 }
 #endif
 
