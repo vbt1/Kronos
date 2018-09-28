@@ -509,7 +509,6 @@ int YabauseInit(yabauseinit_struct *init)
       VIDSoftSetNumPriorityThreads(0);
    }
 
-   scsp_set_use_new(init->use_new_scsp);
    return 0;
 }
 
@@ -656,6 +655,31 @@ u32 YabauseGetFrameCount() {
 
 //#define YAB_STATICS
 
+static unsigned long nextLineTime = 0;
+static unsigned long line_delayUs_NTSC = (1000000/(60*263));
+static unsigned long line_delayUs_PAL = (1000000/(50*313));
+#define line_delayUs ((yabsys.IsPal)?line_delayUs_PAL:line_delayUs_NTSC);
+
+static unsigned long time_left(void)
+{
+    unsigned long now;
+
+    now = YabauseGetTicks();
+    if(nextLineTime <= now)
+        return 0;
+    else
+        return nextLineTime - now;
+}
+
+static void waitLineDelay() {
+  usleep(time_left());
+  nextLineTime += line_delayUs;
+}
+
+static void setupLineDelay() {
+  nextLineTime = YabauseGetTicks() + line_delayUs;
+}
+
 int YabauseEmulate(void) {
    int oneframeexec = 0;
    yabsys.frame_count++;
@@ -668,39 +692,19 @@ int YabauseEmulate(void) {
    u32 m68k_cycles_per_deciline = 0;
    u32 scsp_cycles_per_deciline = 0;
 
-   if(use_new_scsp)
+   if (yabsys.IsPal)
    {
-      int lines = 0;
-      int frames = 0;
-
-      if (yabsys.IsPal)
-      {
-         lines = 313;
-         frames = 50;
-      }
-      else
-      {
-         lines = 263; 
-         frames = 60;
-      }
-      scsp_cycles_per_deciline = get_cycles_per_line_division(44100 * 512, frames, lines, DECILINE_STEP);
-      m68k_cycles_per_deciline = get_cycles_per_line_division(44100 * 256, frames, lines, DECILINE_STEP);
+      /* 11.2896MHz / 50Hz / 313 lines / 10 calls/line = 72.20 cycles/call */
+      m68kcycles = (int)(722/DECILINE_STEP);
+      m68kcenticycles = (int)(((722.0/DECILINE_STEP) - m68kcycles)*100);
    }
    else
    {
-      if (yabsys.IsPal)
-      {
-         /* 11.2896MHz / 50Hz / 313 lines / 10 calls/line = 72.20 cycles/call */
-         m68kcycles = (int)(722/DECILINE_STEP);
-         m68kcenticycles = (int)(((722.0/DECILINE_STEP) - m68kcycles)*100);
-      }
-      else
-      {
-         /* 11.2896MHz / 60Hz / 263 lines / 10 calls/line = 71.62 cycles/call */
-         m68kcycles = (int)(716/DECILINE_STEP);
-         m68kcenticycles = (int)(((716.2/DECILINE_STEP) - m68kcycles)*100);
-      }
+      /* 11.2896MHz / 60Hz / 263 lines / 10 calls/line = 71.62 cycles/call */
+      m68kcycles = (int)(716/DECILINE_STEP);
+      m68kcenticycles = (int)(((716.2/DECILINE_STEP) - m68kcycles)*100);
    }
+
 
    DoMovie();
 
@@ -711,6 +715,7 @@ int YabauseEmulate(void) {
 //   SH2OnFrame(MSH2);
 //   SH2OnFrame(SSH2);
    u64 cpu_emutime = 0;
+   setupLineDelay();
    while (!oneframeexec)
    {
       PROFILE_START("Total Emulation");
@@ -759,7 +764,7 @@ int YabauseEmulate(void) {
          PROFILE_STOP("SCU");
 
       PROFILE_START("68K");
-      M68KSync();  // Wait for the previous iteration to finish
+      //M68KSync();  // Wait for the previous iteration to finish
       PROFILE_STOP("68K");
 
       if (yabsys.DecilineCount == DECILINE_STEP)
@@ -768,7 +773,7 @@ int YabauseEmulate(void) {
          PROFILE_START("hblankout");
          Vdp2HBlankOUT();
          Vdp1HBlankOUT();
-         SyncScsp();
+         //SyncScsp();
          PROFILE_STOP("hblankout");
          PROFILE_START("SCSP");
          ScspExec();
@@ -795,6 +800,7 @@ int YabauseEmulate(void) {
             oneframeexec = 1;
             PROFILE_STOP("VDP1/VDP2");
          }
+         waitLineDelay();
       }
 
       yabsys.UsecFrac += usecinc;
@@ -805,36 +811,6 @@ int YabauseEmulate(void) {
       Cs2Exec(yabsys.UsecFrac >> YABSYS_TIMING_BITS);
       PROFILE_STOP("CDB");
       yabsys.UsecFrac &= YABSYS_TIMING_MASK;
-      
-      if(!use_new_scsp)
-      {
-         int cycles;
-
-         PROFILE_START("68K");
-         cycles = m68kcycles;
-		 saved_centicycles += m68kcenticycles;
-         if (saved_centicycles >= 100) {
-            cycles++;
-            saved_centicycles -= 100;
-         }
-         M68KExec(cycles);
-         PROFILE_STOP("68K");
-      }
-      else
-      {
-#if !defined(ASYNC_SCSP)
-         u32 m68k_integer_part = 0, scsp_integer_part = 0;
-         saved_m68k_cycles += m68k_cycles_per_deciline;
-         m68k_integer_part = saved_m68k_cycles >> SCSP_FRACTIONAL_BITS;
-         M68KExec(m68k_integer_part);
-         saved_m68k_cycles -= m68k_integer_part << SCSP_FRACTIONAL_BITS;
-
-         saved_scsp_cycles += scsp_cycles_per_deciline;
-         scsp_integer_part = saved_scsp_cycles >> SCSP_FRACTIONAL_BITS;
-         new_scsp_exec(scsp_integer_part);
-         saved_scsp_cycles -= scsp_integer_part << SCSP_FRACTIONAL_BITS;
-#endif
-      }
 
       PROFILE_STOP("Total Emulation");
    }
