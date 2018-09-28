@@ -223,10 +223,10 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
 #if 1
   void* value;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
+  EnterCriticalSection(&(queue->mutex));
   while (queue->size == 0)
     WaitForSingleObject(queue->cond_empty, INFINITE);
 
-  EnterCriticalSection(&(queue->mutex));
   value = queue->buffer[queue->out];
   --queue->size;
   ++queue->out;
