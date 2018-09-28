@@ -237,7 +237,7 @@ static int vdp1text_run = 0;
 
 static void FASTCALL Vdp2DrawCell_in_sync(vdp2draw_struct *info, YglTexture *texture, Vdp2 *varVdp2Regs);
 
-#define NB_MSG 128
+#define NB_MSG 32
 
 #ifdef CELL_ASYNC
 
