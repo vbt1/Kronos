@@ -160,6 +160,8 @@ void YabauseChangeTiming(int freqtype) {
 
 //////////////////////////////////////////////////////////////////////////////
 extern int tweak_backup_file_size;
+YabEventQueue * q_scsp_frame_start;
+YabEventQueue * q_scsp_finish;
 
 
 static void sh2ExecuteSync( SH2_struct* sh, int req ) {
@@ -279,6 +281,9 @@ int YabauseInit(yabauseinit_struct *init)
    yabsys.NumThreads = init->numthreads;
    yabsys.usecache = init->usecache;
    yabsys.isRotated = 0;
+
+  q_scsp_frame_start = YabThreadCreateQueue(1);
+  q_scsp_finish = YabThreadCreateQueue(1);
 
 #ifdef SPRITE_CACHE
    yabsys.useVdp1cache = init->useVdp1cache;
@@ -655,6 +660,7 @@ u32 YabauseGetFrameCount() {
 }
 
 //#define YAB_STATICS
+void SyncCPUtoSCSP();
 
 int YabauseEmulate(void) {
    int oneframeexec = 0;
@@ -782,6 +788,9 @@ int YabauseEmulate(void) {
             SmpcINTBACKEnd();
             Vdp1VBlankIN();
             Vdp2VBlankIN();
+#if defined(ASYNC_SCSP)
+            SyncCPUtoSCSP();
+#endif
             PROFILE_STOP("vblankin");
             CheatDoPatches(MSH2);
          }
@@ -879,6 +888,16 @@ int YabauseEmulate(void) {
 #endif
 
    return 0;
+}
+
+
+void SyncCPUtoSCSP() {
+  //LOG("[SH2] WAIT SCSP");
+    YabWaitEventQueue(q_scsp_finish);
+    saved_m68k_cycles = 0;
+    setM68kCounter(saved_m68k_cycles);
+    YabAddEventQueue(q_scsp_frame_start, 0);
+  //LOG("[SH2] START SCSP");
 }
 
 //////////////////////////////////////////////////////////////////////////////
