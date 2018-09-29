@@ -46,7 +46,7 @@ static DWORD wrapper(void *hnd)
 {
    struct thd_s *hnds = (struct thd_s *)hnd;
 
-   WaitForSingleObject(hnds->mutex);
+   WaitForSingleObject(hnds->mutex, INFINITE);
 
    /* Set the handle for the thread, and call the actual thread function. */
    TlsSetValue(hnd_key, hnd);
@@ -160,7 +160,7 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 	p->in = 0;
 	p->out = 0;
   InitializeSRWLock(&p->lock);
-  p->mutex = mutex = CreateMutex(NULL, FALSE, NULL);
+  p->mutex = CreateMutex(NULL, FALSE, NULL);
   p->cond_full = CreateEvent(NULL, FALSE, FALSE, NULL);
   p->cond_empty = CreateEvent(NULL, FALSE, FALSE, NULL);
 	return (YabEventQueue *)p;
@@ -188,7 +188,7 @@ void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
     WaitForSingleObject(queue->cond_full, INFINITE);
   }
 
-  WaitForSingleObject(queue->mutex);
+  WaitForSingleObject(queue->mutex, INFINITE);
   queue->buffer[queue->in] = evcode;
   ++queue->size;
   ++queue->in;
@@ -207,7 +207,7 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
   while (queue->size == 0){
     WaitForSingleObject(queue->cond_empty, INFINITE);
   }
-  WaitForSingleObject(queue->mutex);
+  WaitForSingleObject(queue->mutex, INFINITE);
   value = queue->buffer[queue->out];
   --queue->size;
   ++queue->out;
@@ -236,14 +236,14 @@ void YabThreadLock(YabMutex * mtx){
 	YabMutex_win32 * pmtx;
 	pmtx = (YabMutex_win32 *)mtx;
   if (mtx == NULL) return;
-	WaitForSingleObject(pmtx->mutex);
+	WaitForSingleObject(pmtx->mutex, INFINITE);
 }
 
 void YabThreadUnLock(YabMutex * mtx){
 	YabMutex_win32 * pmtx;
   if (mtx == NULL) return;
 	pmtx = (YabMutex_win32 *)mtx;
-	ReleaseMutex(ptmx->mutex);
+	ReleaseMutex(pmtx->mutex);
 }
 
 YabMutex * YabThreadCreateMutex(){
@@ -349,7 +349,7 @@ void YabThreadCondWait(YabCond *ctx, YabMutex * mtx) {
     pctx = (YabCond_win32 *)ctx;
     pmtx = (YabMutex_win32 *)mtx;
     YabThreadLock(mtx);
-    SleepConditionVariableCS (&pctx->cond, &pmtx->mutex, INFINITE);
+    WaitForSingleObject (&pctx->cond, INFINITE);
     YabThreadUnLock(mtx);
 }
 
