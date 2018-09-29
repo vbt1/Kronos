@@ -145,6 +145,7 @@ typedef struct YabEventQueue_win32
 	int size;
 	int in;
 	int out;
+        SRWLOCK lock;
 	CRITICAL_SECTION mutex;
 	HANDLE cond_full;
 	HANDLE cond_empty;
@@ -158,6 +159,7 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 	p->size = 0;
 	p->in = 0;
 	p->out = 0;
+  InitializeSRWLock(&queue->lock);
   InitializeCriticalSection(&p->mutex);
   p->cond_full = CreateEvent(NULL, FALSE, FALSE, NULL);
   p->cond_empty = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -169,16 +171,14 @@ void YabThreadDestoryQueue(YabEventQueue * queue_t){
   CRITICAL_SECTION mutex;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
   mutex = queue->mutex;
-  EnterCriticalSection(&mutex);
+  AcquireSRWLockShared(&queue->lock);
   while (queue->size == queue->capacity) {
-    LeaveCriticalSection(&(queue->mutex));
     WaitForSingleObject(queue->cond_full, INFINITE);
-    EnterCriticalSection(&(queue->mutex));
-  }
 
+  }
+  ReleaseSRWLockShared(&queue->lock);
   free(queue->buffer);
   free(queue);
-  LeaveCriticalSection(&mutex);
 #else
 	//pthread_mutex_t mutex;
 	YabEventQueue_win32 * queue = (YabEventQueue_pthread*)queue_t;
@@ -197,18 +197,19 @@ void YabThreadDestoryQueue(YabEventQueue * queue_t){
 void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
 #if 1
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
+
+  AcquireSRWLockShared(&queue->lock);
   while (queue->size == queue->capacity){
-    LeaveCriticalSection(&(queue->mutex));
     WaitForSingleObject(queue->cond_full, INFINITE);
-    EnterCriticalSection(&(queue->mutex));
   }
 
+  EnterCriticalSection(&(queue->mutex));
   queue->buffer[queue->in] = evcode;
   ++queue->size;
   ++queue->in;
   queue->in %= queue->capacity;
   LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockShared(&queue->lock);
   SetEvent(queue->cond_empty);
 #else
 	YabEventQueue_pthread * queue = (YabEventQueue_pthread*)queue_t;
@@ -229,18 +230,18 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
 #if 1
   void* value;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
-  while (queue->size == 0){
-    LeaveCriticalSection(&(queue->mutex));
-    WaitForSingleObject(queue->cond_empty, INFINITE);
-    EnterCriticalSection(&(queue->mutex));
-  }
 
+  AcquireSRWLockShared(&queue->lock);
+  while (queue->size == 0){
+    WaitForSingleObject(queue->cond_empty, INFINITE);
+  }
+  EnterCriticalSection(&(queue->mutex));
   value = queue->buffer[queue->out];
   --queue->size;
   ++queue->out;
   queue->out %= queue->capacity;
   LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockShared(&queue->lock);
   SetEvent(queue->cond_full);
   return value; 
 #else
@@ -262,9 +263,9 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
 int YaGetQueueSize(YabEventQueue * queue_t){
   int size = 0;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
+  AcquireSRWLockShared(&queue->lock);
   size = queue->size;
-  LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockShared(&queue->lock);
   return size;
 }
 
