@@ -165,7 +165,6 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 }
 
 void YabThreadDestoryQueue(YabEventQueue * queue_t){
-#if 1
   CRITICAL_SECTION mutex;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
   mutex = queue->mutex;
@@ -179,23 +178,11 @@ void YabThreadDestoryQueue(YabEventQueue * queue_t){
   free(queue->buffer);
   free(queue);
   LeaveCriticalSection(&mutex);
-#else
-	//pthread_mutex_t mutex;
-	YabEventQueue_win32 * queue = (YabEventQueue_pthread*)queue_t;
-	mutex = queue->mutex;
-	pthread_mutex_lock(&mutex);
-	while (queue->size == queue->capacity)
-		pthread_cond_wait(&(queue->cond_full), &(queue->mutex));
-	free(queue->buffer);
-	free(queue);
-	pthread_mutex_unlock(&mutex);
-#endif
 }
 
 
 
 void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
-#if 1
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
   EnterCriticalSection(&(queue->mutex));
   while (queue->size == queue->capacity){
@@ -210,23 +197,10 @@ void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
   queue->in %= queue->capacity;
   LeaveCriticalSection(&(queue->mutex));
   SetEvent(queue->cond_empty);
-#else
-	YabEventQueue_pthread * queue = (YabEventQueue_pthread*)queue_t;
-	pthread_mutex_lock(&(queue->mutex));
-	while (queue->size == queue->capacity)
-		pthread_cond_wait(&(queue->cond_full), &(queue->mutex));
-	queue->buffer[queue->in] = evcode;
-	++queue->size;
-	++queue->in;
-	queue->in %= queue->capacity;
-	pthread_mutex_unlock(&(queue->mutex));
-	pthread_cond_broadcast(&(queue->cond_empty));
-#endif
 }
 
 
 void* YabWaitEventQueue(YabEventQueue * queue_t){
-#if 1
   void* value;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
   EnterCriticalSection(&(queue->mutex));
@@ -243,20 +217,6 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
   LeaveCriticalSection(&(queue->mutex));
   SetEvent(queue->cond_full);
   return value; 
-#else
-	int value;
-	YabEventQueue_pthread * queue = (YabEventQueue_pthread*)queue_t;
-	pthread_mutex_lock(&(queue->mutex));
-	while (queue->size == 0)
-		pthread_cond_wait(&(queue->cond_empty), &(queue->mutex));
-	value = queue->buffer[queue->out];
-	--queue->size;
-	++queue->out;
-	queue->out %= queue->capacity;
-	pthread_mutex_unlock(&(queue->mutex));
-	pthread_cond_broadcast(&(queue->cond_full));
-	return value;
-#endif
 }
 
 int YaGetQueueSize(YabEventQueue * queue_t){
