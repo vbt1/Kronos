@@ -32,7 +32,7 @@ struct thd_s {
    HANDLE thd;
    void (*func)(void *);
    void *arg;
-   HANDLE mutex;
+   CRITICAL_SECTION mutex;
    HANDLE cond;
 };
 
@@ -46,13 +46,13 @@ static DWORD wrapper(void *hnd)
 {
    struct thd_s *hnds = (struct thd_s *)hnd;
 
-   WaitForSingleObject(hnds->mutex, INFINITE);
+   EnterCriticalSection(&hnds->mutex);
 
    /* Set the handle for the thread, and call the actual thread function. */
    TlsSetValue(hnd_key, hnd);
    hnds->func(hnds->arg);
 
-   ReleaseMutex(hnds->mutex);
+   LeaveCriticalSection(&hnds->mutex);
 
    return 0;
 }
@@ -72,7 +72,7 @@ int YabThreadStart(unsigned int id, void (*func)(void *), void *arg)
    }
    
    // Create CS and condition variable for thread
-   thread_handle[id].mutex = CreateMutex(NULL, FALSE, NULL);
+   InitializeCriticalSection(&thread_handle[id].mutex);
    if ((thread_handle[id].cond = CreateEvent(NULL, FALSE, FALSE, NULL)) == NULL)
    {
       perror("CreateEvent");
@@ -146,7 +146,7 @@ typedef struct YabEventQueue_win32
 	int in;
 	int out;
         SRWLOCK lock;
-	HANDLE mutex;
+	CRITICAL_SECTION mutex;
 	HANDLE cond_full;
 	HANDLE cond_empty;
 } YabEventQueue_win32;
@@ -160,14 +160,16 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 	p->in = 0;
 	p->out = 0;
   InitializeSRWLock(&p->lock);
-  p->mutex = CreateMutex(NULL, FALSE, NULL);
+  InitializeCriticalSection(&p->mutex);
   p->cond_full = CreateEvent(NULL, FALSE, FALSE, NULL);
   p->cond_empty = CreateEvent(NULL, FALSE, FALSE, NULL);
 	return (YabEventQueue *)p;
 }
 
 void YabThreadDestoryQueue(YabEventQueue * queue_t){
+  CRITICAL_SECTION mutex;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
+  mutex = queue->mutex;
   AcquireSRWLockShared(&queue->lock);
   while (queue->size == queue->capacity) {
     WaitForSingleObject(queue->cond_full, INFINITE);
@@ -188,12 +190,12 @@ void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
     WaitForSingleObject(queue->cond_full, INFINITE);
   }
 
-  WaitForSingleObject(queue->mutex, INFINITE);
+  EnterCriticalSection(&(queue->mutex));
   queue->buffer[queue->in] = evcode;
   ++queue->size;
   ++queue->in;
   queue->in %= queue->capacity;
-  ReleaseMutex(queue->mutex);
+  LeaveCriticalSection(&(queue->mutex));
   ReleaseSRWLockShared(&queue->lock);
   SetEvent(queue->cond_empty);
 }
@@ -207,12 +209,12 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
   while (queue->size == 0){
     WaitForSingleObject(queue->cond_empty, INFINITE);
   }
-  WaitForSingleObject(queue->mutex, INFINITE);
+  EnterCriticalSection(&(queue->mutex));
   value = queue->buffer[queue->out];
   --queue->size;
   ++queue->out;
   queue->out %= queue->capacity;
-  ReleaseMutex(queue->mutex);
+  LeaveCriticalSection(&(queue->mutex));
   ReleaseSRWLockShared(&queue->lock);
   SetEvent(queue->cond_full);
   return value; 
@@ -229,33 +231,33 @@ int YaGetQueueSize(YabEventQueue * queue_t){
 
 typedef struct YabMutex_win32
 {
-	HANDLE mutex;
+	CRITICAL_SECTION mutex;
 } YabMutex_win32;
 
 void YabThreadLock(YabMutex * mtx){
 	YabMutex_win32 * pmtx;
 	pmtx = (YabMutex_win32 *)mtx;
   if (mtx == NULL) return;
-	WaitForSingleObject(pmtx->mutex, INFINITE);
+	EnterCriticalSection(&pmtx->mutex);
 }
 
 void YabThreadUnLock(YabMutex * mtx){
 	YabMutex_win32 * pmtx;
   if (mtx == NULL) return;
 	pmtx = (YabMutex_win32 *)mtx;
-	ReleaseMutex(pmtx->mutex);
+	LeaveCriticalSection(&pmtx->mutex);
 }
 
 YabMutex * YabThreadCreateMutex(){
 	YabMutex_win32 * mtx = (YabMutex_win32 *)malloc(sizeof(YabMutex_win32));
-	mtx->mutex = CreateMutex(NULL, FALSE, NULL);
+	InitializeCriticalSection(&mtx->mutex);
 	return (YabMutex *)mtx;
 }
 
 void YabThreadFreeMutex( YabMutex * mtx ){
 
 	if (mtx != NULL){
-		CloseHandle(((YabMutex_win32 *)mtx)->mutex);
+		DeleteCriticalSection(&((YabMutex_win32 *)mtx)->mutex);
 		free(mtx);
 	}
 }
@@ -283,7 +285,7 @@ static void DoDynamicInit() {
 typedef struct YabBarrier_win32
 {
   SYNCHRONIZATION_BARRIER barrier;
-  HANDLE mutex;
+  CRITICAL_SECTION mutex;
   HANDLE empty;
   int capacity;
   int current;
@@ -298,7 +300,7 @@ void YabThreadBarrierWait(YabBarrier *bar){
     //if (enterSynchronizationBarrier != NULL) {
     //  enterSynchronizationBarrier(&pctx->barrier, 0);
     //} else {
-      WaitForSingleObject(pctx->mutex, INFINITE);
+      EnterCriticalSection(&pctx->mutex);
       if (pctx->reset == 1) pctx->current = pctx->capacity;
       pctx->reset = 0;
       pctx->current--;
@@ -306,7 +308,7 @@ void YabThreadBarrierWait(YabBarrier *bar){
       if (!wait) {
         pctx->reset = 1;
       }
-      ReleaseMutex(pctx->mutex);
+      LeaveCriticalSection(&pctx->mutex);
       SetEvent(pctx->empty);
       if (wait) {
         while (pctx->current != 0)
@@ -325,7 +327,7 @@ YabBarrier * YabThreadCreateBarrier(int nbWorkers){
     //  initializeSynchronizationBarrier( &mtx->barrier, nbWorkers, -1 );
     //  return (YabBarrier *)mtx;
     //} else {
-      mtx->mutex = CreateMutex(NULL, FALSE, NULL);   
+      InitializeCriticalSection(&mtx->mutex);
       mtx->empty = CreateEvent(NULL, FALSE, FALSE, NULL);
       mtx->capacity = nbWorkers;
       mtx->current = nbWorkers;
@@ -349,7 +351,7 @@ void YabThreadCondWait(YabCond *ctx, YabMutex * mtx) {
     pctx = (YabCond_win32 *)ctx;
     pmtx = (YabMutex_win32 *)mtx;
     YabThreadLock(mtx);
-    WaitForSingleObject (&pctx->cond, INFINITE);
+    SleepConditionVariableCS (&pctx->cond, &pmtx->mutex, INFINITE);
     YabThreadUnLock(mtx);
 }
 
