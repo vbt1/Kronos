@@ -145,7 +145,7 @@ typedef struct YabEventQueue_win32
 	int size;
 	int in;
 	int out;
-	CRITICAL_SECTION mutex;
+	SRWLOCK mutex;
 	CONDITION_VARIABLE cond_full;
 	CONDITION_VARIABLE cond_empty;
 } YabEventQueue_win32;
@@ -158,7 +158,7 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 	p->size = 0;
 	p->in = 0;
 	p->out = 0;
-  InitializeCriticalSection(&p->mutex);
+  InitializeSRWLock(&p->mutex);
   InitializeConditionVariable (&p->cond_full);
   InitializeConditionVariable (&p->cond_empty);
 	return (YabEventQueue *)p;
@@ -166,28 +166,28 @@ YabEventQueue * YabThreadCreateQueue(int qsize){
 
 void YabThreadDestoryQueue(YabEventQueue * queue_t){
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&queue->mutex);
+  AcquireSRWLockExclusive(&queue->mutex);
   while (queue->size == queue->capacity) {
-    SleepConditionVariableCS(&(queue->cond_full), &(queue->mutex),INFINITE);
+    SleepConditionVariableSRW(&(queue->cond_full), &(queue->mutex),INFINITE, 0);
   }
   free(queue->buffer);
   free(queue);
-  LeaveCriticalSection(&queue->mutex);
+  ReleaseSRWLockExclusive(&queue->mutex);
 }
 
 
 
 void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
+  AcquireSRWLockExclusive(&(queue->mutex));
   while (queue->size == queue->capacity){
-    SleepConditionVariableCS(&(queue->cond_full), &(queue->mutex),INFINITE);
+    SleepConditionVariableSRW(&(queue->cond_full), &(queue->mutex),INFINITE, 0);
   }
   queue->buffer[queue->in] = evcode;
   ++queue->size;
   ++queue->in;
   queue->in %= queue->capacity;
-  LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockExclusive(&(queue->mutex));
   WakeConditionVariable(&queue->cond_empty);
 }
 
@@ -195,16 +195,16 @@ void YabAddEventQueue(YabEventQueue * queue_t, void* evcode){
 void* YabWaitEventQueue(YabEventQueue * queue_t){
   void* value;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
+  AcquireSRWLockExclusive(&(queue->mutex));
   while (queue->size == 0){
-    SleepConditionVariableCS(&(queue->cond_empty), &(queue->mutex),INFINITE);
+    SleepConditionVariableSRW(&(queue->cond_empty), &(queue->mutex),INFINITE, 0);
   }
 
   value = queue->buffer[queue->out];
   --queue->size;
   ++queue->out;
   queue->out %= queue->capacity;
-  LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockExclusive(&(queue->mutex));
   WakeConditionVariable(&queue->cond_full);
   return value; 
 }
@@ -212,9 +212,9 @@ void* YabWaitEventQueue(YabEventQueue * queue_t){
 int YaGetQueueSize(YabEventQueue * queue_t){
   int size = 0;
   YabEventQueue_win32 * queue = (YabEventQueue_win32*)queue_t;
-  EnterCriticalSection(&(queue->mutex));
+  AcquireSRWLockExclusive(&(queue->mutex));
   size = queue->size;
-  LeaveCriticalSection(&(queue->mutex));
+  ReleaseSRWLockExclusive(&(queue->mutex));
   return size;
 }
 
