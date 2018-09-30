@@ -392,6 +392,8 @@ static YabBarrier *AVBarrier;
 #endif
 struct AlfoTables alfo;
 
+static sem_t m68counterCond;
+
 void scsp_main_interrupt (u32 id);
 void scsp_sound_interrupt (u32 id);
 
@@ -5009,6 +5011,8 @@ ScspInit (int coreid)
   if (M68K->Init () != 0)
     return -1;
 
+  sem_init(&m68counterCond, 0, 0);
+
   M68K->SetReadB ((C68K_READ *)c68k_byte_read);
   M68K->SetReadW ((C68K_READ *)c68k_word_read);
   M68K->SetWriteB ((C68K_WRITE *)c68k_byte_write);
@@ -5161,6 +5165,10 @@ M68KStop (void)
 
 //////////////////////////////////////////////////////////////////////////////
 
+static u64 m68k_counter = 0;
+static u64 m68k_counter_done = 0;
+
+
 void
 ScspReset (void)
 {
@@ -5187,6 +5195,20 @@ ScspChangeVideoFormat (int type)
 
   return 0;
 }
+
+
+  void setM68kDoneCounter(u64 counter) {
+    m68k_counter_done = counter;
+  }
+
+  u64 getM68KCounter() {
+    return m68k_counter;
+  }
+
+  void setM68kCounter(u64 counter) {
+    m68k_counter = counter;
+    sem_post(&m68counterCond);
+  }
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -5462,11 +5484,11 @@ void ScspAsynMainCpu( void * p ){
     u64 m68k_integer_part = 0;
     u64 m68k_cycle = 0;
     do {
-      m68k_integer_part = getM68KCounter() >> SCSP_FRACTIONAL_BITS;
+      m68k_integer_part = getM68KCounter();
       m68k_cycle = m68k_integer_part - pre_m68k_cycle;
       if (thread_running == 0) break;
+      if (m68k_cycle == 0) sem_wait(&m68counterCond);
     } while (m68k_cycle == 0);
-
     m68k_inc += m68k_cycle;
     pre_m68k_cycle = m68k_integer_part;
 
@@ -5614,11 +5636,10 @@ void ScspAsynMainRT( void * p ){
 }
 
 void ScspExec(){
-
 	if (thread_running == 0){
 		thread_running = 1;
                 AVBarrier = YabThreadCreateBarrier(2);
-		YabThreadStart(YAB_THREAD_SCSP, ScspAsynMainRT, NULL);
+		YabThreadStart(YAB_THREAD_SCSP, ScspAsynMainCpu, NULL);
     YabThreadUSleep(100000);
 	}
 }
