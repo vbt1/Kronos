@@ -47,6 +47,7 @@ ELSE (WIN32)
       /opt/graphics/OpenGL/include /usr/X11R6/include
       /usr/include
       /opt/vc/include
+      /mingw32/include/QtANGLE/include
     )
 
     FIND_PATH(OPENGLES2_INCLUDE_DIR GLES2/gl2.h
@@ -54,24 +55,27 @@ ELSE (WIN32)
       /opt/graphics/OpenGL/include /usr/X11R6/include
       /usr/include
       /opt/vc/include
+      /mingw32/include/QtANGLE/include
     )
 
     FIND_LIBRARY(OPENGLES_gl_LIBRARY
-      NAMES GLES_CM GLESv1_CM
+      NAMES GLES_CM GLESv1_CM opengl32
       PATHS /opt/graphics/OpenGL/lib
             /usr/openwin/lib
             /usr/shlib /usr/X11R6/lib
             /usr/lib
             /opt/vc/lib
+            /mingw32/include/QtANGLE/include
     )
 
     FIND_LIBRARY(OPENGLES_gl2_LIBRARY
-      NAMES GLESv2
+      NAMES GLESv2 opengl32
       PATHS /opt/graphics/OpenGL/lib
             /usr/openwin/lib
             /usr/shlib /usr/X11R6/lib
             /usr/lib
             /opt/vc/lib
+            /mingw32/include/QtANGLE/include
     )
 
 
@@ -102,6 +106,7 @@ ENDIF(OPENGLES_gl_LIBRARY)
 
 SET( OPENGLES2_FOUND "NO" )
 IF(OPENGLES_gl2_LIBRARY)
+
 SET( OPENGLES2_LIBRARIES ${OPENGLES_gl2_LIBRARY} ${OPENGLES2_LIBRARIES})
 
     SET( OPENGLES2_FOUND "YES" )
