@@ -610,17 +610,23 @@ void YuiErrorMsg(const char *string)
       log_cb(RETRO_LOG_ERROR, "Yabause: %s\n", string);
 }
 
-void YuiSetVideoAttribute(int type, int val)
-{
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "Yabause called back to YuSetVideoAttribute.\n");
-}
-
 int YuiSetVideoMode(int width, int height, int bpp, int fullscreen)
 {
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Yabause called, it wants to set width of %d and height of %d.\n", width, height);
     return 0;
+}
+
+int YuiUseOGLOnThisThread(){
+  return 0;
+}
+
+int YuiRevokeOGLOnThisThread(){
+  return 0;
+}
+
+int YuiGetFB(void) {
+  return hw_render.get_current_framebuffer();
 }
 
 void YuiSwapBuffers(void)
@@ -637,9 +643,10 @@ void YuiSwapBuffers(void)
 
    game_width  = current_width;
    game_height = current_height;
-}
 
-void YglOnUpdateColorRamWord(u32 addr) {}
+  video_cb(RETRO_HW_FRAME_BUFFER_VALID, game_width, game_height, 0);
+
+}
 
 /************************************
  * libretro implementation
@@ -658,6 +665,23 @@ void retro_get_system_info(struct retro_system_info *info)
    info->need_fullpath    = true;
    info->valid_extensions = "bin|cue|iso";
 }
+
+/*
+static Framebuffer ms_fbo;
+static Renderbuffer ms_color;
+static Renderbuffer ms_depth_stencil;
+
+static void init_fb(void)
+{
+
+   Framebuffer::set_back_buffer(0);
+
+   ms_color.init(GL_RGBA8, 704, 512, 0);
+   ms_depth_stencil.init(GL_DEPTH24_STENCIL8, 704, 512, 0);
+   ms_fbo.set_attachments({}, {{ &ms_color }, { &ms_depth_stencil }});
+   Framebuffer::set_back_buffer(ms_fbo);
+}
+*/
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
@@ -814,7 +838,6 @@ static void check_variables(void)
       else if (strcmp(var.value, "32") == 0 && numthreads != 32)
          numthreads = 32;
    }
-
 }
 
 static int does_file_exist(const char *filename)
@@ -844,7 +867,7 @@ void retro_init(void)
       perf_get_cpu_features_cb = perf_cb.get_cpu_features;
 
 #if 1
-   enum retro_pixel_format rgb565 = RETRO_PIXEL_FORMAT_RGB565;
+   enum retro_pixel_format rgb565 = RETRO_PIXEL_FORMAT_XRGB8888;
    if(environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &rgb565))
       log_cb(RETRO_LOG_INFO, "Frontend supports RGB565 - will use that instead of XRGB1555.\n");
 #endif
@@ -871,9 +894,38 @@ void retro_init(void)
    environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &serialization_quirks);
 }
 
+static void context_reset(void)
+{
+   YabauseInit(&yinit);
+   YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
+   VIDSoftSetBilinear(1);
+//glsm_ctl(GLSM_CTL_STATE_CONTEXT_RESET, NULL);
+}
+
+static void context_destroy(void)
+{
+//glsm_ctl(GLSM_CTL_STATE_CONTEXT_DESTROY, NULL);
+}
+
+static bool retro_init_hw_context(void)
+{
+   hw_render.version_major = 3;
+   hw_render.version_minor = 0;
+   hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES3;
+   hw_render.context_reset = context_reset;
+   hw_render.context_destroy = context_destroy;
+   hw_render.depth = true;
+   hw_render.stencil = true;
+   hw_render.bottom_left_origin = true;
+
+   if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
+      return false;
+   return true;
+}
+
 bool retro_load_game(const struct retro_game_info *info)
 {
-   int ret;
+   int ret = 0;
    struct retro_input_descriptor desc[] = {
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "D-Pad Left" },
       { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "D-Pad Up" },
@@ -1079,13 +1131,25 @@ bool retro_load_game(const struct retro_game_info *info)
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
+   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
+   if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+   {
+      yinit.vidcoretype  = VIDCORE_SOFT;
+   } else {
+
+     if (retro_init_hw_context())
+     {
+      yinit.vidcoretype  = VIDCORE_OGL;
+     }
+   }
+
    yinit.cdcoretype      = CDCORE_ISO;
    yinit.cdpath          = full_path;
    /* Emulate BIOS */
    yinit.biospath        = (bios_path[0] != '\0' && does_file_exist(bios_path) && !hle_bios_force) ? bios_path : NULL;
    yinit.percoretype     = PERCORE_LIBRETRO;
    yinit.sh2coretype     = 8;
-   yinit.vidcoretype     = VIDCORE_SOFT;
+   
    yinit.sndcoretype     = SNDCORE_LIBRETRO;
    // It seems Musashi is the recommended m68k core only for x86_64
    // TODO : check on win64 and arm64 ? Perhaps rework this as a core option ?
@@ -1110,10 +1174,7 @@ bool retro_load_game(const struct retro_game_info *info)
 #endif
    yinit.useVdp1cache    = 0;
    yinit.usecache        = 0;
-
-   ret = YabauseInit(&yinit);
-   YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
-   VIDSoftSetBilinear(1);
+   yinit.resolution_mode = 1;
 
    return !ret;
 }
@@ -1207,11 +1268,11 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
    yinit.useVdp1cache    = 0;
    yinit.usecache        = 0;
 
-   ret = YabauseInit(&yinit);
-   YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
-   VIDSoftSetBilinear(1);
+   //et = YabauseInit(&yinit);
+   //YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
+   //VIDSoftSetBilinear(1);
 
-   return !ret;
+   return true;
 }
 
 void retro_unload_game(void)
@@ -1221,7 +1282,8 @@ void retro_unload_game(void)
 
 unsigned retro_get_region(void)
 {
-   return Cs2GetRegionID() > 6 ? RETRO_REGION_PAL : RETRO_REGION_NTSC;
+   //return Cs2GetRegionID() > 6 ? RETRO_REGION_PAL : RETRO_REGION_NTSC;
+return RETRO_REGION_NTSC;
 }
 
 unsigned retro_api_version(void)
@@ -1262,7 +1324,7 @@ void retro_deinit(void)
 void retro_reset(void)
 {
    YabauseResetButton();
-   YabauseInit(&yinit);
+   //YabauseInit(&yinit);
 }
 
 void retro_run(void)
@@ -1270,18 +1332,16 @@ void retro_run(void)
    unsigned i;
    bool updated  = false;
 
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       check_variables();
 
    audio_size = SAMPLEFRAME;
 
-   input_poll_cb();
 
    //YabauseExec(); runs from handle events
    if(PERCore)
       PERCore->HandleEvents();
-
-	video_cb(dispbuffer, game_width, game_height, game_width * 2);
 }
 
 #ifdef ANDROID
