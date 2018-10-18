@@ -2177,6 +2177,8 @@ void Ygl_uniformVDP2DrawFramebuffer(void * p, float from, float to, float * offs
 
    _Ygl->renderfb.mtxModelView = glGetUniformLocation(_prgid[pgid], (const GLchar *)"u_mvpMatrix");
 
+
+//printf("%d\n", _Ygl->framebuffer_uniform_id_);
    glBindBufferBase(GL_UNIFORM_BUFFER, FRAME_BUFFER_UNIFORM_ID, _Ygl->framebuffer_uniform_id_);
    glUniform1f(g_draw_framebuffer_uniforms[arrayid].idfrom, from);
    glUniform1f(g_draw_framebuffer_uniforms[arrayid].idto, to);

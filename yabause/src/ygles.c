@@ -30,13 +30,13 @@
 #include "error.h"
 
 
-//#define __USE_OPENGL_DEBUG__
+#define __USE_OPENGL_DEBUG__
 
 #define YGLDEBUG
 //#define YGLDEBUG printf
 //#define YGLDEBUG LOG
 //#define YGLDEBUG yprintf
-//#define YGLLOG yprintf
+#define YGLLOG printf
 
 extern u8 * Vdp1FrameBuffer[];
 static int rebuild_frame_buffer = 0;
@@ -2688,6 +2688,7 @@ void YglUpdateVdp2Reg(Vdp2 *varVdp2Regs) {
 
   if (_Ygl->framebuffer_uniform_id_ == 0) {
     glGenBuffers(1, &_Ygl->framebuffer_uniform_id_);
+
   }
   glBindBuffer(GL_UNIFORM_BUFFER, _Ygl->framebuffer_uniform_id_);
   glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformFrameBuffer), &_Ygl->fbu_, GL_STATIC_DRAW);
@@ -2979,11 +2980,12 @@ void YglRenderFrameBuffer(int from, int to, Vdp2* varVdp2Regs) {
       }
      }
    }
-
    glUniformMatrix4fv(_Ygl->renderfb.mtxModelView, 1, GL_FALSE, (GLfloat*)result.m);
    glVertexAttribPointer(_Ygl->renderfb.vertexp,2,GL_FLOAT, GL_FALSE,0,(GLvoid *)vertices );
    glVertexAttribPointer(_Ygl->renderfb.texcoordp,2,GL_FLOAT,GL_FALSE,0,(GLvoid *)texcord );
+printf("La\n");
    glDrawArrays(GL_TRIANGLES, 0, 6);
+printf("La doe\n");
 
 #if 0
    if (is_addcolor == 1){

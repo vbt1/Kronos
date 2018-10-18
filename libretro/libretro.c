@@ -45,6 +45,7 @@ static bool stv_mode = false;
 
 struct retro_perf_callback perf_cb;
 retro_get_cpu_features_t perf_get_cpu_features_cb = NULL;
+retro_hw_get_proc_address_t libretro_get_proc_address;
 
 retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
@@ -52,6 +53,7 @@ static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
 static retro_environment_t environ_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
+
 
 static struct retro_hw_render_callback hw_render;
 
@@ -604,6 +606,14 @@ VideoInterface_struct *VIDCoreList[] = {
 
 #pragma mark Yabause Callbacks
 
+void YuiMsg(const char *format, ...)
+{
+  va_list arglist;
+  va_start( arglist, format );
+  vprintf( format, arglist );
+  va_end( arglist );
+}
+
 void YuiErrorMsg(const char *string)
 {
    if (log_cb)
@@ -643,6 +653,8 @@ void YuiSwapBuffers(void)
 
    game_width  = current_width;
    game_height = current_height;
+
+printf("Swap %d %d\n", game_width, game_height);
 
   video_cb(RETRO_HW_FRAME_BUFFER_VALID, game_width, game_height, 0);
 
@@ -687,7 +699,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    memset(info, 0, sizeof(*info));
 
-   info->timing.fps            = (retro_get_region() == RETRO_REGION_NTSC) ? 60 : 50;
+   info->timing.fps            = (retro_get_region() == RETRO_REGION_NTSC) ? 60.0f : 50.0f;
    info->timing.sample_rate    = 44100;
    info->geometry.base_width   = game_width;
    info->geometry.base_height  = game_height;
@@ -866,12 +878,6 @@ void retro_init(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_cb))
       perf_get_cpu_features_cb = perf_cb.get_cpu_features;
 
-#if 1
-   enum retro_pixel_format rgb565 = RETRO_PIXEL_FORMAT_XRGB8888;
-   if(environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &rgb565))
-      log_cb(RETRO_LOG_INFO, "Frontend supports RGB565 - will use that instead of XRGB1555.\n");
-#endif
-
    environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir);
 
    if (dir)
@@ -894,32 +900,39 @@ void retro_init(void)
    environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &serialization_quirks);
 }
 
+static int first_ctx_reset = 0;
+
 static void context_reset(void)
 {
-   YabauseInit(&yinit);
-   YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
-   VIDSoftSetBilinear(1);
-//glsm_ctl(GLSM_CTL_STATE_CONTEXT_RESET, NULL);
+
+   if (first_ctx_reset == 1)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_INFO, "Context reset!\n");
+   
+      first_ctx_reset = 0;
+      YabauseInit(&yinit);
+      YabauseSetVideoFormat(VIDEOFORMATTYPE_NTSC);
+      VIDSoftSetBilinear(1);
+   }
 }
 
 static void context_destroy(void)
 {
-//glsm_ctl(GLSM_CTL_STATE_CONTEXT_DESTROY, NULL);
+
 }
 
 static bool retro_init_hw_context(void)
 {
-   hw_render.version_major = 3;
-   hw_render.version_minor = 0;
    hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES3;
    hw_render.context_reset = context_reset;
    hw_render.context_destroy = context_destroy;
    hw_render.depth = true;
-   hw_render.stencil = true;
    hw_render.bottom_left_origin = true;
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
       return false;
+
    return true;
 }
 
@@ -1142,6 +1155,7 @@ bool retro_load_game(const struct retro_game_info *info)
       yinit.vidcoretype  = VIDCORE_OGL;
      }
    }
+   first_ctx_reset = 1;
 
    yinit.cdcoretype      = CDCORE_ISO;
    yinit.cdpath          = full_path;
