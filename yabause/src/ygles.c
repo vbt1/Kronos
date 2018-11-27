@@ -3423,6 +3423,7 @@ render_finish:
 
   _Ygl->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
   FrameProfileAdd("YglRender end");
+  glFlush();
   return;
 }
 
