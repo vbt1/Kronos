@@ -42,6 +42,9 @@ extern u8 * Vdp1FrameBuffer[];
 static int rebuild_frame_buffer = 0;
 int opengl_mode = 1;
 
+static int frame[2] = {0, 0};
+static int nbframe = 0;
+
 extern int WaitVdp2Async(int sync);
 extern int YglDrawBackScreen(float w, float h);
 
@@ -2555,6 +2558,8 @@ void YglRenderVDP1(void) {
   //YabThreadLock(_Ygl->mutex);
   YglMatrix m, *mat;
 
+  frame[_Ygl->drawframe] = nbframe;
+
   FrameProfileAdd("YglRenderVDP1 start");
   YglLoadIdentity(&m);
 
@@ -3187,6 +3192,7 @@ void YglCheckFBSwitch(int sync) {
   if ((ret == GL_CONDITION_SATISFIED) || (ret == GL_ALREADY_SIGNALED)) {
     glDeleteSync(_Ygl->sync);
     _Ygl->sync = 0;
+    nbframe++;
     YuiSwapBuffers();
   }
 }
@@ -3207,6 +3213,8 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
    YGLLOG("YglRender\n");
 
+   executeVdp1();
+
    if (_Ygl->stretch == 0) {
      double dar = (double)GlWidth/(double)GlHeight;
      double par = 4.0/3.0;
@@ -3226,7 +3234,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
    FrameProfileAdd("YglRender start");
    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
-
+printf("Frame %d, vdp1 frame %d\n", nbframe, frame[_Ygl->readframe]);
    glEnable(GL_SCISSOR_TEST);
    glViewport(0, 0, GlWidth, GlHeight);
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

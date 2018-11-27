@@ -1622,8 +1622,7 @@ static void FPSDisplay(void)
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-static void startField(void) {
+void executeVdp1(void) {
   int isrender = 0;
 
   yabsys.wait_line_count = -1;
@@ -1660,6 +1659,10 @@ static void startField(void) {
   }
 
   Vdp1External.manualchange = 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+static void startField(void) {
 
    FPSDisplay();
 }
