@@ -419,7 +419,7 @@ void Vdp2HBlankIN(void) {
   } else {
 // Fix : Function doesn't exist without those defines
 #if defined(HAVE_LIBGL) || defined(__ANDROID__) || defined(IOS)
-     if (yabsys.LineCount == (yabsys.MaxLineCount-1)) waitVdp2DrawScreensEnd(1);
+     waitVdp2DrawScreensEnd(yabsys.LineCount == (yabsys.MaxLineCount-1));
 #endif
   }
 }
