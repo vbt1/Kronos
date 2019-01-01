@@ -422,7 +422,7 @@ typedef struct {
    GLuint color_offset;
    GLuint tex0;
    GLuint tex1;
-   float color_offset_val[4];
+   GLint color_offset_val[4];
    int (*setupUniform)(void *, YglTextureManager *tm, Vdp2* regs);
    int (*cleanupUniform)(void *, YglTextureManager *tm);
    YglVdp1CommonParam * ids;

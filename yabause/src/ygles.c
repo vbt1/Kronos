@@ -32,6 +32,8 @@
 
 #define __USE_OPENGL_DEBUG__
 
+#define YGLDEBUG_PRG
+
 #define YGLDEBUG
 //#define YGLDEBUG printf
 //#define YGLDEBUG LOG
@@ -2601,7 +2603,7 @@ void YglRenderVDP1(void) {
     if( level->prg[j].prgid != cprg ) {
       cprg = level->prg[j].prgid;
       if (cprg == 0) continue; //prgid 0 has no meaning
-printf("%d\n", cprg);
+      YGLDEBUG_PRG("%d\n", cprg);
       glUseProgram(level->prg[j].prg);
     }
   
@@ -3382,7 +3384,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
           {
             cprg = level->prg[j].prgid;
             glUseProgram(level->prg[j].prg);
-printf("vdp2 %d\n", cprg);
+            YGLDEBUG_PRG("vdp2 %d\n", cprg);
           }
           if (level->prg[j].setupUniform)
           {

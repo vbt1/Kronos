@@ -291,7 +291,7 @@ SHADER_VERSION
 "{\n"
 "  uvec4 txindex = texelFetch( s_texture, ivec2(int(v_texcoord.x),int(v_texcoord.y)) ,0 );\n"
 "  if(txindex.a == 0.0) { discard; }\n"
-"  uvec4 txcol = texelFetch( s_color,  ivec2( ( int(txindex.g)<<uint(8) | int(txindex.r)) ,0 )  , 0 );\n"
+"  uvec4 txcol = texelFetch( s_color,  ivec2(txindex.g * 256.0 + txindex.r ,0 )  , 0 );\n"
 "  fragColor = uvec4(clamp(vec4(txcol) + u_color_offset, vec4(0), vec4(255)));  \n"
 "  fragColor.a = txindex.a;\n"
 "}\n";
@@ -311,8 +311,8 @@ SHADER_VERSION
 "{\n"
 "  uvec4 txindex = texelFetch( s_texture, ivec2(int(v_texcoord.x),int(v_texcoord.y)) ,0 );\n"
 "  if(txindex.a == 0.0) { discard; }\n"
-"  uvec4 txcol = texelFetch( s_color,  ivec2( ((txindex.g<<uint(8)) | (txindex.r)) ,0 )  , 0 );\n"
-"  fragColor = uvec4(clamp(vec4(txcol) + u_color_offset, vec4(0), vec4(255)));  \n"
+"  uvec4 txcol = texelFetch( s_color,  ivec2( ((txindex.g*256.0 + txindex.r)) ,0 )  , 0 );\n"
+"  fragColor = uvec4(vec4(txcol) + u_color_offset);  \n"
 "  fragColor.a = txindex.a;\n"
 "  gl_FragDepth = ((txindex.b/10.0) +1.0)/2.0 ; \n"
 "}\n";
@@ -387,7 +387,7 @@ SHADER_VERSION
 "{\n"
 "  vec4 txindex = texelFetch( s_texture, ivec2(int(v_texcoord.x),int(v_texcoord.y)) ,0 );\n"
 "  if(txindex.a == 0.0) { discard; }\n"
-"  vec4 txcol = texelFetch( s_color,  ivec2( ( int(txindex.g)<<uint(8) | int(txindex.r)) ,0 )  , 0 );\n"
+"  vec4 txcol = texelFetch( s_color,  ivec2(txindex.g * 256.0 + txindex.r ,0 )  , 0 );\n"
 "  fragColor = txcol+u_color_offset;\n"
 "  if( txindex.a > 0.5) { fragColor.a = 1.0;} else {fragColor.a = 0.0;}\n"
 "}\n";
@@ -408,7 +408,7 @@ int Ygl_uniformAddColCram(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs)
   glEnableVertexAttribArray(1);
   glUniform1i(id_normal_cram_s_texture_addcol, 0);
   glUniform1i(id_normal_cram_s_color_addcol, 1);
-  glUniform4fv(id_normal_cram_color_offset_addcol, 1, prg->color_offset_val);
+  glUniform4iv(id_normal_cram_color_offset_addcol, 1, prg->color_offset_val);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, _Ygl->cram_tex);
   glEnable(GL_BLEND);
@@ -430,7 +430,7 @@ void Ygl_setNormalshader(YglProgram * prg) {
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glUniform1i(id_normal_s_texture, 0);
-    glUniform4fv(id_normal_color_offset, 1, prg->color_offset_val);
+    glUniform4iv(id_normal_color_offset, 1, prg->color_offset_val);
     glUniformMatrix4fv(id_normal_matrix, 1, GL_FALSE, prg->matrix);
   }
   else {
@@ -442,7 +442,7 @@ void Ygl_setNormalshader(YglProgram * prg) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _Ygl->cram_tex);
     glActiveTexture(GL_TEXTURE0);
-    glUniform4fv(id_normal_color_offset, 1, prg->color_offset_val);
+    glUniform4iv(id_normal_color_offset, 1, prg->color_offset_val);
     glUniformMatrix4fv(id_normal_cram_matrix, 1, GL_FALSE, prg->matrix);
   }
 }
@@ -465,7 +465,7 @@ SHADER_VERSION
 "  vec4 txindex = texelFetch( s_texture, ivec2(int(v_texcoord.x),int(v_texcoord.y)) ,0 );         \n"
 "  if(txindex.a > 0.0) {\n"
 "    highp int highg = int(txindex.g);"
-"    vec4 txcol = texelFetch( s_color, ivec2( ((highg&0x7F)<<uint(8)) | int(txindex.r) , 0 ) , 0 );\n"
+"    vec4 txcol = texelFetch( s_color, ivec2((highg&0x7F)*256.0 + txindex.r , 0 ) , 0 );\n"
 "    txcol.a = txindex.a;\n"
 "    if( (highg & 0x80)  != 0) {\n"
 "      int coef = int(txindex.b);\n"
@@ -506,7 +506,7 @@ int Ygl_uniformNormalCramLine(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs
   glEnableVertexAttribArray(1);
   glUniform1i(id_rbg_cram_line_s_texture, 0);
   glUniform1i(id_rbg_cram_line_s_color, 1);
-  glUniform4fv(id_rbg_cram_line_color_offset, 1, prg->color_offset_val);
+  glUniform4iv(id_rbg_cram_line_color_offset, 1, prg->color_offset_val);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, _Ygl->cram_tex);
 
@@ -1065,7 +1065,7 @@ SHADER_VERSION
 "  addr.t = addr.t / (v_texcoord.q);                                      \n"
 "  uvec4 spriteColor = texture(u_sprite,addr);                           \n"
 "  if( spriteColor.a == 0.0 ) discard;                                      \n"
-"  fragColor  = clamp(spriteColor+uvec4(v_vtxcolor),uvec4(0.0),uvec4(255.0));     \n"
+"  fragColor  = uvec4(vec4(spriteColor)+v_vtxcolor*255.0);     \n"
 "  fragColor.a = spriteColor.a;                                        \n"
 "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_f[] = {Yglprg_vdp1_gouraudshading_f, NULL};
@@ -1084,7 +1084,7 @@ SHADER_VERSION
 "  addr.s = addr.s / (v_texcoord.q);                                      \n"
 "  addr.t = addr.t / (v_texcoord.q);                                      \n"
 "  uvec4 spriteColor = texture(u_sprite,addr);                           \n"
-"  fragColor  = clamp(spriteColor+uvec4(v_vtxcolor*255.0),uvec4(0.0),uvec4(255.0));     \n"
+"  fragColor  =  uvec4(vec4(spriteColor)+v_vtxcolor*255.0);     \n"
 "  fragColor.a = spriteColor.a;                                        \n"
 "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_spd_f[] = { Yglprg_vdp1_gouraudshading_spd_f, NULL };
@@ -2381,7 +2381,7 @@ SHADER_VERSION
 "precision highp float;\n"
 "#endif\n"
 "in highp vec4 v_texcoord;\n"
-"uniform vec4 u_color_offset;\n"
+"uniform ivec4 u_color_offset;\n"
 "uniform float u_emu_height;\n"
 "uniform float u_vheight; \n"
 "uniform highp sampler2D s_texture;\n"
@@ -2471,7 +2471,7 @@ int Ygl_uniformLinecolorInsert(void * p, YglTextureManager *tm, Vdp2 *varVdp2Reg
   glEnableVertexAttribArray(1);
   glUniform1i(param->s_texture, 0);
   glUniform1i(param->s_line, 1);
-  glUniform4fv(param->color_offset, 1, prg->color_offset_val);
+  glUniform4iv(param->color_offset, 1, prg->color_offset_val);
   glUniform1f(param->emu_height, (float)_Ygl->rheight / (float)_Ygl->height);
   //glUniform1f(param->height_ratio, (float)_Ygl->rheight/((float)_Ygl->height * (float)_Ygl->density));  
   glUniform1f(param->vheight, (float)_Ygl->height);
