@@ -3382,6 +3382,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
           {
             cprg = level->prg[j].prgid;
             glUseProgram(level->prg[j].prg);
+printf("vdp2 %d\n", cprg);
           }
           if (level->prg[j].setupUniform)
           {
