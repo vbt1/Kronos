@@ -32,7 +32,7 @@
 
 #define __USE_OPENGL_DEBUG__
 
-#define YGLDEBUG_PRG
+#define YGLDEBUG_PRG printf
 
 #define YGLDEBUG
 //#define YGLDEBUG printf
@@ -898,25 +898,11 @@ int YglGenFrameBuffer() {
    glGenFramebuffers(1, &_Ygl->vdp1AccessFB);
   }
 
-   if(1) //strstr((const char*)glGetString(GL_EXTENSIONS),"packed_depth_stencil") != NULL )
-  {
     if (_Ygl->rboid_depth != 0) glDeleteRenderbuffers(1, &_Ygl->rboid_depth);
     glGenRenderbuffers(1, &_Ygl->rboid_depth);
     glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->rboid_depth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width, _Ygl->height);
-    _Ygl->rboid_stencil = _Ygl->rboid_depth;
-  }
-  else{
-    if (_Ygl->rboid_depth != 0) glDeleteRenderbuffers(1, &_Ygl->rboid_depth);
-    glGenRenderbuffers(1, &_Ygl->rboid_depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->rboid_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, _Ygl->width, _Ygl->height);
 
-    if (_Ygl->rboid_stencil != 0) glDeleteRenderbuffers(1, &_Ygl->rboid_stencil);
-    glGenRenderbuffers(1, &_Ygl->rboid_stencil);
-    glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->rboid_stencil);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, _Ygl->width, _Ygl->height);
-  }
 
   if (_Ygl->vdp1fbo != 0)
     glDeleteFramebuffers(1, &_Ygl->vdp1fbo);
@@ -924,8 +910,7 @@ int YglGenFrameBuffer() {
   glGenFramebuffers(1, &_Ygl->vdp1fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[0], 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_stencil);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     YGLDEBUG("YglGenFrameBuffer:Framebuffer line %d status = %08X\n", __LINE__, status);
@@ -936,8 +921,7 @@ int YglGenFrameBuffer() {
 
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[1], 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_stencil);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -976,26 +960,11 @@ int YglGenerateOriginalBuffer(){
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  if ( 1) //strstr(glGetString(GL_EXTENSIONS), "packed_depth_stencil") != NULL)
-  {
     if (_Ygl->original_depth != 0) glDeleteRenderbuffers(1, &_Ygl->original_depth);
     glGenRenderbuffers(1, &_Ygl->original_depth);
     glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->original_depth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width, _Ygl->height);
-    _Ygl->original_stencil = _Ygl->original_depth;
     
-  }else{
-    if (_Ygl->original_depth != 0) glDeleteRenderbuffers(1, &_Ygl->original_depth);
-    glGenRenderbuffers(1, &_Ygl->original_depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->original_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, _Ygl->width, _Ygl->height);
-
-    if (_Ygl->original_stencil != 0) glDeleteRenderbuffers(1, &_Ygl->original_stencil);
-    glGenRenderbuffers(1, &_Ygl->original_stencil);
-    glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->original_stencil);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, _Ygl->width, _Ygl->height);
-    
-  }
 
   if (_Ygl->original_fbo != 0){
     glDeleteFramebuffers(1, &_Ygl->original_fbo);
@@ -1004,8 +973,7 @@ int YglGenerateOriginalBuffer(){
   glGenFramebuffers(1, &_Ygl->original_fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->original_fbotex, 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->original_depth);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->original_stencil);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->original_depth);
   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     YGLDEBUG("YglGenerateOriginalBuffer:Framebuffer status = %08X\n", status);
@@ -1240,7 +1208,7 @@ YglProgram * YglGetProgram( YglSprite * input, int prg, YglTextureManager *tm)
 {
    YglLevel   *level;
    YglProgram *program;
-   float checkval;
+   int checkval;
 
    if (input->priority > 8) {
       VDP1LOG("sprite with priority %d\n", input->priority);
@@ -1282,7 +1250,7 @@ YglProgram * YglGetProgram( YglSprite * input, int prg, YglTextureManager *tm)
 
    }
 
-   checkval = (float)(input->cor) / 255.0f;
+   checkval = input->cor;
    if (checkval != level->prg[level->prgcurrent].color_offset_val[0])
    {
      YglProgramChange(level, prg);
@@ -1424,9 +1392,9 @@ int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * co
   program = YglGetProgram(input, prg, tm);
   if (program == NULL || program->quads == NULL) return -1;
 
-  program->color_offset_val[0] = (float)(input->cor) / 255.0f;
-  program->color_offset_val[1] = (float)(input->cog) / 255.0f;
-  program->color_offset_val[2] = (float)(input->cob) / 255.0f;
+  program->color_offset_val[0] = input->cor;
+  program->color_offset_val[1] = input->cog;
+  program->color_offset_val[2] = input->cob;
   program->color_offset_val[3] = 0;
 
 
@@ -1688,9 +1656,9 @@ int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors
        int a=0;
    }
 
-   program->color_offset_val[0] = (float)(input->cor)/255.0f;
-   program->color_offset_val[1] = (float)(input->cog)/255.0f;
-   program->color_offset_val[2] = (float)(input->cob)/255.0f;
+   program->color_offset_val[0] = input->cor;
+   program->color_offset_val[1] = input->cog;
+   program->color_offset_val[2] = input->cob;
    program->color_offset_val[3] = 0;
 
    if (output != NULL){
@@ -1862,9 +1830,9 @@ int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, fl
     int a = 0;
   }
 
-  program->color_offset_val[0] = (float)(input->cor) / 255.0f;
-  program->color_offset_val[1] = (float)(input->cog) / 255.0f;
-  program->color_offset_val[2] = (float)(input->cob) / 255.0f;
+  program->color_offset_val[0] = input->cor;
+  program->color_offset_val[1] = input->cog;
+  program->color_offset_val[2] = input->cob;
   program->color_offset_val[3] = 0.0;
 
   if (output != NULL){
@@ -2049,9 +2017,9 @@ void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c
   program->mosaic[0] = input->mosaicxmask;
   program->mosaic[1] = input->mosaicymask;
 
-  program->color_offset_val[0] = (float)(input->cor) / 255.0f;
-  program->color_offset_val[1] = (float)(input->cog) / 255.0f;
-  program->color_offset_val[2] = (float)(input->cob) / 255.0f;
+  program->color_offset_val[0] = input->cor;
+  program->color_offset_val[1] = input->cog;
+  program->color_offset_val[2] = input->cob;
   program->color_offset_val[3] = 0;
   //info->cor
 
@@ -2208,9 +2176,9 @@ int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int c
   program->mosaic[0] = input->mosaicxmask;
   program->mosaic[1] = input->mosaicymask;
 
-  program->color_offset_val[0] = (float)(input->cor) / 255.0f;
-  program->color_offset_val[1] = (float)(input->cog) / 255.0f;
-  program->color_offset_val[2] = (float)(input->cob) / 255.0f;
+  program->color_offset_val[0] = input->cor;
+  program->color_offset_val[1] = input->cog;
+  program->color_offset_val[2] = input->cob;
   program->color_offset_val[3] = 0;
   //info->cor
 
@@ -2383,9 +2351,9 @@ int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglC
   program->mosaic[0] = input->mosaicxmask;
   program->mosaic[1] = input->mosaicymask;
 
-  program->color_offset_val[0] = (float)(input->cor) / 255.0f;
-  program->color_offset_val[1] = (float)(input->cog) / 255.0f;
-  program->color_offset_val[2] = (float)(input->cob) / 255.0f;
+  program->color_offset_val[0] = input->cor;
+  program->color_offset_val[1] = input->cog;
+  program->color_offset_val[2] = input->cob;
   program->color_offset_val[3] = 0;
   //info->cor
   pos = program->quads + program->currentQuad;
@@ -2467,8 +2435,7 @@ void YglEraseWriteVDP1(void) {
 
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[_Ygl->readframe], 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_stencil);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
 
   color = Vdp1Regs->EWDR;
   priority = 0;
@@ -2575,8 +2542,7 @@ void YglRenderVDP1(void) {
   YglGenFrameBuffer();
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[_Ygl->drawframe], 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_stencil);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if( status != GL_FRAMEBUFFER_COMPLETE ) {
     YGLLOG("YglRenderVDP1: Framebuffer status = %08X\n", status );
@@ -2762,16 +2728,16 @@ void YglUpdateVdp2Reg(Vdp2 *varVdp2Regs) {
   u8 *prilist = (u8 *)&varVdp2Regs->PRISA;
 
   for (i = 0; i < 8; i++) {
-    _Ygl->fbu_.u_alpha[i*4] = (float)(0x1F - (((cclist[i] & 0x1F)) & 0x1F)) / 31.0f;
+    _Ygl->fbu_.u_alpha[i*4] = (float)(0x1F - (((cclist[i] & 0x1F)) & 0x1F)) * 8.0f;
     _Ygl->fbu_.u_pri[i*4] = ((float)(prilist[i] & 0x7) / 10.0f) + 0.05f;
   }
   _Ygl->fbu_.u_cctll = ((float)((varVdp2Regs->SPCTL >> 8) & 0x07) / 10.0f) + 0.05f;
 
   updateColorOffset(varVdp2Regs);
 
-  _Ygl->fbu_.u_coloroffset[0] = vdp1cor / 255.0f;
-  _Ygl->fbu_.u_coloroffset[1] = vdp1cog / 255.0f;
-  _Ygl->fbu_.u_coloroffset[2] = vdp1cob / 255.0f;
+  _Ygl->fbu_.u_coloroffset[0] = vdp1cor;
+  _Ygl->fbu_.u_coloroffset[1] = vdp1cog;
+  _Ygl->fbu_.u_coloroffset[2] = vdp1cob;
   _Ygl->fbu_.u_coloroffset[3] = 0.0f;
 
   // For Line Color insersion
@@ -3131,7 +3097,7 @@ void YglRenderFrameBufferShadow() {
   YglMatrix result;
 
   YglGenFrameBuffer();
-
+printf("%d\n", __LINE__);
   Ygl_uniformVDP2DrawFrameBufferShadow(&_Ygl->renderfb);
 
   glBindTexture(GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[_Ygl->readframe]);
@@ -3197,8 +3163,7 @@ static void releaseVDP1FB(int i) {
     if (_Ygl->vdp1fb_buf[i] != NULL) {
       glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[i], 0);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_stencil);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
       glViewport(0, 0, _Ygl->width, _Ygl->height);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, _Ygl->vdp1AccessTex[i]);

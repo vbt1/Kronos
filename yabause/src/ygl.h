@@ -385,7 +385,7 @@ void YglUpdateVDP1FB(void);
 // std140
 typedef struct  { 
  float u_pri[8*4];  
- float u_alpha[8*4];
+ int u_alpha[8*4];
  float u_coloroffset[4];
  float u_cctll;
  float u_emu_height;
@@ -540,7 +540,6 @@ typedef struct {
    int drawframe;
    int readframe;
    GLuint rboid_depth;
-   GLuint rboid_stencil;
    GLuint vdp1fbo;
    GLuint vdp1FrameBuff[2];
    GLuint smallfbo;
@@ -554,7 +553,6 @@ typedef struct {
    u32* vdp1fb_buf[2];
    GLuint original_fbo;
    GLuint original_fbotex;
-   GLuint original_stencil;
    GLuint original_depth;
 
    GLuint tmpfbo;

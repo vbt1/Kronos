@@ -284,7 +284,7 @@ SHADER_VERSION
 "#endif\n"
 "in vec4 v_texcoord;\n"
 "uniform ivec4 u_color_offset;\n"
-"uniform highp usampler2D s_texture;\n"
+"uniform usampler2D s_texture;\n"
 "uniform usampler2D s_color;\n"
 "out uvec4 fragColor;\n"
 "void main()\n"
@@ -787,35 +787,6 @@ int Ygl_cleanupNormal_blur(void * p, YglTextureManager *tm)
 
   return 0;
 }
-
-
-
-const GLchar Yglprg_DestinationAlpha_f[] =
-SHADER_VERSION
-"#ifdef GL_ES\n"
-"precision highp float;                                  \n"
-"#endif\n"
-"in highp vec4 v_texcoord;                               \n"
-"uniform vec4 u_color_offset;                            \n"
-"uniform sampler2D s_texture;                            \n"
-"uniform sampler2D s_depth;                              \n"
-"uniform sampler2D s_dest;                               \n"
-"out vec4 fragColor;                                     \n"
-"void main()                                             \n"
-"{                                                       \n"
-"  ivec2 addr;                                           \n"
-"  addr.x = int(v_texcoord.x);                           \n"
-"  addr.y = int(v_texcoord.y);                           \n"
-"  vec4 txcol = texelFetch( s_texture, addr,0 );         \n"
-"  ivec2 screenpos = gl_FragCoord.xy;                    \n"
-"  float depth = texelFetch( s_depth, screenpos,0 ).x;   \n"
-"  if(txcol.a > 0.0 ){                                   \n"
-"     fragColor = clamp(txcol+u_color_offset,vec4(0.0),vec4(1.0)); \n"
-"     if( depth == gl_FragCoord.z )                                \n"
-"         fragColor.a = texelFetch( s_dest, screenpos,0 ).x        \n"
-"  }else \n                                            "
-"     discard;\n                                      "
-"}                                                   \n";
 
 /*------------------------------------------------------------------------------------
  *  Window Operation
@@ -1519,37 +1490,6 @@ const GLchar Yglprg_vdp1_drawfb_v[] =
       "}\n";
 const GLchar * pYglprg_vdp2_drawfb_v[] = {Yglprg_vdp1_drawfb_v, NULL};
 
-const GLchar Yglprg_vdp2_drawfb_f[] =
-SHADER_VERSION
-"#ifdef GL_ES\n"
-"precision highp sampler2D; \n"
-"precision highp float;\n"
-"#endif\n"
-"in vec2 v_texcoord;\n"
-"uniform sampler2D s_vdp1FrameBuffer;\n"
-"uniform float u_from;\n"
-"uniform float u_to;\n"
-"uniform vec4 u_coloroffset;\n"
-"out vec4 fragColor;\n"
-"void main()\n"
-"{\n"
-"  vec2 addr = v_texcoord;\n"
-"  highp vec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
-"  int additional = int(fbColor.a );\n"
-"  highp float alpha = float((additional/8)*8)/255.0;\n"
-"  highp float depth = (float(additional&0x07)/10.0) + 0.05;\n"
-"  if( depth < u_from || depth > u_to ){\n"
-"    discard;\n"
-"  }else if( alpha > 0.0){\n"
-"     fragColor = fbColor;\n"
-"     fragColor += u_coloroffset;  \n"
-"     fragColor.a = alpha + 7.0/255.0;\n"
-"     gl_FragDepth = (depth+1.0)/2.0;\n"
-"  }else{ \n"
-"     discard;\n"
-"  }\n"
-"}\n";
-
 /*
 +-+-+-+-+-+-+-+-+
 |S|C|A|A|A|P|P|P|
@@ -1578,7 +1518,7 @@ SHADER_VERSION
 " float u_cctl; \n"
 " float u_emu_height; \n"
 " float u_vheight; \n"
-" uint u_color_ram_offset; \n"
+" int u_color_ram_offset; \n"
 "}; \n"
 "uniform usampler2D s_vdp1FrameBuffer;\n"
 "uniform usampler2D s_color; \n"
@@ -1604,16 +1544,16 @@ SHADER_VERSION
 "  vec2 addr = v_texcoord;\n"
 "  uvec4 color;\n"
 "  uvec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
-"  uint additional = fbColor.a;\n"
-"  if( (additional & uint(0x80)) == uint(0) ){ discard; } // show? \n"
-"  uint prinumber = (additional&uint(0x07)); "
+"  int additional = int(fbColor.a);\n"
+"  if( (additional & 0x80) == 0 ){ discard; } // show? \n"
+"  int prinumber = int(additional&0x07);\n"
 "  float depth = u_pri[ prinumber ];\n"
-"  if( depth < u_from || depth > u_to ){ discard; } \n"
+"  if( (depth < u_from) || (depth > u_to) ){ discard; } \n"
 "  uvec4 txcol=uvec4(0.0,0.0,0.0,255.0);\n"
-"  if( (additional & uint(0x40)) != uint(0) ){  // index color? \n"
-"    if( fbColor.b != uint(0) ) {discard;} // draw shadow last path \n"
-"    uint colindex = ( fbColor.g<<uint(8) | fbColor.r ); \n"
-"    if( colindex == uint(0) && prinumber == uint(0)) { discard;} // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
+"  if( (additional & 0x40) != 0 ){  // index color? \n"
+"    if( int(fbColor.b) != 0 ) {discard;} // draw shadow last path \n"
+"    int colindex = int(fbColor.g * 256.0 + fbColor.r); \n"
+"    if( (colindex == 0) && (prinumber == 0)) { discard;} // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
 "    colindex = colindex + u_color_ram_offset; \n"
 "    txcol = texelFetch( s_color,  ivec2( colindex ,0 )  , 0 );\n"
 "    fragColor = txcol;\n"
@@ -1625,19 +1565,19 @@ SHADER_VERSION
  Color calculation option 
   hard/vdp2/hon/p09_21.htm
 */
-const GLchar Yglprg_vdp2_drawfb_cram_no_color_col_f[]    = " fragColor.a = uint(0xFF); \n";
+const GLchar Yglprg_vdp2_drawfb_cram_no_color_col_f[]    = " fragColor.a = uint(255.0); \n";
 
-const GLchar Yglprg_vdp2_drawfb_cram_destalpha_col_f[] = " fragColor.a = u_alpha[((additional>>uint(3))&uint(0x07))]; \n";
+const GLchar Yglprg_vdp2_drawfb_cram_destalpha_col_f[] = " fragColor.a = u_alpha[(additional>>3)&0x07]; \n";
 
-const GLchar Yglprg_vdp2_drawfb_cram_less_color_col_f[]  = " if( depth <= u_cctl ){ fragColor.a = u_alpha[((additional>>uint(3))&uint(0x07))]; }else{ fragColor.a =  uint(0xFF); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_equal_color_col_f[] = " if( depth == u_cctl ){ fragColor.a = u_alpha[((additional>>uint(3))&uint(0x07))]; }else{ fragColor.a =  uint(0xFF); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_more_color_col_f[]  = " if( depth >= u_cctl ){ fragColor.a = u_alpha[((additional>>uint(3))&uint(0x07))]; }else{ fragColor.a =  uint(0xFF); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_msb_color_col_f[]   = " if( txcol.a != 0.0 ){ fragColor.a = u_alpha[((additional>>uint(3))&uint(0x07))]; }else{ fragColor.a =  uint(0xFF); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_less_color_col_f[]  = " if( depth <= u_cctl ){ fragColor.a = u_alpha[(additional>>3)&0x07]; }else{ fragColor.a =  uint(255.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_equal_color_col_f[] = " if( depth == u_cctl ){ fragColor.a = u_alpha[(additional>>3)&0x07]; }else{ fragColor.a =  uint(255.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_more_color_col_f[]  = " if( depth >= u_cctl ){ fragColor.a = u_alpha[(additional>>3)&0x07]; }else{ fragColor.a =  uint(255.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_msb_color_col_f[]   = " if( txcol.a != 0.0 ){ fragColor.a = u_alpha[(additional>>3)&0x07]; }else{ fragColor.a =  uint(255.0); } \n ";
 
-const GLchar Yglprg_vdp2_drawfb_cram_less_color_add_f[]  = " if( depth <= u_cctl ){ fragColor.a = uint(0xFF); }else{ fragColor.a = uint(0x0); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_equal_color_add_f[] = " if( depth == u_cctl ){ fragColor.a = uint(0xFF); }else{ fragColor.a = uint(0x0); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_more_color_add_f[]  = " if( depth >= u_cctl ){ fragColor.a = uint(0xFF); }else{ fragColor.a = uint(0x0); } \n ";
-const GLchar Yglprg_vdp2_drawfb_cram_msb_color_add_f[]   = " if( txcol.a != 0.0 ){ fragColor.a = uint(0xFF); }else{ fragColor.a = uint(0x0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_less_color_add_f[]  = " if( depth <= u_cctl ){ fragColor.a = uint(255.0); }else{ fragColor.a = uint(0.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_equal_color_add_f[] = " if( depth == u_cctl ){ fragColor.a = uint(255.0); }else{ fragColor.a = uint(0.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_more_color_add_f[]  = " if( depth >= u_cctl ){ fragColor.a = uint(255.0); }else{ fragColor.a = uint(0.0); } \n ";
+const GLchar Yglprg_vdp2_drawfb_cram_msb_color_add_f[]   = " if( txcol.a != 0.0 ){ fragColor.a = uint(255.0); }else{ fragColor.a = uint(0.0); } \n ";
 
 const GLchar Yglprg_vdp2_drawfb_line_blend_f[] =
 "  ivec2 linepos; \n "
@@ -1694,85 +1634,84 @@ const GLchar Yglprg_vdp2_drawfb_cram_eiploge_f[] =
 const GLchar Yglprg_vdp2_drawfb_hblank_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
-"precision highp sampler2D; \n"
+"precision highp usampler2D; \n"
 "precision highp float;\n"
 "#endif\n"
 "layout(std140) uniform vdp2regs { \n"
 " float u_pri[8]; \n"
-" float u_alpha[8]; \n"
-" vec4 u_coloroffset;\n"
+" uint u_alpha[8]; \n"
+" ivec4 u_coloroffset;\n"
 " float u_cctl; \n"
 " float u_emu_height; \n"
 " float u_vheight; \n"
 " int u_color_ram_offset; \n"
 "}; \n"
-"uniform highp sampler2D s_vdp1FrameBuffer;\n"
-"uniform sampler2D s_color; \n"
-"uniform highp sampler2D s_line; \n"
-"uniform float u_from;\n"
-"uniform float u_to;\n"
+"uniform usampler2D s_vdp1FrameBuffer;\n"
+"uniform usampler2D s_color; \n"
+"uniform usampler2D s_line; \n"
+"uniform int u_from;\n"
+"uniform int u_to;\n"
 "in vec2 v_texcoord;\n"
-"out vec4 fragColor;\n"
+"out uvec4 fragColor;\n"
 "void main()\n"
 "{\n"
 "  ivec2 linepos; \n "
 "  linepos.y = 0; \n "
 "  linepos.x = int((u_vheight - gl_FragCoord.y) * u_emu_height);\n"
-"  vec4 linetex = texelFetch( s_line, linepos,0 ); "
+"  uvec4 linetex = texelFetch( s_line, linepos,0 ); "
 "  vec2 addr = v_texcoord;\n"
-"  highp vec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
-"  int additional = int(fbColor.a );\n"
+"  uvec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
+"  int additional = int(fbColor.a);\n"
 "  if( (additional & 0x80) == 0 ){ discard; } // show? \n"
-"  highp vec4 linepri = texelFetch( s_line, ivec2(linepos.x,1+(additional&0x07)) ,0 ); \n"
+"  uvec4 linepri = texelFetch( s_line, ivec2(linepos.x,1+(additional&0x07)) ,0 ); \n"
 "  if( linepri.a == 0.0 ) discard; \n"
-"  highp float depth = ((linepri.a)/10.0)+0.05 ;\n"
+"  float depth = ((linepri.a)/10.0)+0.05 ;\n"
 "  if( depth < u_from || depth > u_to ){ discard; } \n"
-"  vec4 txcol=vec4(0.0,0.0,0.0,1.0);\n"
+"  uvec4 txcol=uvec4(0.0,0.0,0.0,255.0);\n"
 "  if( (additional & 0x40) != 0 ){  // index color? \n"
 "    if( fbColor.b != 0.0 ) {discard;} // draw shadow last path \n"
-"    int colindex = ( int(fbColor.g)<<uint(8) | int(fbColor.r)); \n"
-"    if( colindex == 0 && (additional&0x07) == 0 ) { discard;} // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
-"    colindex = colindex + u_color_ram_offset; \n"
+"    uint colindex = uint(fbColor.g * 256.0 + fbColor.r); \n"
+"    if( (colindex == 0.0) && ((additional&0x07) == 0.0) ) { discard;} // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
+"    colindex = uint(int(colindex) + u_color_ram_offset); \n"
 "    txcol = texelFetch( s_color,  ivec2( colindex ,0 )  , 0 );\n"
 "    fragColor = txcol;\n"
 "  }else{ // direct color \n"
 "    fragColor = fbColor;\n"
 "  } \n"
-"  fragColor.r += (linetex.r-0.5)*2.0;      \n"
-"  fragColor.g += (linetex.g-0.5)*2.0;      \n"
-"  fragColor.b += (linetex.b-0.5)*2.0;      \n";
+"  fragColor.r += uint((linetex.r-128.0)*2.0);      \n"
+"  fragColor.g += uint((linetex.g-128.0)*2.0);      \n"
+"  fragColor.b += uint((linetex.b-128.0)*2.0);      \n";
 
 
 const GLchar Yglprg_vdp2_drawfb_cram_less_color_col_hblank_f[] = 
 " if( depth <= u_cctl ){ \n" 
-"  vec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
+"  uvec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
 "  fragColor.a = linealpha.a; \n"
-"}else{ fragColor.a = 1.0; } \n ";
+"}else{ fragColor.a = uint(255.0); } \n ";
 
 const GLchar Yglprg_vdp2_drawfb_cram_equal_color_col_hblank_f[] =
 " if( depth == u_cctl ){ \n"
-"  vec4 linealpha = texelFetch( s_line, ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); \n"
+"  uvec4 linealpha = texelFetch( s_line, ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); \n"
 "  fragColor.a = linealpha.a; \n"
-"}else{ fragColor.a = 1.0; } \n ";
+"}else{ fragColor.a = uint(255.0); } \n ";
 
 const GLchar Yglprg_vdp2_drawfb_cram_more_color_col_hblank_f[] =
 " if( depth >= u_cctl ){ \n"
-"  vec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
+"  uvec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
 "  fragColor.a = linealpha.a; \n"
-"}else{ fragColor.a = 1.0; } \n ";
+"}else{ fragColor.a = uint(255.0); } \n ";
 
 const GLchar Yglprg_vdp2_drawfb_cram_msb_color_col_hblank_f[] =
 " if( txcol.a != 0.0 ){ \n"
-"  vec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
+"  uvec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
 "  fragColor.a = linealpha.a; \n"
-"}else{ fragColor.a = 1.0; } \n ";
+"}else{ fragColor.a = uint(255.0); } \n ";
 
 const GLchar Yglprg_vdp2_drawfb_cram_destalpha_col_hblank_f[] =
-"  vec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
+"  uvec4 linealpha = texelFetch( s_line,  ivec2(linepos.x,(1+8+((additional>>3)&0x07))) , 0 ); "
 "  fragColor.a = linealpha.a; \n";
 
 
-//const GLchar * pYglprg_vdp2_drawfb_f[] = {Yglprg_vdp2_drawfb_f, NULL};
 const GLchar * pYglprg_vdp2_drawfb_f[] = { Yglprg_vdp2_drawfb_cram_f, Yglprg_vdp2_drawfb_cram_no_color_col_f, Yglprg_vdp2_drawfb_cram_eiploge_f, NULL };
 const GLchar * pYglprg_vdp2_drawfb_destalpha_f[] = { Yglprg_vdp2_drawfb_cram_f, Yglprg_vdp2_drawfb_cram_destalpha_col_f, Yglprg_vdp2_drawfb_cram_eiploge_f, NULL };
 
@@ -1823,29 +1762,30 @@ const GLchar * pYglprg_vdp2_drawfb_msb_add_hblank_f[]  = { Yglprg_vdp2_drawfb_hb
 const GLchar Yglprg_vdp2_drawfb_shadow_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
-"precision highp sampler2D; \n"
+"precision highp usampler2D; \n"
 "precision highp float;\n"
 "#endif\n"
 "layout(std140) uniform vdp2regs { \n"
 " float u_pri[8]; \n"
-" float u_alpha[8]; \n"
+" uint u_alpha[8]; \n"
 " vec4 u_coloroffset;\n"
 " float u_cctl; \n"
 " float u_emu_height; \n"
 " float u_vheight; \n"
+" int u_color_ram_offset; \n"
 "}; \n"
-"uniform highp sampler2D s_vdp1FrameBuffer;\n"
+"uniform usampler2D s_vdp1FrameBuffer;\n"
 "in vec2 v_texcoord;\n"
-"out vec4 fragColor;\n"
+"out uvec4 fragColor;\n"
 "void main()\n"
 "{\n"
 "  vec2 addr = v_texcoord;\n"
-"  highp vec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
-"  int additional = int(fbColor.a );\n"
+"  uvec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
+"  int additional = int(fbColor.a);\n"
 "  if( (additional & 0x80) == 0 ){ discard; } // show? \n"
-"  highp float depth = u_pri[ (additional&0x07) ];\n"
+"  float depth = u_pri[ (additional&0x07) ];\n"
 "  if( (additional & 0x40) != 0 && fbColor.b != 0.0 ){  // index color and shadow? \n"
-"    fragColor = vec4(0.0,0.0,0.0,0.5);\n"
+"    fragColor = uvec4(0.0,0.0,0.0,128.0);\n"
 "  }else{ // direct color \n"
 "    discard;;\n"
 "  } \n"
@@ -2252,6 +2192,8 @@ void Ygl_uniformVDP2DrawFramebuffer(void * p, float from, float to, float * offs
      pgid = PG_VDP2_DRAWFRAMEBUFF;
    }
 
+printf("FB pgid = %d\n", pgid);
+
    arrayid = pgid - PG_VDP2_DRAWFRAMEBUFF;
    GLUSEPROG(_prgid[pgid]);
 
@@ -2294,28 +2236,28 @@ void Ygl_uniformVDP2DrawFramebuffer(void * p, float from, float to, float * offs
 const GLchar Yglprg_vdp2_drawfb_addcolor_shadow_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
-"precision highp sampler2D; \n"
+"precision highp usampler2D; \n"
 "precision highp float;\n"
 "#endif\n"
 "in vec2 v_texcoord;\n"
-"uniform sampler2D s_vdp1FrameBuffer;\n"
-"uniform float u_from;\n"
-"uniform float u_to;\n"
+"uniform usampler2D s_vdp1FrameBuffer;\n"
+"uniform int u_from;\n"
+"uniform int u_to;\n"
 "uniform vec4 u_coloroffset;\n"
-"out vec4 fragColor;\n"
+"out uvec4 fragColor;\n"
 "void main()\n"
 "{\n"
 "  vec2 addr = v_texcoord;\n"
-"  highp vec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
-"  highp int additional = int(fbColor.a );\n"
-"  highp float alpha = float((additional/8)*8)/255.0;\n"
-"  highp float depth = ((float(additional&0x07))/10.0) + 0.05;\n"
+"  uvec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
+"  int additional = int(fbColor.a );\n"
+"  int alpha = additional&0xF8;\n"
+"  float depth = ((float(additional&0x07))/10.0) + 0.05;\n"
 "  if( depth < u_from || depth > u_to ){ discard;return;}\n"
 "  if( alpha <= 0.0){\n"
 "     discard;\n"
-"  }else if( alpha < 0.75 && fbColor.r == 0.0 && fbColor.g == 0.0 && fbColor.b == 0.0 ){\n"
+"  }else if( alpha < 192.0 && fbColor.r == 0.0 && fbColor.g == 0.0 && fbColor.b == 0.0 ){\n"
 "     fragColor = fbColor;\n"
-"     fragColor.a = alpha;\n"
+"     fragColor.a = uint(alpha);\n"
 "     gl_FragDepth =  (depth+1.0)/2.0;\n"
 "  }else{\n"
 "     discard;\n"
@@ -2781,6 +2723,7 @@ int YglProgramInit()
    linecol.emu_height = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT], (const GLchar *)"u_emu_height");
    linecol.vheight = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT], (const GLchar *)"u_vheight");
 
+   YGLLOG("PG_LINECOLOR_INSERT_DESTALPHA\n");
    if (YglInitShader(PG_LINECOLOR_INSERT_DESTALPHA, pYglprg_linecol_v, pYglprg_linecol_dest_alpha_f, 3, NULL, NULL, NULL) != 0)
      return -1;
    
@@ -2790,6 +2733,7 @@ int YglProgramInit()
    linecol_destalpha.emu_height = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT_DESTALPHA], (const GLchar *)"u_emu_height");
    linecol_destalpha.vheight = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT_DESTALPHA], (const GLchar *)"u_vheight");
 
+   YGLLOG("PG_LINECOLOR_INSERT_CRAM\n");
    if (YglInitShader(PG_LINECOLOR_INSERT_CRAM, pYglprg_linecol_v, pYglprg_linecol_cram_f, 3, NULL, NULL, NULL) != 0)
      return -1;
 
@@ -2800,6 +2744,7 @@ int YglProgramInit()
    linecol_cram.emu_height = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT_CRAM], (const GLchar *)"u_emu_height");
    linecol_cram.vheight = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT_CRAM], (const GLchar *)"u_vheight");
 
+   YGLLOG("PG_LINECOLOR_INSERT_DESTALPHA_CRAM\n");
    if (YglInitShader(PG_LINECOLOR_INSERT_DESTALPHA_CRAM, pYglprg_linecol_v, pYglprg_linecol_dest_alpha_cram_f, 3, NULL, NULL, NULL) != 0)
      return -1;
 
@@ -2811,7 +2756,7 @@ int YglProgramInit()
    linecol_destalpha_cram.vheight = glGetUniformLocation(_prgid[PG_LINECOLOR_INSERT_DESTALPHA_CRAM], (const GLchar *)"u_vheight");
 
 
-   //
+   YGLLOG("PG_VDP2_DRAWFRAMEBUFF_ADDCOLOR_SHADOW\n");
    if (YglInitShader(PG_VDP2_DRAWFRAMEBUFF_ADDCOLOR_SHADOW, pYglprg_vdp2_drawfb_v, pYglprg_vdp2_drawfb_addcolor_shadow_f, 1, NULL, NULL, NULL) != 0)
      return -1;
 
