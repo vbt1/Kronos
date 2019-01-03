@@ -591,13 +591,12 @@ int Ygl_useUpscaleBuffer(void){
 int Ygl_uniformMosaic(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs)
 {
   YglProgram * prg;
+  u8 col[4] = {0};
   prg = p;
 
   Ygl_useTmpBuffer();
   glViewport(0, 0, _Ygl->rwidth, _Ygl->rheight);
   glScissor(0, 0, _Ygl->rwidth, _Ygl->rheight);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
 
   if (prg->prgid == PG_VDP2_MOSAIC_CRAM ) {
     glEnableVertexAttribArray(prg->vertexp);
@@ -650,14 +649,13 @@ int Ygl_cleanupMosaic(void * p, YglTextureManager *tm)
 int Ygl_uniformPerLineAlpha(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs)
 {
   YglProgram * prg;
+  
   int preblend = 0;
   prg = p;
 
   Ygl_useTmpBuffer();
   glViewport(0, 0, _Ygl->rwidth, _Ygl->rheight);
   glScissor(0, 0, _Ygl->rwidth, _Ygl->rheight);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
   prg->preblendmode = prg->blendmode;
   prg->blendmode = 0;
 
@@ -727,8 +725,6 @@ int Ygl_uniformNormal_blur(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs)
   Ygl_useTmpBuffer();
   glViewport(0, 0, _Ygl->rwidth, _Ygl->rheight);
   glScissor(0, 0, _Ygl->rwidth, _Ygl->rheight);
-  glClearColor(0.0f,0.0f,0.0f,0.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
 
   if (prg->prgid == PG_VDP2_BLUR_CRAM) {
     glEnableVertexAttribArray(prg->vertexp);
@@ -1376,6 +1372,7 @@ int Ygl_uniformStartUserClip(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs 
 {
    YglProgram * prg;
    prg = p;
+   int clear = 0;
 
    glEnableVertexAttribArray(0);
    glDisableVertexAttribArray(1);
@@ -1386,8 +1383,8 @@ int Ygl_uniformStartUserClip(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs 
       GLint vertices[12];
       glColorMask( GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE );
       glStencilMask(0xffffffff);
-      glClearStencil(0);
-      glClear(GL_STENCIL_BUFFER_BIT);
+      glClearBufferiv(GL_STENCIL, 0, &clear);
+
       glEnable(GL_STENCIL_TEST);
       glStencilFunc(GL_ALWAYS,0x1,0x01);
       glStencilOp(GL_REPLACE,GL_REPLACE,GL_REPLACE);
@@ -1546,13 +1543,13 @@ SHADER_VERSION
 "  uvec4 fbColor = texture(s_vdp1FrameBuffer,addr);\n"
 "  int additional = int(fbColor.a);\n"
 "  if( (additional & 0x80) == 0 ){ discard; } // show? \n"
-"  int prinumber = int(additional&0x07);\n"
+"  int prinumber = additional&0x07;\n"
 "  float depth = u_pri[ prinumber ];\n"
 "  if( (depth < u_from) || (depth > u_to) ){ discard; } \n"
 "  uvec4 txcol=uvec4(0.0,0.0,0.0,255.0);\n"
 "  if( (additional & 0x40) != 0 ){  // index color? \n"
-"    if( int(fbColor.b) != 0 ) {discard;} // draw shadow last path \n"
-"    int colindex = int(fbColor.g * 256.0 + fbColor.r); \n"
+"    if( fbColor.b != 0.0 ) {discard;} // draw shadow last path \n"
+"    int colindex = int(fbColor.g)<<8 | int(fbColor.r); \n"
 "    if( (colindex == 0) && (prinumber == 0)) { discard;} // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
 "    colindex = colindex + u_color_ram_offset; \n"
 "    txcol = texelFetch( s_color,  ivec2( colindex ,0 )  , 0 );\n"
@@ -1560,7 +1557,7 @@ SHADER_VERSION
 "  }else{ // direct color \n"
 "    fragColor = fbColor;\n"
 "  } \n"
-"  fragColor = uvec4(clamp(vec4(fragColor) + u_coloroffset, vec4(0), vec4(255)));  \n";
+"  fragColor = uvec4(clamp(vec4(fragColor) + u_coloroffset, vec4(0.0), vec4(255.0)));  \n";
 /*
  Color calculation option 
   hard/vdp2/hon/p09_21.htm

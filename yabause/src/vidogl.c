@@ -5699,9 +5699,9 @@ static void Vdp2DrawBackScreen(Vdp2 *varVdp2Regs)
   }
   else {
     YglSetClearColor(
-      (float)(((dot & 0x1F) << 3) + info.cor) / (float)(0xFF),
-      (float)((((dot & 0x3E0) >> 5) << 3) + info.cog) / (float)(0xFF),
-      (float)((((dot & 0x7C00) >> 10) << 3) + info.cob) / (float)(0xFF)
+      ((dot & 0x1F) << 3) + info.cor,
+      (((dot & 0x3E0) >> 5) << 3) + info.cog,
+      (((dot & 0x7C00) >> 10) << 3) + info.cob
     );
   }
 #else

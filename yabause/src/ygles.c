@@ -827,6 +827,7 @@ void VIDOGLVdp1ReadFrameBuffer(u32 type, u32 addr, void * out) {
 int YglGenFrameBuffer() {
   int status;
   GLuint error;
+  u8 col[4] = {0, 0, 0, 0x80};
 
   if (rebuild_frame_buffer == 0){
     return 0;
@@ -916,14 +917,14 @@ int YglGenFrameBuffer() {
     YGLDEBUG("YglGenFrameBuffer:Framebuffer line %d status = %08X\n", __LINE__, status);
     abort();
   }
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  glClearBufferuiv(GL_COLOR, 0, col);
+  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
 
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[1], 0);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  glClearBufferuiv(GL_COLOR, 0, col);
+  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     YGLDEBUG("YglGenFrameBuffer:Framebuffer line %d status = %08X\n", __LINE__, status);
@@ -943,6 +944,7 @@ int YglGenerateOriginalBuffer(){
 
   int status;
   GLuint error;
+  u8 col[4] = {0};
 
   YGLDEBUG("YglGenerateOriginalBuffer: %d,%d\n", _Ygl->width, _Ygl->height);
 
@@ -979,8 +981,8 @@ int YglGenerateOriginalBuffer(){
     YGLDEBUG("YglGenerateOriginalBuffer:Framebuffer status = %08X\n", status);
     abort();
   }
-  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  glClearBufferuiv(GL_COLOR, 0, col);
+  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
   return 0;
 }
 
@@ -1043,6 +1045,7 @@ int YglInit(int width, int height, unsigned int depth) {
   unsigned int i,j;
   int maj, min;
   void * dataPointer=NULL;
+  int col[4] = {0};
   YGLLOG("YglInit(%d,%d,%d);",width,height,depth );
 
   glGetIntegerv(GL_MAJOR_VERSION, &maj);
@@ -1127,7 +1130,8 @@ int YglInit(int width, int height, unsigned int depth) {
   glGetIntegerv(GL_FRAMEBUFFER_BINDING,&_Ygl->default_fbo);
 #endif
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearBufferuiv(GL_COLOR, 0, col);
+  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
 
   YglLoadIdentity(&_Ygl->mtxModelView);
   YglOrtho(&_Ygl->mtxModelView, 0.0f, 320.0f, 224.0f, 0.0f, 10.0f, 0.0f);
@@ -1137,7 +1141,6 @@ int YglInit(int width, int height, unsigned int depth) {
 
   glDisable(GL_DEPTH_TEST);
   glDepthFunc(GL_GEQUAL);
-//  glClearDepthf(0.0f);
 
   glCullFace(GL_FRONT_AND_BACK);
   glDisable(GL_CULL_FACE);
@@ -2423,6 +2426,7 @@ int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglC
 //////////////////////////////////////////////////////////////////////////////
 void YglEraseWriteVDP1(void) {
 
+  u8 col[4];
   u16 color;
   int priority;
   u32 alpha = 0;
@@ -2451,9 +2455,13 @@ void YglEraseWriteVDP1(void) {
     alpha = VDP1COLOR(rgb, colorcalc, priority, 0, 0);
     alpha >>= 24;
   }
+  col[0] = color & 0x1F;
+  col[1] = (color >> 5) & 0x1F;
+  col[2] = (color >> 10) & 0x1F;
+  col[3] = alpha;
 
-  glClearColor((color & 0x1F) / 31.0f, ((color >> 5) & 0x1F) / 31.0f, ((color >> 10) & 0x1F) / 31.0f, alpha / 255.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  glClearBufferuiv(GL_COLOR, 0, col);
+  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
   FRAMELOG("YglEraseWriteVDP1xx: clear %d\n", _Ygl->readframe);
   //Get back to drawframe
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1FrameBuff[_Ygl->drawframe], 0);
@@ -2551,9 +2559,6 @@ void YglRenderVDP1(void) {
   }else{
     //YGLLOG("Framebuffer status OK = %08X\n", status );
   }
-  //glClearColor(0,0,0,0);
-  //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
 
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_DEPTH_TEST);
@@ -2642,8 +2647,6 @@ void YglSetVdp2Window()
      glDepthMask(GL_FALSE);
      glDisable(GL_DEPTH_TEST);
 
-     //glClearStencil(0);
-     //glClear(GL_STENCIL_BUFFER_BIT);
      glEnable(GL_STENCIL_TEST);
 
      glStencilOp(GL_REPLACE,GL_REPLACE,GL_REPLACE);
@@ -3152,10 +3155,11 @@ printf("%d\n", __LINE__);
 }
 
 
-void YglSetClearColor(float r, float g, float b){
-  _Ygl->clear_r = r;
-  _Ygl->clear_g = g;
-  _Ygl->clear_b = b;
+void YglSetClearColor(u8 r, u8 g, u8 b){
+  _Ygl->clear[0] = r;
+  _Ygl->clear[1] = g;
+  _Ygl->clear[2] = b;
+  _Ygl->clear[3] = 0;
 }
 
 static void releaseVDP1FB(int i) {
@@ -3218,6 +3222,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
    double h = 0;
    double x = 0;
    double y = 0;
+   u8 col[4] = {0,0,0,0x80};
 
    YGLLOG("YglRender\n");
    glBindVertexArray(_Ygl->vao);
@@ -3244,23 +3249,28 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
    glEnable(GL_SCISSOR_TEST);
    glViewport(0, 0, GlWidth, GlHeight);
-   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
    glDisable(GL_DEPTH_TEST);
    if (w<GlWidth) {
      glScissor(0, 0, x, h);
-     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, col);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
      glScissor(x+w, 0, w, h);
-     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, col);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
    } else {
      glScissor(0, 0, x, h);
-     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, col);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
      glScissor(x+w, 0, w, h);
-     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, col);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
    }
 
    if ((Vdp2Regs->TVMD & 0x8000) == 0){
      glScissor(x, y, w, h);
-     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, col);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
      goto render_finish;
    }
 
@@ -3270,11 +3280,8 @@ void YglRender(Vdp2 *varVdp2Regs) {
    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
    _Ygl->targetfbo = _Ygl->original_fbo;
    glViewport(0, 0, GlWidth, GlHeight);
-   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-   glClearDepthf(0.0f);
    glDepthMask(GL_TRUE);
    glEnable(GL_DEPTH_TEST);
-   //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
    glViewport(0, 0, _Ygl->width, _Ygl->height);
 
@@ -3284,11 +3291,11 @@ void YglRender(Vdp2 *varVdp2Regs) {
    glEnable(GL_SCISSOR_TEST);
 
    if ((varVdp2Regs->BKTAU & 0x8000) != 0) {
-     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
      YglDrawBackScreen(GlWidth, GlHeight);
    }else{
-     glClearColor(_Ygl->clear_r, _Ygl->clear_g, _Ygl->clear_b, 1.0f);
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+     glClearBufferuiv(GL_COLOR, 0, _Ygl->clear);
+     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
    }
 
    if (YglTM_vdp2 == NULL) goto render_finish;
