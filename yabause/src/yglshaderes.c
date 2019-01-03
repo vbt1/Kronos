@@ -591,7 +591,6 @@ int Ygl_useUpscaleBuffer(void){
 int Ygl_uniformMosaic(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs)
 {
   YglProgram * prg;
-  u8 col[4] = {0};
   prg = p;
 
   Ygl_useTmpBuffer();

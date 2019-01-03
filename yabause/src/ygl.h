@@ -524,7 +524,7 @@ typedef struct {
    unsigned int height;
    unsigned int depth;
 
-   u8 clear[4];
+   int clear[4];
    
    // VDP1 Info
    int vdp1_maxpri;

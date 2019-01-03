@@ -827,7 +827,7 @@ void VIDOGLVdp1ReadFrameBuffer(u32 type, u32 addr, void * out) {
 int YglGenFrameBuffer() {
   int status;
   GLuint error;
-  u8 col[4] = {0, 0, 0, 0x80};
+  int col[4] = {0, 0, 0, 0};
 
   if (rebuild_frame_buffer == 0){
     return 0;
@@ -944,7 +944,7 @@ int YglGenerateOriginalBuffer(){
 
   int status;
   GLuint error;
-  u8 col[4] = {0};
+  int col[4] = {0};
 
   YGLDEBUG("YglGenerateOriginalBuffer: %d,%d\n", _Ygl->width, _Ygl->height);
 
@@ -2426,7 +2426,7 @@ int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglC
 //////////////////////////////////////////////////////////////////////////////
 void YglEraseWriteVDP1(void) {
 
-  u8 col[4];
+  int col[4];
   u16 color;
   int priority;
   u32 alpha = 0;
@@ -2455,9 +2455,9 @@ void YglEraseWriteVDP1(void) {
     alpha = VDP1COLOR(rgb, colorcalc, priority, 0, 0);
     alpha >>= 24;
   }
-  col[0] = color & 0x1F;
-  col[1] = (color >> 5) & 0x1F;
-  col[2] = (color >> 10) & 0x1F;
+  col[0] = (color & 0x1F) << 3;
+  col[1] = ((color >> 5) & 0x1F) << 3;
+  col[2] = ((color >> 10) & 0x1F) << 3;
   col[3] = alpha;
 
   glClearBufferuiv(GL_COLOR, 0, col);
@@ -3222,7 +3222,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
    double h = 0;
    double x = 0;
    double y = 0;
-   u8 col[4] = {0,0,0,0x80};
+   int col[4] = {0,0,0,0x0};
 
    YGLLOG("YglRender\n");
    glBindVertexArray(_Ygl->vao);
