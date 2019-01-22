@@ -553,6 +553,9 @@ typedef struct {
    GLuint original_fbotex[7];
    GLuint original_depth;
 
+   GLuint screen_fbo;
+   GLuint screen_fbotex[7];
+
    GLuint tmpfbo;
    GLuint tmpfbotex;
 
