@@ -528,7 +528,7 @@ typedef struct {
    int readframe;
    GLuint rboid_depth;
    GLuint vdp1fbo;
-   GLuint vdp1FrameBuff[2];
+   GLuint vdp1FrameBuff[4];
    GLuint smallfbo;
    GLuint smallfbotex;
    GLuint vdp1pixelBufferID;
