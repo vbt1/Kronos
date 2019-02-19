@@ -584,7 +584,7 @@ u16 FASTCALL Vdp2ReadWord(SH2_struct *context, u8* mem, u32 addr) {
          else
             return (tvstat | 0x8);
       }
-      case 0x006:         
+      case 0x006:
          return Vdp2Regs->VRSIZE;
       case 0x008:
 		  return Vdp2Regs->HCNT;
@@ -968,7 +968,7 @@ void Vdp2ReadReg(int addr) {
          break;
       case 0x0E6:
          val = Vdp2Regs->CRAOFB;
-         break;     
+         break;
       case 0x0E8:
          val = Vdp2Regs->LNCLEN;
          break;
@@ -977,7 +977,7 @@ void Vdp2ReadReg(int addr) {
          break;
       case 0x0EC:
          val = Vdp2Regs->CCCTL;
-         break;     
+         break;
       case 0x0EE:
          val = Vdp2Regs->SFCCMD;
          break;
@@ -1433,7 +1433,7 @@ void FASTCALL Vdp2WriteWord(SH2_struct *context, u8* mem, u32 addr, u16 val) {
          return;
       case 0x0E6:
          Vdp2Regs->CRAOFB = val;
-         return;     
+         return;
       case 0x0E8:
          Vdp2Regs->LNCLEN = val;
          return;
@@ -1442,7 +1442,7 @@ void FASTCALL Vdp2WriteWord(SH2_struct *context, u8* mem, u32 addr, u16 val) {
          return;
       case 0x0EC:
          Vdp2Regs->CCCTL = val;
-         return;     
+         return;
       case 0x0EE:
          Vdp2Regs->SFCCMD = val;
          return;
@@ -1529,7 +1529,7 @@ void FASTCALL Vdp2WriteWord(SH2_struct *context, u8* mem, u32 addr, u16 val) {
 //////////////////////////////////////////////////////////////////////////////
 
 void FASTCALL Vdp2WriteLong(SH2_struct *context, u8* mem, u32 addr, u32 val) {
-   
+
    Vdp2WriteWord(context, mem, addr,val>>16);
    Vdp2WriteWord(context, mem, addr+2,val&0xFFFF);
    return;
@@ -1643,5 +1643,3 @@ void ToggleFullScreen(void)
       VIDCore->Resize(0,0,320, 224, 1);
    }
 }
-
-
