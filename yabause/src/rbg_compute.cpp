@@ -1258,7 +1258,7 @@ public:
   }
 
   //-----------------------------------------------
-  void update( RBGDrawInfo * rbg) {
+  void update( RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
 
     if (prg_rbg_0_2w_p1_4bpp_line_ == 0) return;
 
@@ -1272,7 +1272,7 @@ public:
     error = glGetError();
 	// Line color insersion
 	if (rbg->info.LineColorBase != 0 && VDP2_CC_NONE != (rbg->info.blendmode & 0x03)) {
-		if (fixVdp2Regs->RPMD == 0 || (fixVdp2Regs->RPMD == 3 && (fixVdp2Regs->WCTLD & 0xA) == 0)) {
+		if (varVdp2Regs->RPMD == 0 || (varVdp2Regs->RPMD == 3 && (varVdp2Regs->WCTLD & 0xA) == 0)) {
 			if (rbg->info.isbitmap) {
 				glUseProgram(prg_rbg_0_2w_bitmap_8bpp_line_);
 			}
@@ -1363,7 +1363,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 1) {
+		else if (varVdp2Regs->RPMD == 1) {
 			if (rbg->info.isbitmap) {
 				glUseProgram(prg_rbg_1_2w_bitmap_8bpp_line_);
 			}
@@ -1454,7 +1454,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 2) {
+		else if (varVdp2Regs->RPMD == 2) {
 			if (rbg->info.isbitmap) {
 				glUseProgram(prg_rbg_2_2w_bitmap_8bpp_line_);
 			}
@@ -1545,7 +1545,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 3) {
+		else if (varVdp2Regs->RPMD == 3) {
 
 			if (rbg->info.isbitmap) {
 				glUseProgram(prg_rbg_3_2w_bitmap_8bpp_line_);
@@ -1645,7 +1645,7 @@ public:
 
 	// no line color insersion
 	else {
-		if (fixVdp2Regs->RPMD == 0 || (fixVdp2Regs->RPMD == 3 && (fixVdp2Regs->WCTLD & 0xA) == 0) ) {
+		if (varVdp2Regs->RPMD == 0 || (varVdp2Regs->RPMD == 3 && (varVdp2Regs->WCTLD & 0xA) == 0) ) {
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
 				case 0: {
@@ -1781,7 +1781,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 1) {
+		else if (varVdp2Regs->RPMD == 1) {
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
 				case 0: {
@@ -1917,7 +1917,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 2) {
+		else if (varVdp2Regs->RPMD == 2) {
 				if (rbg->info.isbitmap) {
 					switch (rbg->info.colornumber) {
 					case 0: {
@@ -2054,7 +2054,7 @@ public:
 				}
 			}
 		}
-		else if (fixVdp2Regs->RPMD == 3) {
+		else if (varVdp2Regs->RPMD == 3) {
 
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
@@ -2209,7 +2209,7 @@ public:
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_vram_);
   ErrorHandle("glBindBufferBase");
 
-	if (rbg->info.specialcolormode == 3 || paraA.k_mem_type != 0 || paraB.k_mem_type != 0 ) {
+	if (rbg->info.specialcolormode == 3 || rbg->paraA.k_mem_type != 0 || rbg->paraB.k_mem_type != 0 ) {
 		if (ssbo_cram_ == 0) {
 			glGenBuffers(1, &ssbo_cram_);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cram_);
@@ -2221,13 +2221,13 @@ public:
 	}
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&paraA);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2rotationparameter_struct), sizeof(vdp2rotationparameter_struct), (void*)&paraB);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraA);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2rotationparameter_struct), sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraB);
 	ErrorHandle("glBufferSubData");
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_paraA_);
 
-	uniform.hres_scale = 1.0 / rbg->rotate_mval_h;
-	uniform.vres_scale = 1.0 / rbg->rotate_mval_v;
+	uniform.hres_scale = 1.0;
+	uniform.vres_scale = 1.0;
 	uniform.cellw = rbg->info.cellw;
 	uniform.cellh = rbg->info.cellh;
 	uniform.paladdr_ = rbg->info.paladdr;
@@ -2324,11 +2324,11 @@ extern "C" {
 	  RBGGenerator * instance = RBGGenerator::getInstance();
 	  instance->resize(width, height);
   }
-  void RBGGenerator_update(RBGDrawInfo * rbg ) {
+  void RBGGenerator_update(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs ) {
     if (_Ygl->rbg_use_compute_shader == 0) return;
 
     RBGGenerator * instance = RBGGenerator::getInstance();
-    instance->update(rbg);
+    instance->update(rbg, varVdp2Regs);
   }
   GLuint RBGGenerator_getTexture( int id ) {
     if (_Ygl->rbg_use_compute_shader == 0) return 0;

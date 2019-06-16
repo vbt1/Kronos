@@ -705,6 +705,28 @@ typedef struct {
 extern Ygl * _Ygl;
 extern int opengl_mode; // 0 => gles3 , 1 => gl3.3
 
+// Rotate Screen
+
+typedef struct {
+  int useb;
+  vdp2draw_struct info;
+  YglTexture texture;
+  int rgb_type;
+  int pagesize;
+  int patternshift;
+  u32 LineColorRamAdress;
+  vdp2draw_struct line_info;
+  YglTexture line_texture;
+  YglCache c;
+  YglCache cline;
+  int vres;
+  int hres;
+  int async;
+  volatile int vdp2_sync_flg;
+  vdp2rotationparameter_struct  paraA;
+  vdp2rotationparameter_struct  paraB;
+} RBGDrawInfo;
+
 int YglInit(int, int, unsigned int);
 void YglDeInit(void);
 float * YglQuad(vdp2draw_struct *, YglTexture *, YglCache * c, YglTextureManager *tm);

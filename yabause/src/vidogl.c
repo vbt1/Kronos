@@ -182,28 +182,6 @@ static int rbg0priority = 0;
 
 static int vdp2busy = 0;
 
-// Rotate Screen
-
-typedef struct {
-  int useb;
-  vdp2draw_struct info;
-  YglTexture texture;
-  int rgb_type;
-  int pagesize;
-  int patternshift;
-  u32 LineColorRamAdress;
-  vdp2draw_struct line_info;
-  YglTexture line_texture;
-  YglCache c;
-  YglCache cline;
-  int vres;
-  int hres;
-  int async;
-  volatile int vdp2_sync_flg;
-  vdp2rotationparameter_struct  paraA;
-  vdp2rotationparameter_struct  paraB;
-} RBGDrawInfo;
-
 vdp2rotationparameter_struct  Vdp1ParaA;
 
 typedef struct {
