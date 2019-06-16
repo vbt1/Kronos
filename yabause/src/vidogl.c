@@ -2726,6 +2726,11 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
   if (vdp2height >= 448) lineInc <<= 1;
   if (vdp2height >= 448) rbg->vres = (vdp2height >> 1); else rbg->vres = vdp2height;
   if (vdp2width >= 640) rbg->hres = (vdp2width >> 1); else rbg->hres = vdp2width;
+
+  if (_Ygl->rbg_use_compute_shader) {
+	  RBGGenerator_init(rbg->hres, rbg->vres);
+  }
+
   info->vertices[0] = 0;
   info->vertices[1] = (vdp2height * info->startLine)/yabsys.VBlankLineCount;
   info->vertices[2] = vdp2width;
@@ -2773,10 +2778,12 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
     u64 cacheaddr = 0x90000000BAD;
 
     rbg->vdp2_sync_flg = -1;
-    YglTMAllocate(YglTM_vdp2, &rbg->texture, info->cellw, info->cellh, &x, &y);
-    rbg->c.x = x;
-    rbg->c.y = y;
-    YglCacheAdd(YglTM_vdp2, cacheaddr, &rbg->c);
+    if (!_Ygl->rbg_use_compute_shader) {
+      YglTMAllocate(YglTM_vdp2, &rbg->texture, info->cellw, info->cellh, &x, &y);
+      rbg->c.x = x;
+      rbg->c.y = y;
+      YglCacheAdd(YglTM_vdp2, cacheaddr, &rbg->c);
+    }
     info->cellw = cellw;
     info->cellh = cellh;
 
@@ -2801,21 +2808,24 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
     rbg->line_texture.w = 0;
   }
 #ifdef RGB_ASYNC
-  if (rgb_type == 0x0) Vdp2DrawRotation_in(rbg, varVdp2Regs);
+  if ((rgb_type == 0x0) && (_Ygl->rbg_use_compute_shader == 0)) Vdp2DrawRotation_in(rbg, varVdp2Regs);
   else
 #endif
   {
     Vdp2DrawRotation_in_sync(rbg, varVdp2Regs);
-    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, YglTM_vdp2);
+    if (!_Ygl->rbg_use_compute_shader) {
+      YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
+    }
   }
 }
+
 
 #ifdef RGB_ASYNC
 static void finishRbgQueue() {
   while (YaGetQueueSize(rotq_end_task)!=0)
   {
     RBGDrawInfo *rbg = (RBGDrawInfo *) YabWaitEventQueue(rotq_end_task);
-    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, YglTM_vdp2);
+    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
     free(rbg);
   }
 }
@@ -2922,7 +2932,8 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
   rbg->paraB.over_pattern_name = varVdp2Regs->OVPNRB;
 
   if (_Ygl->rbg_use_compute_shader) {
-	  RBGGenerator_update(rbg);
+    printf("Call up\n");
+	  RBGGenerator_update(rbg, varVdp2Regs);
 
 	  if (info->LineColorBase != 0) {
 		  const float vstep = 1.0;
@@ -2948,6 +2959,7 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
 			  j += vstep;
 		  }
 	  }
+    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
 	  return;
   }
 

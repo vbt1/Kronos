@@ -424,6 +424,7 @@ typedef struct {
    float vheight;
    float emu_width;
    float vwidth;
+   GLuint interuput_texture;
 } YglProgram;
 
 typedef struct {
@@ -730,7 +731,7 @@ typedef struct {
 int YglInit(int, int, unsigned int);
 void YglDeInit(void);
 float * YglQuad(vdp2draw_struct *, YglTexture *, YglCache * c, YglTextureManager *tm);
-int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglCache * line, YglTextureManager *tm);
+int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglCache * line, int rbg_type, YglTextureManager *tm);
 void YglQuadOffset(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, YglTextureManager *tm);
 void YglCachedQuadOffset(vdp2draw_struct * input, YglCache * cache, int cx, int cy, float sx, float sy, YglTextureManager *tm);
 void YglCachedQuad(vdp2draw_struct *, YglCache *, YglTextureManager *tm);
@@ -747,7 +748,6 @@ void YglEndWindow( vdp2draw_struct * info );
 
 void YglOnUpdateColorRamWord(u32 addr);
 void YglUpdateColorRam();
-int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglCache * line, YglTextureManager *tm);
 int YglInitShader(int id, const GLchar * vertex[], const GLchar * frag[], int fcount, const GLchar * tc[], const GLchar * te[], const GLchar * g[] );
 
 int YglTriangleGrowShading(YglSprite * input, YglTexture * output, float * colors, YglCache * c, YglTextureManager *tm);
@@ -815,9 +815,12 @@ void YglFrameChangeVDP1();
 #if defined(_OGLES3_)
 #define SHADER_VERSION "#version 310 es \n"
 #define SHADER_VERSION_TESS "#version 310 es \n#extension GL_ANDROID_extension_pack_es31a : enable \n"
+#define SHADER_VERSION_COMPUTE "#version 310 es \n"
+
 #else
 #define SHADER_VERSION "#version 330 core \n"
 #define SHADER_VERSION_TESS "#version 420 core \n"
+#define SHADER_VERSION_COMPUTE "#version 430 core \n"
 #endif
 
 #if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(_USEGLEW_) && !defined(_OGLES3_) && !defined(__LIBRETRO__)
