@@ -2943,6 +2943,36 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
   rbg->paraA.over_pattern_name = varVdp2Regs->OVPNRA;
   rbg->paraB.over_pattern_name = varVdp2Regs->OVPNRB;
 
+  if (_Ygl->rbg_use_compute_shader) {
+	  RBGGenerator_update(rbg);
+
+	  if (info->LineColorBase != 0) {
+		  const float vstep = 1.0;
+		  j = 0.0f;
+      int lvres = rbg->vres;
+      if (vres >= 480) {
+        lvres >>= 1;
+      }
+		  for (int jj = 0; jj < lvres; jj++) {
+			  if ((varVdp2Regs->LCTA.part.U & 0x8000) != 0) {
+				  rbg->LineColorRamAdress = T1ReadWord(Vdp2Ram, info->LineColorBase + lineInc*(int)(j));
+				  *line_texture->textdata = rbg->LineColorRamAdress | (linecl << 24);
+				  line_texture->textdata++;
+          if (vres >= 480) {
+            *line_texture->textdata = rbg->LineColorRamAdress | (linecl << 24);
+            line_texture->textdata++;
+          }
+			  }
+			  else {
+				  *line_texture->textdata = rbg->LineColorRamAdress;
+				  line_texture->textdata++;
+			  }
+			  j += vstep;
+		  }
+	  }
+	  return;
+  }
+
   for (j = vstart; j < vstart+vres; j++)
   {
 #if 0 // PERLINE

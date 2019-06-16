@@ -698,6 +698,8 @@ typedef struct {
    int use_cc_win;
    int vdp1_stencil_mode;
 
+   int rbg_use_compute_shader;
+
 } Ygl;
 
 extern Ygl * _Ygl;
@@ -786,6 +788,15 @@ int YglSetupWindow(YglProgram * prg);
 void YglEraseWriteVDP1();
 void YglFrameChangeVDP1();
 
+
+// Keep a way to switch to gles shaders for embedded devices
+#if defined(_OGLES3_)
+#define SHADER_VERSION "#version 310 es \n"
+#define SHADER_VERSION_TESS "#version 310 es \n#extension GL_ANDROID_extension_pack_es31a : enable \n"
+#else
+#define SHADER_VERSION "#version 330 core \n"
+#define SHADER_VERSION_TESS "#version 420 core \n"
+#endif
 
 #if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(_USEGLEW_) && !defined(_OGLES3_) && !defined(__LIBRETRO__)
 
