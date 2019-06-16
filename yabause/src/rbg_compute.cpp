@@ -115,19 +115,19 @@ SHADER_VERSION
 "  int specialcolorfunction;\n"
 "  uint specialcode;\n"
 "  int colornumber;\n"
-"  int window_area_mode;"
+// "  int window_area_mode;"
 "  float alpha_;"
 "  int cram_shift;"
 "};\n"
-" struct vdp2WindowInfo\n"
-"{\n"
-"  int WinShowLine;\n"
-"  int WinHStart;\n"
-"  int WinHEnd;\n"
-"};\n"
-"layout(std430, binding = 4) readonly buffer windowinfo { \n"
-"  vdp2WindowInfo pWinInfo[];\n"
-"};\n"
+// " struct vdp2WindowInfo\n"
+// "{\n"
+// "  int WinShowLine;\n"
+// "  int WinHStart;\n"
+// "  int WinHEnd;\n"
+// "};\n"
+// "layout(std430, binding = 4) readonly buffer windowinfo { \n"
+// "  vdp2WindowInfo pWinInfo[];\n"
+// "};\n"
 "layout(std430, binding = 5) readonly buffer VDP2C { uint cram[]; };\n"
 " int GetKValue( int paramid, float posx, float posy, out float ky, out uint lineaddr ){ \n"
 "  uint kdata;\n"
@@ -160,35 +160,35 @@ SHADER_VERSION
 "  return 0;"
 " }\n"
 
-" bool isWindowInside(int posx, int posy) {\n"
-"	if (window_area_mode == 0) {\n"
-"		if (pWinInfo[posy].WinShowLine == 0) {\n"
-"			return true;\n"
-"		}\n"
-"		else {\n"
-"			if (posx < pWinInfo[posy].WinHStart || posx >= pWinInfo[posy].WinHEnd) {\n"
-"				return true;\n"
-"			}\n"
-"			else {\n"
-"				return false;\n"
-"			}\n"
-"		}\n"
-"	}\n"
-"	else {\n"
-"		if (pWinInfo[posy].WinShowLine == 0) {\n"
-"			return false;\n"
-"		}\n"
-"		else {\n"
-"			if (posx < pWinInfo[posy].WinHStart || posx >= pWinInfo[posy].WinHEnd) {\n"
-"				return false;\n"
-"			}\n"
-"			else {\n"
-"				return true;\n"
-"			}\n"
-"		}\n"
-"	}\n"
-"	return true;\n"
-"}\n"
+// " bool isWindowInside(int posx, int posy) {\n"
+// "	if (window_area_mode == 0) {\n"
+// "		if (pWinInfo[posy].WinShowLine == 0) {\n"
+// "			return true;\n"
+// "		}\n"
+// "		else {\n"
+// "			if (posx < pWinInfo[posy].WinHStart || posx >= pWinInfo[posy].WinHEnd) {\n"
+// "				return true;\n"
+// "			}\n"
+// "			else {\n"
+// "				return false;\n"
+// "			}\n"
+// "		}\n"
+// "	}\n"
+// "	else {\n"
+// "		if (pWinInfo[posy].WinShowLine == 0) {\n"
+// "			return false;\n"
+// "		}\n"
+// "		else {\n"
+// "			if (posx < pWinInfo[posy].WinHStart || posx >= pWinInfo[posy].WinHEnd) {\n"
+// "				return false;\n"
+// "			}\n"
+// "			else {\n"
+// "				return true;\n"
+// "			}\n"
+// "		}\n"
+// "	}\n"
+// "	return true;\n"
+// "}\n"
 
 "uint get_cram_msb(uint colorindex) { \n"
 "	uint colorval = 0u; \n"
@@ -252,7 +252,7 @@ const char prg_rbg_rpmd2_2w[] =
 
 
 const char prg_get_param_mode03[] =
-"  if( isWindowInside( int(posx), int(posy) ) ) { "
+// "  if( isWindowInside( int(posx), int(posy) ) ) { "
 "    paramid = 0; \n"
 "    if( para[paramid].coefenab != 0 ){ \n"
 "      if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { \n"
@@ -267,23 +267,23 @@ const char prg_get_param_mode03[] =
 "    }else{\n"
 "      ky = para[paramid].ky; \n"
 "      lineaddr = para[paramid].lineaddr; \n"
-"    }\n"
-"  }else{\n"
-"    paramid = 1; \n"
-"    if( para[paramid].coefenab != 0 ){ \n"
-"      if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { \n"
-"        paramid=0;\n"
-"        if( para[paramid].coefenab != 0 ){ \n"
-"          if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { imageStore(outSurface,texel,vec4(0.0)); return;} \n"
-"        }else{ \n"
-"          ky = para[paramid].ky; \n"
-"          lineaddr = para[paramid].lineaddr; \n"
-"        }\n"
-"      }\n"
-"    }else{\n"
-"      ky = para[paramid].ky; \n"
-"      lineaddr = para[paramid].lineaddr; \n"
-"    }\n"
+// "    }\n"
+// "  }else{\n"
+// "    paramid = 1; \n"
+// "    if( para[paramid].coefenab != 0 ){ \n"
+// "      if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { \n"
+// "        paramid=0;\n"
+// "        if( para[paramid].coefenab != 0 ){ \n"
+// "          if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { imageStore(outSurface,texel,vec4(0.0)); return;} \n"
+// "        }else{ \n"
+// "          ky = para[paramid].ky; \n"
+// "          lineaddr = para[paramid].lineaddr; \n"
+// "        }\n"
+// "      }\n"
+// "    }else{\n"
+// "      ky = para[paramid].ky; \n"
+// "      lineaddr = para[paramid].lineaddr; \n"
+// "    }\n"
 " }\n";
 
 
@@ -1126,9 +1126,9 @@ public:
   glBufferData(GL_UNIFORM_BUFFER, sizeof(RBGDrawInfo), &uniform, GL_STATIC_DRAW);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	glGenBuffers(1, &ssbo_window_);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2WindowInfo)*512, NULL, GL_DYNAMIC_DRAW);
+	// glGenBuffers(1, &ssbo_window_);
+	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
+	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2WindowInfo)*512, NULL, GL_DYNAMIC_DRAW);
 
 	prg_rbg_0_2w_bitmap_8bpp_ = createProgram(sizeof(a_prg_rbg_0_2w_bitmap) / sizeof(char*), (const GLchar**)a_prg_rbg_0_2w_bitmap);
 	prg_rbg_0_2w_p1_4bpp_ = createProgram(sizeof(a_prg_rbg_0_2w_p1_4bpp) / sizeof(char*), (const GLchar**)a_prg_rbg_0_2w_p1_4bpp);
@@ -1636,9 +1636,9 @@ public:
 					}
 				}
 			}
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
-			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2WindowInfo)*int(rbg->vres / rbg->rotate_mval_v), (void*)rbg->info.pWinInfo);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_window_);
+			// glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
+			// glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2WindowInfo)*rbg->vres, (void*)rbg->info.pWinInfo);
+			// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_window_);
 		}
 
 	}
@@ -2191,9 +2191,9 @@ public:
 					}
 				}
 			}
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
-			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2WindowInfo)*int(rbg->vres / rbg->rotate_mval_v), (void*)rbg->info.pWinInfo);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_window_);
+			// glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
+			// glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2WindowInfo)*rbg->vres, (void*)rbg->info.pWinInfo);
+			// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_window_);
 		}
 	}
 
@@ -2245,7 +2245,7 @@ public:
   uniform.specialcolorfunction = rbg->info.specialcolorfunction;
   uniform.specialcode = rbg->info.specialcode;
 	uniform.colornumber = rbg->info.colornumber;
-	uniform.window_area_mode = rbg->info.WindwAreaMode;
+	// uniform.window_area_mode = rbg->info.WindwAreaMode;
 	uniform.alpha_ = (float)rbg->info.alpha / 255.0f;
 	if (Vdp2Internal.ColorMode < 2) {
 		uniform.cram_shift = 1;
