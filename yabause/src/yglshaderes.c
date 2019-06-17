@@ -29,7 +29,7 @@
 #include "bicubic_shader.h"
 #include "scanline_shader.h"
 
-#define YGLLOG printf
+#define YGLLOG
 
 static int saveFB;
 static void Ygl_useTmpBuffer();

@@ -1614,7 +1614,6 @@ YglProgram * YglGetProgram( YglSprite * input, int prg, YglTextureManager *tm, i
       program->vertexAttribute = (float *) realloc(program->vertexAttribute, program->maxQuad * sizeof(float)*2);
     YglCacheReset(tm);
    }
-   program->interuput_texture = 0;
    return program;
 }
 
@@ -2519,10 +2518,11 @@ int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int c
 }
 
 
-int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglCache * line, int rbg_type, YglTextureManager *tm) {
+int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache * line, int rbg_type, YglTextureManager *tm, Vdp2 *varVdp2Regs) {
   unsigned int x, y;
   YglProgram *program;
   texturecoordinate_struct *tmp;
+  vdp2draw_struct * input = &rbg->info;
   int prg;
   float * pos;
 
@@ -2576,12 +2576,15 @@ int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglC
 
   if (_Ygl->rbg_use_compute_shader) {
 
+    if (varVdp2Regs == NULL) {
+      printf("varVdp2Regs is NULL %d\n", __LINE__);
+      abort();
+    }
+
     if(rbg_type == 0 )
     program->interuput_texture = 1;
     else
     program->interuput_texture = 2;
-
-    printf("interrupt %d\n", program->interuput_texture);
 
     tmp = (texturecoordinate_struct *)(program->textcoords + (program->currentQuad * 2));
     program->currentQuad += 12;
@@ -2592,10 +2595,12 @@ int YglQuadRbg0(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglC
     //tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0;
     //tmp[0].q = tmp[1].q = tmp[2].q = tmp[3].q = tmp[4].q = tmp[5].q = 0;
 
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, RBGGenerator_getTexture(program->interuput_texture));
+
+    RBGGenerator_update(rbg, varVdp2Regs);
   }
   else {
-
-    printf("interrupt %d\n", program->interuput_texture);
 
     program->interuput_texture = 0;
 
@@ -3308,7 +3313,6 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
   level = &_Ygl->vdp2levels[id];
 
   if (level->prgcurrent == 0) return 0;
-printf("DrawVDP2Screen %d\n", id);
 
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D, _Ygl->window_fbotex[id]);
@@ -3317,12 +3321,7 @@ printf("DrawVDP2Screen %d\n", id);
   {
     if (level->prg[j].currentQuad != 0) {
       glActiveTexture(GL_TEXTURE0);
-      printf("Bind %d\n", level->prg[j].interuput_texture);
-      if (level->prg[j].interuput_texture != 0) {
-       glBindTexture(GL_TEXTURE_2D, RBGGenerator_getTexture(level->prg[j].interuput_texture));
-      } else {
-       glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
-      }
+      glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
       ret = 1;
 
       if (level->prg[j].prgid != cprg)
@@ -3363,7 +3362,6 @@ printf("DrawVDP2Screen %d\n", id);
     }
     level->prg[j].currentQuad = 0;
   }
-  printf("DrawVDP2Screen %d end\n", id);
   level->prgcurrent = 0;
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, 0);

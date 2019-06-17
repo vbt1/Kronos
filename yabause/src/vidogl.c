@@ -2814,7 +2814,7 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
   {
     Vdp2DrawRotation_in_sync(rbg, varVdp2Regs);
     if (!_Ygl->rbg_use_compute_shader) {
-      YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
+      YglQuadRbg0(rbg, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2, NULL);
     }
   }
 }
@@ -2825,7 +2825,7 @@ static void finishRbgQueue() {
   while (YaGetQueueSize(rotq_end_task)!=0)
   {
     RBGDrawInfo *rbg = (RBGDrawInfo *) YabWaitEventQueue(rotq_end_task);
-    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
+    YglQuadRbg0(rbg, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2, NULL);
     free(rbg);
   }
 }
@@ -2932,8 +2932,6 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
   rbg->paraB.over_pattern_name = varVdp2Regs->OVPNRB;
 
   if (_Ygl->rbg_use_compute_shader) {
-    printf("Call up\n");
-	  RBGGenerator_update(rbg, varVdp2Regs);
 
 	  if (info->LineColorBase != 0) {
 		  const float vstep = 1.0;
@@ -2959,7 +2957,7 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
 			  j += vstep;
 		  }
 	  }
-    YglQuadRbg0(&rbg->info, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2);
+    YglQuadRbg0(rbg, NULL, &rbg->c, &rbg->cline, rbg->rgb_type, YglTM_vdp2, varVdp2Regs);
 	  return;
   }
 

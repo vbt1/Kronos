@@ -24,7 +24,7 @@ extern "C"{
 #include "vidshared.h"
 }
 
-#define YGLDEBUG printf
+#define YGLDEBUG
 
 const char prg_generate_rbg[] =
 SHADER_VERSION_COMPUTE
@@ -1031,7 +1031,6 @@ public:
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	ErrorHandle("glBindTexture");
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_width_, tex_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	printf("%d\n", __LINE__);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, tex_width_, tex_height_);
 	ErrorHandle("glTexStorage2D");
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1049,7 +1048,6 @@ public:
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	ErrorHandle("glBindTexture");
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_width_, tex_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	printf("Create %d %d %d\n", tex_width_, tex_height_, __LINE__);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, tex_width_, tex_height_);
 	ErrorHandle("glTexStorage2D");
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1274,22 +1272,18 @@ public:
     error = glGetError();
 	// Line color insersion
 	if (rbg->info.LineColorBase != 0 && VDP2_CC_NONE != (rbg->info.blendmode & 0x03)) {
-		printf("La\n");
 		if (varVdp2Regs->RPMD == 0 || (varVdp2Regs->RPMD == 3 && (varVdp2Regs->WCTLD & 0xA) == 0)) {
 			if (rbg->info.isbitmap) {
-				printf("%d\n", __LINE__);
 				glUseProgram(prg_rbg_0_2w_bitmap_8bpp_line_);
 			}
 			else {
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: { // Decathalete ToDo: Line Color Bug
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p1_4bpp_line_);
 						break;
 					}
 					case 1: { // Sakatuku 2 Ground, GUNDAM Side Story 2, SonicR ToDo: 2Player
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p1_8bpp_line_);
 						break;
 					}
@@ -1300,7 +1294,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p1_16bpp_p_line_);
 						break;
 					}
@@ -1311,7 +1304,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p1_16bpp_line_);
 						break;
 					}
@@ -1322,7 +1314,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p1_32bpp_line_);
 						break;
 					}
@@ -1331,12 +1322,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_4bpp_line_);
 						break;
 					}
 					case 1: { // Thunder Force V
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_8bpp_line_);
 						break;
 					}
@@ -1347,7 +1336,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_16bpp_p_line_);
 						break;
 					}
@@ -1358,7 +1346,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_16bpp_line_);
 						break;
 					}
@@ -1369,7 +1356,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_32bpp_line_);
 						break;
 					}
@@ -1379,19 +1365,16 @@ public:
 		}
 		else if (varVdp2Regs->RPMD == 1) {
 			if (rbg->info.isbitmap) {
-				printf("%d\n", __LINE__);
 				glUseProgram(prg_rbg_1_2w_bitmap_8bpp_line_);
 			}
 			else {
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_4bpp_line_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_8bpp_line_);
 						break;
 					}
@@ -1402,7 +1385,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_16bpp_p_line_);
 						break;
 					}
@@ -1413,7 +1395,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_16bpp_line_);
 						break;
 					}
@@ -1424,7 +1405,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_32bpp_line_);
 						break;
 					}
@@ -1433,12 +1413,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_4bpp_line_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_8bpp_line_);
 						break;
 					}
@@ -1449,7 +1427,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_16bpp_p_line_);
 						break;
 					}
@@ -1460,7 +1437,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_16bpp_line_);
 						break;
 					}
@@ -1471,7 +1447,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_32bpp_line_);
 						break;
 					}
@@ -1481,19 +1456,16 @@ public:
 		}
 		else if (varVdp2Regs->RPMD == 2) {
 			if (rbg->info.isbitmap) {
-				printf("%d\n", __LINE__);
 				glUseProgram(prg_rbg_2_2w_bitmap_8bpp_line_);
 			}
 			else {
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_4bpp_line_);
 						break;
 					}
 					case 1: { // Panzer Dragoon 1
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_8bpp_line_);
 						break;
 					}
@@ -1504,7 +1476,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_16bpp_p_line_);
 						break;
 					}
@@ -1515,7 +1486,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_16bpp_line_);
 						break;
 					}
@@ -1526,7 +1496,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_32bpp_line_);
 						break;
 					}
@@ -1535,12 +1504,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_4bpp_line_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_8bpp_line_);
 						break;
 					}
@@ -1551,7 +1518,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_16bpp_p_line_);
 						break;
 					}
@@ -1562,7 +1528,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_16bpp_line_);
 						break;
 					}
@@ -1573,7 +1538,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_32bpp_line_);
 						break;
 					}
@@ -1584,19 +1548,16 @@ public:
 		else if (varVdp2Regs->RPMD == 3) {
 
 			if (rbg->info.isbitmap) {
-				printf("%d\n", __LINE__);
 				glUseProgram(prg_rbg_3_2w_bitmap_8bpp_line_);
 			}
 			else {
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_4bpp_line_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_8bpp_line_);
 						break;
 					}
@@ -1607,7 +1568,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_16bpp_p_line_);
 						break;
 					}
@@ -1618,7 +1578,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_16bpp_line_);
 						break;
 					}
@@ -1629,7 +1588,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_32bpp_line_);
 						break;
 					}
@@ -1638,12 +1596,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_4bpp_line_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_8bpp_line_);
 						break;
 					}
@@ -1654,7 +1610,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_16bpp_p_line_);
 						break;
 					}
@@ -1665,7 +1620,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_16bpp_line_);
 						break;
 					}
@@ -1676,7 +1630,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_line_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_32bpp_line_);
 						break;
 					}
@@ -1692,9 +1645,7 @@ public:
 
 	// no line color insersion
 	else {
-		printf("Ici %x\n", varVdp2Regs->RPMD);
 		if (varVdp2Regs->RPMD == 0 || (varVdp2Regs->RPMD == 3 && (varVdp2Regs->WCTLD & 0xA) == 0) ) {
-			printf("Ok\n");
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
 				case 0: {
@@ -1704,12 +1655,10 @@ public:
 							prg_rbg_getcolor_4bpp,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_0_2w_bitmap_4bpp_);
 					break;
 				}
 				case 1: { // SF3S1( Initial )
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_0_2w_bitmap_8bpp_);
 					break;
 				}
@@ -1720,7 +1669,6 @@ public:
 							prg_rbg_getcolor_16bpp_palette,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_0_2w_bitmap_16bpp_p_);
 					break;
 				}
@@ -1731,7 +1679,6 @@ public:
 							prg_rbg_getcolor_16bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_0_2w_bitmap_16bpp_);
 					break;
 				}
@@ -1742,7 +1689,6 @@ public:
 							prg_rbg_getcolor_32bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_0_2w_bitmap_32bpp_);
 					break;
 				}
@@ -1752,12 +1698,10 @@ public:
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 						case 0: { // Dead or Alive, Radiant Silver Gun, Diehard
-							printf("%d\n", __LINE__);
 							glUseProgram(prg_rbg_0_2w_p1_4bpp_);
 							break;
 						}
 						case 1: { // Sakatuku 2 ( Initial Setting ), Virtua Fighter 2, Virtual-on
-							printf("%d\n", __LINE__);
 							glUseProgram(prg_rbg_0_2w_p1_8bpp_);
 							break;
 						}
@@ -1768,7 +1712,6 @@ public:
 									prg_rbg_getcolor_16bpp_palette,
 									prg_generate_rbg_end);
 							}
-							printf("%d\n", __LINE__);
 							glUseProgram(prg_rbg_0_2w_p1_16bpp_p_);
 							break;
 						}
@@ -1779,7 +1722,6 @@ public:
 									prg_rbg_getcolor_16bpp_rbg,
 									prg_generate_rbg_end);
 							}
-							printf("%d\n", __LINE__);
 							glUseProgram(prg_rbg_0_2w_p1_16bpp_);
 							break;
 						}
@@ -1790,7 +1732,6 @@ public:
 									prg_rbg_getcolor_32bpp_rbg,
 									prg_generate_rbg_end);
 							}
-							printf("%d\n", __LINE__);
 							glUseProgram(prg_rbg_0_2w_p1_32bpp_);
 							break;
 						}
@@ -1799,12 +1740,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_4bpp_);
 						break;
 					}
 					case 1: { // NHL97(In Game), BIOS
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_8bpp_);
 						break;
 					}
@@ -1815,7 +1754,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_16bpp_p_);
 						break;
 					}
@@ -1826,7 +1764,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_16bpp_);
 						break;
 					}
@@ -1837,7 +1774,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_0_2w_p2_32bpp_);
 						break;
 					}
@@ -1846,7 +1782,6 @@ public:
 			}
 		}
 		else if (varVdp2Regs->RPMD == 1) {
-			printf("%d\n", __LINE__);
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
 				case 0: {
@@ -1856,12 +1791,10 @@ public:
 							prg_rbg_getcolor_4bpp,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_1_2w_bitmap_4bpp_);
 					break;
 				}
 				case 1: {
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_1_2w_bitmap_8bpp_);
 					break;
 				}
@@ -1872,7 +1805,6 @@ public:
 							prg_rbg_getcolor_16bpp_palette,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_1_2w_bitmap_16bpp_p_);
 					break;
 				}
@@ -1883,7 +1815,6 @@ public:
 							prg_rbg_getcolor_16bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_1_2w_bitmap_16bpp_);
 					break;
 				}
@@ -1894,7 +1825,6 @@ public:
 							prg_rbg_getcolor_32bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_1_2w_bitmap_32bpp_);
 					break;
 				}
@@ -1904,12 +1834,10 @@ public:
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_4bpp_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_8bpp_);
 						break;
 					}
@@ -1920,7 +1848,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_16bpp_p_);
 						break;
 					}
@@ -1931,7 +1858,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_16bpp_);
 						break;
 					}
@@ -1942,7 +1868,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p1_32bpp_);
 						break;
 					}
@@ -1951,12 +1876,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_4bpp_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_8bpp_);
 						break;
 					}
@@ -1967,7 +1890,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_16bpp_p_);
 						break;
 					}
@@ -1978,7 +1900,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_16bpp_);
 						break;
 					}
@@ -1989,7 +1910,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_1_2w_p2_32bpp_);
 						break;
 					}
@@ -1998,7 +1918,6 @@ public:
 			}
 		}
 		else if (varVdp2Regs->RPMD == 2) {
-			printf("%d\n", __LINE__);
 				if (rbg->info.isbitmap) {
 					switch (rbg->info.colornumber) {
 					case 0: {
@@ -2008,12 +1927,10 @@ public:
 								prg_rbg_getcolor_4bpp,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_bitmap_4bpp_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_bitmap_8bpp_);
 						break;
 					}
@@ -2024,7 +1941,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_bitmap_16bpp_p_);
 						break;
 					}
@@ -2035,7 +1951,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_bitmap_16bpp_);
 						break;
 					}
@@ -2046,7 +1961,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_bitmap_32bpp_);
 						break;
 					}
@@ -2057,12 +1971,10 @@ public:
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: { // BlukSlash
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_4bpp_);
 						break;
 					}
 					case 1: { // Panzer Dragoon Zwei, Toshiden(Title) ToDo: Sky bug
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_8bpp_);
 						break;
 					}
@@ -2073,7 +1985,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_16bpp_p_);
 						break;
 					}
@@ -2084,7 +1995,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_16bpp_);
 						break;
 					}
@@ -2095,7 +2005,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p1_32bpp_);
 						break;
 					}
@@ -2104,12 +2013,10 @@ public:
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_4bpp_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_8bpp_);
 						break;
 					}
@@ -2120,7 +2027,6 @@ public:
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_16bpp_p_);
 						break;
 					}
@@ -2131,7 +2037,6 @@ public:
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_16bpp_);
 						break;
 					}
@@ -2142,7 +2047,6 @@ public:
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_2_2w_p2_32bpp_);
 						break;
 					}
@@ -2151,7 +2055,6 @@ public:
 			}
 		}
 		else if (varVdp2Regs->RPMD == 3) {
-printf("%d\n", __LINE__);
 			if (rbg->info.isbitmap) {
 				switch (rbg->info.colornumber) {
 				case 0: {
@@ -2161,12 +2064,10 @@ printf("%d\n", __LINE__);
 							prg_rbg_getcolor_4bpp,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_3_2w_bitmap_4bpp_);
 					break;
 				}
 				case 1: {
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_3_2w_bitmap_8bpp_);
 					break;
 				}
@@ -2177,7 +2078,6 @@ printf("%d\n", __LINE__);
 							prg_rbg_getcolor_16bpp_palette,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_3_2w_bitmap_16bpp_p_);
 					break;
 				}
@@ -2188,7 +2088,6 @@ printf("%d\n", __LINE__);
 							prg_rbg_getcolor_16bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_3_2w_bitmap_16bpp_);
 					break;
 				}
@@ -2199,7 +2098,6 @@ printf("%d\n", __LINE__);
 							prg_rbg_getcolor_32bpp_rbg,
 							prg_generate_rbg_end);
 					}
-					printf("%d\n", __LINE__);
 					glUseProgram(prg_rbg_3_2w_bitmap_32bpp_);
 					break;
 				}
@@ -2210,12 +2108,10 @@ printf("%d\n", __LINE__);
 				if (rbg->info.patterndatasize == 1) {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_4bpp_);
 						break;
 					}
 					case 1: { // Final Fight Revenge, Grandia main
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_8bpp_);
 						break;
 					}
@@ -2226,7 +2122,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_16bpp_p_);
 						break;
 					}
@@ -2237,7 +2132,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_16bpp_);
 						break;
 					}
@@ -2248,7 +2142,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p1_32bpp_);
 						break;
 					}
@@ -2257,12 +2150,10 @@ printf("%d\n", __LINE__);
 				else {
 					switch (rbg->info.colornumber) {
 					case 0: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_4bpp_);
 						break;
 					}
 					case 1: {
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_8bpp_);
 						break;
 					}
@@ -2273,7 +2164,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_16bpp_palette,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_16bpp_p_);
 						break;
 					}
@@ -2284,7 +2174,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_16bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_16bpp_);
 						break;
 					}
@@ -2295,7 +2184,6 @@ printf("%d\n", __LINE__);
 								prg_rbg_getcolor_32bpp_rbg,
 								prg_generate_rbg_end);
 						}
-						printf("%d\n", __LINE__);
 						glUseProgram(prg_rbg_3_2w_p2_32bpp_);
 						break;
 					}
@@ -2371,12 +2259,12 @@ printf("%d\n", __LINE__);
   glBindBufferBase(GL_UNIFORM_BUFFER, 3, scene_uniform);
 
 	if (rbg->rgb_type == 0x04  ) {
-		if (tex_surface_1 != 0) {
+		if (tex_surface_1 == 0) {
+			glGenTextures(1, &tex_surface_1);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, tex_surface_1);
 			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 			ErrorHandle("glBindTexture");
-			printf("%d %d %d %d\n", tex_surface_1, tex_width_, tex_height_, __LINE__);
 			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, tex_width_, tex_height_);
 			ErrorHandle("glTexStorage2D");
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -2438,7 +2326,6 @@ extern "C" {
   }
   void RBGGenerator_update(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs ) {
     if (_Ygl->rbg_use_compute_shader == 0) return;
-printf("Update\n");
     RBGGenerator * instance = RBGGenerator::getInstance();
     instance->update(rbg, varVdp2Regs);
   }
