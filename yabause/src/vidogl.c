@@ -5586,13 +5586,13 @@ static void Vdp2DrawRBG1_part(RBGDrawInfo *rgb, Vdp2* varVdp2Regs)
     }
 
     info->rotatenum = 1;
-    rgb->paraB.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterBPlaneAddr;
+    //rgb->paraB.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterBPlaneAddr;
     rgb->paraB.coefenab = varVdp2Regs->KTCTL & 0x100;
     rgb->paraB.charaddr = (varVdp2Regs->MPOFR & 0x70) * 0x2000;
     ReadPlaneSizeR(&rgb->paraB, varVdp2Regs->PLSZ >> 12);
     for (i = 0; i < 16; i++)
     {
-      rgb->paraB.PlaneAddr(info, i, varVdp2Regs);
+      Vdp2ParameterBPlaneAddr(info, i, varVdp2Regs);
       rgb->paraB.PlaneAddrv[i] = info->addr;
     }
 
@@ -6492,8 +6492,8 @@ static void Vdp2DrawRBG0_part( RBGDrawInfo *rgb, Vdp2* varVdp2Regs)
   B0_Updated = 0;
   B1_Updated = 0;
 
-  rgb->paraA.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterAPlaneAddr;
-  rgb->paraB.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterBPlaneAddr;
+  //rgb->paraA.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterAPlaneAddr;
+  //rgb->paraB.PlaneAddr = (void FASTCALL(*)(void *, int, Vdp2*))&Vdp2ParameterBPlaneAddr;
   rgb->paraA.charaddr = (varVdp2Regs->MPOFR & 0x7) * 0x20000;
   rgb->paraB.charaddr = (varVdp2Regs->MPOFR & 0x70) * 0x2000;
   ReadPlaneSizeR(&rgb->paraA, varVdp2Regs->PLSZ >> 8);
@@ -6706,9 +6706,9 @@ static void Vdp2DrawRBG0_part( RBGDrawInfo *rgb, Vdp2* varVdp2Regs)
 
     for (i = 0; i < 16; i++)
     {
-      rgb->paraA.PlaneAddr(info, i, varVdp2Regs);
+	  Vdp2ParameterAPlaneAddr(info, i, varVdp2Regs);
       rgb->paraA.PlaneAddrv[i] = info->addr;
-      rgb->paraB.PlaneAddr(info, i, varVdp2Regs);
+	  Vdp2ParameterBPlaneAddr(info, i, varVdp2Regs);
       rgb->paraB.PlaneAddrv[i] = info->addr;
     }
   }

@@ -91,6 +91,7 @@ SHADER_VERSION_COMPUTE
 " int k_mem_type;\n"
 " uint over_pattern_name;\n"
 " int linecoefenab;\n"
+" int padding;\n"
 "};\n"
 "layout(std430, binding = 2) readonly buffer vdp2Param { \n"
 "  vdp2rotationparameter_struct para[2];\n"
@@ -133,24 +134,26 @@ SHADER_VERSION_COMPUTE
 "  uint kdata;\n"
 "  int kindex = int( ceil(para[paramid].deltaKAst*posy+(para[paramid].deltaKAx*posx)) ); \n"
 "  if (para[paramid].coefdatasize == 2) { \n"
+//Revoir la gestion de la vram
 "    uint addr = ( uint( int(para[paramid].coeftbladdr) + (kindex<<1)) &0x7FFFFu); "
 "    if( para[paramid].k_mem_type == 0) { \n"
-"	     kdata = vram[ addr>>2 ]; \n"
+"	     kdata = vram[ addr ]; \n"
 "      if( (addr & 0x02u) != 0u ) { kdata >>= 16; } \n"
 "      kdata = (((kdata) >> 8 & 0xFFu) | ((kdata) & 0xFFu) << 8);\n"
 "    }else{\n"
-"      kdata = cram[ ((0x800u + (addr&0xFFFu))>>2)  ]; \n"
+"      kdata = cram[ ((0x800u + (addr&0xFFFu)))  ]; \n"
 "      if( (addr & 0x02u) != 0u ) { kdata >>= 16; } \n"
 "    }\n"
 "    if ( (kdata & 0x8000u) != 0u) { return -1; }\n"
 "	   if((kdata&0x4000u)!=0u) ky=float( int(kdata&0x7FFFu)| int(0xFFFF8000u) )/1024.0; else ky=float(kdata&0x7FFFu)/1024.0;\n"
 "  }else{\n"
+//Revoir la gestion de la vram
 "    uint addr = ( uint( int(para[paramid].coeftbladdr) + (kindex<<2))&0x7FFFFu);"
 "    if( para[paramid].k_mem_type == 0) { \n"
-"	     kdata = vram[ addr>>2 ]; \n"
+"	     kdata = vram[ addr ]; \n"
 "      kdata = ((kdata&0xFF000000u) >> 24 | ((kdata) >> 8 & 0xFF00u) | ((kdata) & 0xFF00u) << 8 | (kdata&0x000000FFu) << 24);\n"
 "    }else{\n"
-"      kdata = cram[ ((0x800u + (addr&0xFFFu) )>>2) ]; \n"
+"      kdata = cram[ (0x800u + (addr&0xFFFu) ) ]; \n"
 "      kdata = ((kdata&0xFFFF0000u)>>16|(kdata&0x0000FFFFu)<<16);\n"
 "    }\n"
 "	 if( para[paramid].linecoefenab != 0) lineaddr = (kdata >> 24) & 0x7Fu; else lineaddr = 0u;\n"
@@ -370,7 +373,7 @@ const char prg_rbg_get_patternaddr[] =
 
 const char prg_rbg_get_pattern_data_1w[] =
 "  if( patternname == 0xFFFFFFFFu){\n"
-"    patternname = vram[addr>>2]; \n" // WORD mode( patterndatasize == 1 )
+"    patternname = vram[ addr ]; \n" // WORD mode( patterndatasize == 1 )
 "    if( (addr & 0x02u) != 0u ) { patternname >>= 16; } \n"
 "    patternname = (((patternname >> 8) & 0xFFu) | ((patternname) & 0xFFu) << 8);\n"
 "  }\n"
@@ -407,7 +410,7 @@ const char prg_rbg_get_pattern_data_1w[] =
 "  charaddr *= 0x20u;\n";
 
 const char prg_rbg_get_pattern_data_2w[] =
-"  patternname = vram[addr>>2]; \n"
+"  patternname = vram[ addr ]; \n"
 "  uint tmp1 = patternname & 0x7FFFu; \n"
 "  charaddr = patternname >> 16; \n"
 "  charaddr = (((charaddr >> 8) & 0xFFu) | ((charaddr) & 0xFFu) << 8);\n"
@@ -463,7 +466,7 @@ const char prg_rbg_getcolor_4bpp[] =
 "  uint cramindex = 0u;\n"
 "  float alpha = alpha_;\n"
 "  uint dotaddr = ((charaddr + uint(((y * cellw) + x) >> 1)) & 0x7FFFFu);\n"
-"  dot = vram[ dotaddr >> 2];\n"
+"  dot = vram[ dotaddr >> 1];\n"
 "  if( (dotaddr & 0x3u) == 0u ) dot >>= 0;\n"
 "  else if( (dotaddr & 0x3u) == 1u ) dot >>= 8;\n"
 "  else if( (dotaddr & 0x3u) == 2u ) dot >>= 16;\n"
@@ -495,7 +498,7 @@ const char prg_rbg_getcolor_8bpp[] =
 "  uint cramindex = 0u;\n"
 "  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x);\n"
-"  dot = vram[ dotaddr >> 2];\n"
+"  dot = vram[ dotaddr & 0x7FFFFu];\n"
 "  if( (dotaddr & 0x3u) == 0u ) dot >>= 0;\n"
 "  else if( (dotaddr & 0x3u) == 1u ) dot >>= 8;\n"
 "  else if( (dotaddr & 0x3u) == 2u ) dot >>= 16;\n"
@@ -526,7 +529,7 @@ const char prg_rbg_getcolor_16bpp_palette[] =
 "  uint cramindex = 0u;\n"
 "  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 2u;\n"
-"  dot = vram[dotaddr>>2]; \n"
+"  dot = vram[ dotaddr ]; \n"
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot) >> 8 & 0xFF) | ((dot) & 0xFF) << 8);\n"
 "  if ( dot == 0 && transparencyenable != 0 ) { \n"
@@ -541,7 +544,7 @@ const char prg_rbg_getcolor_16bpp_rbg[] =
 "  uint cramindex = 0u;\n"
 "  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 2u;\n"
-"  dot = vram[dotaddr>>2]; \n"
+"  dot = vram[ dotaddr ]; \n"
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot >> 8) & 0xFFu) | ((dot) & 0xFFu) << 8);\n"
 "  if ( (dot&0x8000u) == 0u && transparencyenable != 0 ) { \n"
@@ -557,7 +560,7 @@ const char prg_rbg_getcolor_32bpp_rbg[] =
 "  uint cramindex = 0u;\n"
 "  float alpha = 1.0;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 4u;\n"
-"  dot = vram[dotaddr>>2]; \n"
+"  dot = vram[ dotaddr ]; \n"
 "  dot = ((dot&0xFF000000u) >> 24 | ((dot >> 8) & 0xFF00u) | ((dot) & 0xFF00u) << 8 | (dot&0x000000FFu) << 24);\n"
 "  if ( (dot&0x80000000u) == 0u && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
@@ -816,7 +819,7 @@ struct RBGUniform {
     specialcolormode = 0;
     specialcolorfunction=0;
     specialcode=0;
-	window_area_mode = 0;
+	//window_area_mode = 0;
 	alpha_ = 0.0;
 	cram_shift = 1;
   }
@@ -839,7 +842,7 @@ struct RBGUniform {
   int specialcolorfunction;
   unsigned int specialcode;
   int colornumber;
-  int window_area_mode;
+//  int window_area_mode;
   float alpha_;
   int cram_shift;
 };
@@ -1115,7 +1118,7 @@ public:
 
   glGenBuffers(1, &ssbo_vram_);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, 0x80000,(void*)Vdp2Ram,GL_DYNAMIC_DRAW);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, 0x100000,(void*)Vdp2Ram,GL_DYNAMIC_DRAW);
 
   glGenBuffers(1, &ssbo_paraA_);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
@@ -2202,7 +2205,7 @@ public:
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
   //glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp2Ram);
   if(mapped_vram == nullptr) mapped_vram = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-  memcpy(mapped_vram, Vdp2Ram, 0x80000);
+  memcpy(mapped_vram, Vdp2Ram, 0x100000);
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   mapped_vram = nullptr;
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_vram_);
@@ -2221,7 +2224,7 @@ public:
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraA);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2rotationparameter_struct), sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraB);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size_, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraB);
 	ErrorHandle("glBufferSubData");
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_paraA_);
 
@@ -2284,6 +2287,7 @@ public:
 	}
 
   glDispatchCompute(work_groups_x, work_groups_y, 1);
+	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
   ErrorHandle("glDispatchCompute");
 
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -2302,7 +2306,7 @@ public:
   void onFinish() {
     if ( ssbo_vram_ != 0 && mapped_vram == nullptr) {
       glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-      mapped_vram = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+      mapped_vram = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 0x100000, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
       glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0 );
     }
   }
