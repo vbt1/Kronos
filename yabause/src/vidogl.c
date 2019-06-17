@@ -6863,6 +6863,7 @@ int WaitVdp2Async(int sync) {
       }
     }
 #endif
+    RBGGenerator_onFinish();
     if (empty == 0) vdp2busy = 0;
   }
   return empty;

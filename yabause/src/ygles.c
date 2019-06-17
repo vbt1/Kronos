@@ -3321,7 +3321,10 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
   {
     if (level->prg[j].currentQuad != 0) {
       glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
+      if (level->prg[j].interuput_texture == 0)
+        glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
+      else
+        glBindTexture(GL_TEXTURE_2D, RBGGenerator_getTexture(level->prg[j].interuput_texture));
       ret = 1;
 
       if (level->prg[j].prgid != cprg)
