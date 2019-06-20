@@ -117,7 +117,8 @@ SHADER_VERSION_COMPUTE
 "  uint specialcode;\n"
 "  int colornumber;\n"
 // "  int window_area_mode;"
-"  float alpha_;"
+"  uint alpha;"
+"  uint priority;"
 "  int cram_shift;"
 "};\n"
 // " struct vdp2WindowInfo\n"
@@ -201,6 +202,11 @@ SHADER_VERSION_COMPUTE
 "	return (colorval & 0x8000u); \n"
 "}\n"
 
+" vec4 vdp2color(uint alpha_, uint prio, uint cc_on, uint index) {\n"
+" uint ret = (((alpha_ & 0xF8u) | prio) << 24 | ((cc_on & 0x1u)<<16) | (index& 0xFEFFFFu));\n"
+" return vec4(float((ret >> 24)&0xFFu)/255.0,float((ret >> 16)&0xFFu)/255.0, float((ret >> 8)&0xFFu)/255.0, float((ret >> 0)&0xFFu)/255.0);"
+"\n}"
+
 
 //----------------------------------------------------------------------
 // Main
@@ -214,6 +220,7 @@ SHADER_VERSION_COMPUTE
 "  uint lineaddr = 0u; \n"
 "  float ky; \n"
 "  uint kdata;\n"
+"  uint cc = 1;\n"
 "  uint patternname = 0xFFFFFFFFu;\n"
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  ivec2 size = imageSize(outSurface);\n"
@@ -410,7 +417,7 @@ const char prg_rbg_get_pattern_data_1w[] =
 "  charaddr *= 0x20u;\n";
 
 const char prg_rbg_get_pattern_data_2w[] =
-"  patternname = vram[addr>>2]; \n" 
+"  patternname = vram[addr>>2]; \n"
 "  uint tmp1 = patternname & 0x7FFFu; \n"
 "  charaddr = patternname >> 16; \n"
 "  charaddr = (((charaddr >> 8) & 0xFFu) | ((charaddr) & 0xFFu) << 8);\n"
@@ -461,10 +468,12 @@ const char prg_rbg_get_charaddr[] =
 
 
 // 4 BPP
+
 const char prg_rbg_getcolor_4bpp[] =
+//Aligner avec Vdp2GetPixel4bpp
+//Jeu de test Dead or Alive
 "  uint dot = 0u;\n"
 "  uint cramindex = 0u;\n"
-"  float alpha = alpha_;\n"
 "  uint dotaddr = ((charaddr + uint(((y * cellw) + x) >> 1)) & 0x7FFFFu);\n"
 "  dot = vram[ dotaddr >> 2];\n"
 "  if( (dotaddr & 0x3u) == 0u ) dot >>= 0;\n"
@@ -474,19 +483,20 @@ const char prg_rbg_getcolor_4bpp[] =
 "  if ( (x & 0x1) == 0 ) dot >>= 4;\n"
 "  if ( (dot & 0xFu) == 0u && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
-"    alpha = 0.0;\n"
 "  } else {\n"
 "    cramindex = (coloroffset + ((paladdr << 4) | (dot & 0xFu)));\n"
+//inserer la fonction Vdp2SetSpecialPriority
 "    switch (specialcolormode)\n"
 "    {\n"
+//Changer alpha avec cc suivant Vdp2GetCCOn
 "    case 1:\n"
-"      if (specialcolorfunction == 0) { alpha = 1.0; } break;\n"
+"      if (specialcolorfunction == 0) { cc = 0; } break;\n"
 "    case 2:\n"
-"      if (specialcolorfunction == 0) { alpha = 1.0; }\n"
-"      else { if ((specialcode & (1u << ((dot & 0xFu) >> 1))) == 0u) { alpha = 1.0; } } \n"
+"      if (specialcolorfunction == 0) { cc = 0; }\n"
+"      else { if ((specialcode & (1u << ((dot & 0xFu) >> 1))) == 0u) { cc = 0; } } \n"
 "      break; \n"
 "    case 3:\n"
-"	   if (get_cram_msb(cramindex) == 0u) { alpha = 1.0; }\n"
+"	   if (get_cram_msb(cramindex) == 0u) { cc = 0; }\n"
 "	   break;\n"
 "    }\n"
 "  }\n";
@@ -496,7 +506,6 @@ const char prg_rbg_getcolor_4bpp[] =
 const char prg_rbg_getcolor_8bpp[] =
 "  uint dot = 0u;\n"
 "  uint cramindex = 0u;\n"
-"  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x);\n"
 "  dot = vram[ dotaddr >> 2];\n"
 "  if( (dotaddr & 0x3u) == 0u ) dot >>= 0;\n"
@@ -506,19 +515,18 @@ const char prg_rbg_getcolor_8bpp[] =
 "  dot = dot & 0xFFu; \n"
 "  if ( dot == 0u && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
-"    alpha = 0.0;\n"
 "  } else {\n"
 "    cramindex = (coloroffset + ((paladdr << 4) | dot));\n"
 "    switch (specialcolormode)\n"
 "    {\n"
 "    case 1:\n"
-"      if (specialcolorfunction == 0) { alpha = 1.0; } break;\n"
+"      if (specialcolorfunction == 0) { cc = 0; } break;\n"
 "    case 2:\n"
-"      if (specialcolorfunction == 0) { alpha = 1.0; }\n"
-"      else { if ((specialcode & (1u << ((dot & 0xFu) >> 1))) == 0u) { alpha = 1.0; } } \n"
+"      if (specialcolorfunction == 0) { cc = 0; }\n"
+"      else { if ((specialcode & (1u << ((dot & 0xFu) >> 1))) == 0u) { cc = 0; } } \n"
 "      break; \n"
 "    case 3:\n"
-"	   if (get_cram_msb(cramindex) == 0u) { alpha = 1.0; }\n"
+"	   if (get_cram_msb(cramindex) == 0u) { cc = 0; }\n"
 "	   break;\n"
 "    }\n"
 "  }\n";
@@ -527,14 +535,12 @@ const char prg_rbg_getcolor_8bpp[] =
 const char prg_rbg_getcolor_16bpp_palette[] =
 "  uint dot = 0u;\n"
 "  uint cramindex = 0u;\n"
-"  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 2u;\n"
-"  dot = vram[dotaddr>>2]; \n" 
+"  dot = vram[dotaddr>>2]; \n"
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot) >> 8 & 0xFF) | ((dot) & 0xFF) << 8);\n"
 "  if ( dot == 0 && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
-"    alpha = 0.0;\n"
 "  } else {\n"
 "    cramindex = (coloroffset + dot);\n"
 "  }\n";
@@ -542,14 +548,12 @@ const char prg_rbg_getcolor_16bpp_palette[] =
 const char prg_rbg_getcolor_16bpp_rbg[] =
 "  uint dot = 0u;\n"
 "  uint cramindex = 0u;\n"
-"  float alpha = alpha_;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 2u;\n"
 "  dot = vram[dotaddr>>2]; \n"
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot >> 8) & 0xFFu) | ((dot) & 0xFFu) << 8);\n"
 "  if ( (dot&0x8000u) == 0u && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
-"    alpha = 0.0;\n"
 "  } else {\n"
 "    cramindex = (dot & 0x1Fu) << 3 | (dot & 0x3E0u) << 6 | (dot & 0x7C00u) << 9;\n"
 "  }\n";
@@ -558,27 +562,25 @@ const char prg_rbg_getcolor_16bpp_rbg[] =
 const char prg_rbg_getcolor_32bpp_rbg[] =
 "  uint dot = 0u;\n"
 "  uint cramindex = 0u;\n"
-"  float alpha = 1.0;\n"
 "  uint dotaddr = charaddr + uint((y*cellw)+x) * 4u;\n"
 "  dot = vram[dotaddr>>2]; \n"
 "  dot = ((dot&0xFF000000u) >> 24 | ((dot >> 8) & 0xFF00u) | ((dot) & 0xFF00u) << 8 | (dot&0x000000FFu) << 24);\n"
 "  if ( (dot&0x80000000u) == 0u && transparencyenable != 0 ) { \n"
 "    cramindex = 0u; \n"
-"    alpha = 0.0;\n"
 "  } else {\n"
 "    cramindex = dot & 0x00FFFFFFu;\n"
 "  }\n";
 
 
 const char prg_generate_rbg_end[] =
-"  imageStore(outSurface,texel,vec4( float(cramindex&0xFFu)/255.0, float((cramindex>>8) &0xFFu)/255.0, float((cramindex>>16) &0xFFu)/255.0, alpha));\n"
+"  imageStore(outSurface,texel,vdp2color(alpha, priority, cc, cramindex));\n"
 "}\n";
 
 const char prg_generate_rbg_line_end[] =
 "  cramindex |= 0x8000u;\n"
 "  uint line_color = 0u;\n"
 "  if( lineaddr != 0xFFFFFFFFu && lineaddr != 0u ) line_color = ((lineaddr & 0x7Fu) | 0x80u);"
-"  imageStore(outSurface,texel,vec4( float(cramindex&0xFFu)/255.0, float((cramindex>>8)&0xFFu)/255.0, float((line_color)&0xFFu)/255.0, alpha));\n"
+"  imageStore(outSurface,texel,vdp2color(alpha, priority, cc, cramindex));\n"
 "}\n";
 
 
@@ -820,7 +822,8 @@ struct RBGUniform {
     specialcolorfunction=0;
     specialcode=0;
 	//window_area_mode = 0;
-	alpha_ = 0.0;
+	alpha = 0;
+	priority = 0;
 	cram_shift = 1;
   }
   float hres_scale;
@@ -843,7 +846,8 @@ struct RBGUniform {
   unsigned int specialcode;
   int colornumber;
 //  int window_area_mode;
-  float alpha_;
+  unsigned int alpha;
+  unsigned int priority;
   int cram_shift;
 };
 
@@ -2248,7 +2252,8 @@ public:
   uniform.specialcode = rbg->info.specialcode;
 	uniform.colornumber = rbg->info.colornumber;
 	// uniform.window_area_mode = rbg->info.WindwAreaMode;
-	uniform.alpha_ = (float)rbg->info.alpha / 255.0f;
+	uniform.alpha = rbg->info.alpha;
+	uniform.priority = rbg->info.priority;
 	if (Vdp2Internal.ColorMode < 2) {
 		uniform.cram_shift = 1;
 	}
