@@ -117,9 +117,11 @@ SHADER_VERSION_COMPUTE
 "  uint specialcode;\n"
 "  int colornumber;\n"
 // "  int window_area_mode;"
-"  uint alpha;"
-"  uint priority;"
-"  int cram_shift;"
+"  uint alpha;\n"
+"  uint priority;\n"
+"  int cram_shift;\n"
+"  int startLine;\n"
+"  int endLine;\n"
 "};\n"
 // " struct vdp2WindowInfo\n"
 // "{\n"
@@ -225,6 +227,7 @@ SHADER_VERSION_COMPUTE
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
+"  if (texel.y < startLine || texel.y >= endLine ) return;\n"
 "  float posx = float(texel.x) * hres_scale;\n"
 "  float posy = float(texel.y) * vres_scale;\n";
 
@@ -825,6 +828,8 @@ struct RBGUniform {
 	alpha = 0;
 	priority = 0;
 	cram_shift = 1;
+	startLine = 0;
+	endLine = 0;
   }
   float hres_scale;
   float vres_scale;
@@ -849,6 +854,8 @@ struct RBGUniform {
   unsigned int alpha;
   unsigned int priority;
   int cram_shift;
+	int startLine;
+	int endLine;
 };
 
 class RBGGenerator{
@@ -1018,7 +1025,7 @@ public:
   void resize(int width, int height) {
 	if (tex_width_ == width && tex_height_ == height) return;
 
-	YGLDEBUG("resize %d, %d\n",width,height);
+	printf("resize %d, %d\n",width,height);
 
 	glGetError();
 
@@ -2262,6 +2269,9 @@ public:
 		uniform.cram_shift = 2;
 	}
 
+	uniform.startLine = rbg->info.startLine;
+	uniform.endLine = rbg->info.endLine;
+
   glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RBGDrawInfo), (void*)&uniform);
 	ErrorHandle("glBufferSubData");
@@ -2330,7 +2340,7 @@ extern "C" {
   }
   void RBGGenerator_resize(int width, int height) {
     if (_Ygl->rbg_use_compute_shader == 0) return;
-
+    YGLDEBUG("RBGGenerator_resize\n");
 	  RBGGenerator * instance = RBGGenerator::getInstance();
 	  instance->resize(width, height);
   }
