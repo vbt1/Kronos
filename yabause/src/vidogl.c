@@ -2724,8 +2724,10 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
 
 
   if (vdp2height >= 448) lineInc <<= 1;
-  if (vdp2height >= 448) rbg->vres = (vdp2height >> 1); else rbg->vres = vdp2height;
-  if (vdp2width >= 640) rbg->hres = (vdp2width >> 1); else rbg->hres = vdp2width;
+  if (vdp2height >= 448) rbg->vres = (vdp2height >> 1);
+  else rbg->vres = vdp2height;
+  if (vdp2width >= 640) rbg->hres = (vdp2width >> 1);
+  else rbg->hres = vdp2width;
 
   if (_Ygl->rbg_use_compute_shader) {
 	  RBGGenerator_init(rbg->hres, rbg->vres);

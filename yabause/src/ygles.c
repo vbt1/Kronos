@@ -30,7 +30,7 @@
 #include "error.h"
 
 
-#define __USE_OPENGL_DEBUG__
+//#define __USE_OPENGL_DEBUG__
 
 #define YGLDEBUG
 //#define YGLDEBUG printf
@@ -1185,6 +1185,8 @@ int YglGenerateScreenBuffer(){
   float col[4] = {0.0f,0.0f,0.0f,0.0f};
 
   YGLDEBUG("YglGenerateScreenBuffer: %d,%d\n", _Ygl->rwidth, _Ygl->rheight);
+
+  //RBGGenerator_resize(_Ygl->rwidth, _Ygl->rheight);
 
   if (_Ygl->screen_fbotex[0] != 0) {
     glDeleteTextures(SPRITE,&_Ygl->screen_fbotex[0]);
@@ -2588,10 +2590,11 @@ int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache *
 
     tmp = (texturecoordinate_struct *)(program->textcoords + (program->currentQuad * 2));
     program->currentQuad += 12;
+
     tmp[0].s = tmp[3].s = tmp[5].s = 0;
-    tmp[1].s = tmp[2].s = tmp[4].s = (float)(input->cellw);
+    tmp[1].s = tmp[2].s = tmp[4].s = (float)(rbg->hres);
     tmp[0].t = tmp[1].t = tmp[3].t = 0;
-    tmp[2].t = tmp[4].t = tmp[5].t = (float)(input->cellh);
+    tmp[2].t = tmp[4].t = tmp[5].t = (float)(rbg->vres);
     //tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0;
     //tmp[0].q = tmp[1].q = tmp[2].q = tmp[3].q = tmp[4].q = tmp[5].q = 0;
 

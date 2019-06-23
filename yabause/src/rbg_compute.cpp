@@ -204,7 +204,7 @@ SHADER_VERSION_COMPUTE
 
 " vec4 vdp2color(uint alpha_, uint prio, uint cc_on, uint index) {\n"
 " uint ret = (((alpha_ & 0xF8u) | prio) << 24 | ((cc_on & 0x1u)<<16) | (index& 0xFEFFFFu));\n"
-" return vec4(float((ret >> 24)&0xFFu)/255.0,float((ret >> 16)&0xFFu)/255.0, float((ret >> 8)&0xFFu)/255.0, float((ret >> 0)&0xFFu)/255.0);"
+" return vec4(float((ret >> 0)&0xFFu)/255.0,float((ret >> 8)&0xFFu)/255.0, float((ret >> 16)&0xFFu)/255.0, float((ret >> 24)&0xFFu)/255.0);"
 "\n}"
 
 
@@ -2254,6 +2254,7 @@ public:
 	// uniform.window_area_mode = rbg->info.WindwAreaMode;
 	uniform.alpha = rbg->info.alpha;
 	uniform.priority = rbg->info.priority;
+
 	if (Vdp2Internal.ColorMode < 2) {
 		uniform.cram_shift = 1;
 	}
