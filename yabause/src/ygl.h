@@ -727,6 +727,7 @@ typedef struct {
   vdp2rotationparameter_struct  paraA;
   vdp2rotationparameter_struct  paraB;
   Vdp2 *varVdp2Regs;
+  int use_cs;
 } RBGDrawInfo;
 
 int YglInit(int, int, unsigned int);

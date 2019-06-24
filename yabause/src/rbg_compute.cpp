@@ -582,7 +582,8 @@ const char prg_generate_rbg_end[] =
 const char prg_generate_rbg_line_end[] =
 "  cramindex |= 0x8000u;\n"
 "  uint line_color = 0u;\n"
-"  if( lineaddr != 0xFFFFFFFFu && lineaddr != 0u ) line_color = ((lineaddr & 0x7Fu) | 0x80u);"
+"  if( lineaddr != 0xFFFFFFFFu && lineaddr != 0u ) line_color = ((lineaddr & 0x7Fu) | 0x80u);\n"
+"  cramindex |= (line_color << 16);\n"
 "  imageStore(outSurface,texel,vdp2color(alpha, priority, cc, cramindex));\n"
 "}\n";
 
@@ -988,7 +989,7 @@ class RBGGenerator{
   GLuint prg_rbg_3_2w_p2_32bpp_line_ = 0;
 
   GLuint tex_surface_ = 0;
-  GLuint tex_surface_1 = -1;
+  GLuint tex_surface_1 = 0;
   GLuint ssbo_vram_ = 0;
   GLuint ssbo_cram_ = 0;
   GLuint ssbo_window_ = 0;
@@ -1137,7 +1138,7 @@ public:
 
   glGenBuffers(1, &scene_uniform);
   glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
-  glBufferData(GL_UNIFORM_BUFFER, sizeof(RBGDrawInfo), &uniform, GL_DYNAMIC_DRAW);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(RBGUniform), &uniform, GL_DYNAMIC_DRAW);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	// glGenBuffers(1, &ssbo_window_);
@@ -2273,31 +2274,17 @@ public:
 	uniform.endLine = rbg->info.endLine;
 
   glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RBGDrawInfo), (void*)&uniform);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RBGUniform), (void*)&uniform);
 	ErrorHandle("glBufferSubData");
   glBindBufferBase(GL_UNIFORM_BUFFER, 3, scene_uniform);
 
 	if (rbg->rgb_type == 0x04  ) {
-		if (tex_surface_1 == 0) {
-			glGenTextures(1, &tex_surface_1);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, tex_surface_1);
-			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-			ErrorHandle("glBindTexture");
-			glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, tex_width_, tex_height_);
-			ErrorHandle("glTexStorage2D");
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			ErrorHandle("glTexParameteri");
-		}
-		else {
-			glBindImageTexture(0, tex_surface_1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-			ErrorHandle("glBindImageTexture 1");
-		}
+		printf("Draw RBG1\n");
+		glBindImageTexture(0, tex_surface_1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		ErrorHandle("glBindImageTexture 1");
 	}
 	else {
+		printf("Draw RBG0\n");
 		glBindImageTexture(0, tex_surface_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 		ErrorHandle("glBindImageTexture 0");
 	}
