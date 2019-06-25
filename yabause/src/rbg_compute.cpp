@@ -606,9 +606,11 @@ const char prg_rbg_getcolor_16bpp_palette[] =
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot) >> 8 & 0xFF) | ((dot) & 0xFF) << 8);\n"
 "  if ( dot == 0 && transparencyenable != 0 ) { \n"
-"    cramindex = 0u; \n"
+"    discarded = 1; \n"
 "  } else {\n"
 "    cramindex = (coloroffset + dot);\n"
+"    priority_ = Vdp2SetSpecialPriority(dot);\n"
+"    cc = setCCOn(cramindex, dot);\n"
 "  }\n";
 
 const char prg_rbg_getcolor_16bpp_rbg[] =
@@ -619,9 +621,10 @@ const char prg_rbg_getcolor_16bpp_rbg[] =
 "  if( (dotaddr & 0x02u) != 0u ) { dot >>= 16; } \n"
 "  dot = (((dot >> 8) & 0xFFu) | ((dot) & 0xFFu) << 8);\n"
 "  if ( (dot&0x8000u) == 0u && transparencyenable != 0 ) { \n"
-"    cramindex = 0u; \n"
+"    discarded = 1; \n"
 "  } else {\n"
 "    cramindex = (dot & 0x1Fu) << 3 | (dot & 0x3E0u) << 6 | (dot & 0x7C00u) << 9;\n"
+"    cc = setCCOn(cramindex, dot);\n"
 "  }\n";
 
 
@@ -632,8 +635,9 @@ const char prg_rbg_getcolor_32bpp_rbg[] =
 "  dot = vram[dotaddr>>2]; \n"
 "  dot = ((dot&0xFF000000u) >> 24 | ((dot >> 8) & 0xFF00u) | ((dot) & 0xFF00u) << 8 | (dot&0x000000FFu) << 24);\n"
 "  if ( (dot&0x80000000u) == 0u && transparencyenable != 0 ) { \n"
-"    cramindex = 0u; \n"
+"    discarded = 1; \n"
 "  } else {\n"
+"    cc = setCCOn(cramindex, dot);\n"
 "    cramindex = dot & 0x00FFFFFFu;\n"
 "  }\n";
 
