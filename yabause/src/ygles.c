@@ -2591,12 +2591,18 @@ int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache *
     tmp = (texturecoordinate_struct *)(program->textcoords + (program->currentQuad * 2));
     program->currentQuad += 12;
 
-    tmp[0].s = tmp[3].s = tmp[5].s = (float)(rbg->vres* input->startLine)/(float)(yabsys.VBlankLineCount);
-    tmp[1].s = tmp[2].s = tmp[4].s = (float)(rbg->hres);
-    tmp[0].t = tmp[1].t = tmp[3].t = 0;
-    tmp[2].t = tmp[4].t = tmp[5].t = (float)(rbg->vres* input->endLine)/(float)(yabsys.VBlankLineCount);
-    //tmp[0].r = tmp[1].r = tmp[2].r = tmp[3].r = tmp[4].r = tmp[5].r = 0;
-    //tmp[0].q = tmp[1].q = tmp[2].q = tmp[3].q = tmp[4].q = tmp[5].q = 0;
+    tmp[0].s = 0;
+    tmp[0].t = (rbg->vres * rbg->info.startLine)/yabsys.VBlankLineCount;
+    tmp[1].s = rbg->hres;
+    tmp[1].t = (rbg->vres * rbg->info.startLine)/yabsys.VBlankLineCount;
+    tmp[2].s = rbg->hres;
+    tmp[2].t = (rbg->vres * rbg->info.endLine)/yabsys.VBlankLineCount;
+    tmp[3].s = 0;
+    tmp[3].t = (rbg->vres * rbg->info.startLine)/yabsys.VBlankLineCount;
+    tmp[4].s = rbg->hres;
+    tmp[4].t = (rbg->vres * rbg->info.endLine)/yabsys.VBlankLineCount;
+    tmp[5].s = 0;
+    tmp[5].t = (rbg->vres * rbg->info.endLine)/yabsys.VBlankLineCount;
 
     // glActiveTexture(GL_TEXTURE0);
     // glBindTexture(GL_TEXTURE_2D, RBGGenerator_getTexture(program->interuput_texture));

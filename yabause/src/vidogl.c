@@ -2933,13 +2933,18 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
   rbg->paraA.over_pattern_name = varVdp2Regs->OVPNRA;
   rbg->paraB.over_pattern_name = varVdp2Regs->OVPNRB;
 
+
+  rbg->info.cellw = rbg->hres;
+  rbg->info.cellh = (rbg->vres * (info->endLine - info->startLine))/yabsys.VBlankLineCount;
+  rbg->info.celly = (rbg->vres * info->startLine)/yabsys.VBlankLineCount;
+
   if (rbg->use_cs) {
 
 	  if (info->LineColorBase != 0) {
 		  const float vstep = 1.0;
 		  j = 0.0f;
       int lvres = rbg->vres;
-      if (vres >= 480) {
+      if (rbg->vres >= 480) {
         lvres >>= 1;
       }
 		  for (int jj = 0; jj < lvres; jj++) {
@@ -2947,7 +2952,7 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
 				  rbg->LineColorRamAdress = T1ReadWord(Vdp2Ram, info->LineColorBase + lineInc*(int)(j));
 				  *line_texture->textdata = rbg->LineColorRamAdress | (linecl << 24);
 				  line_texture->textdata++;
-          if (vres >= 480) {
+          if (rbg->vres >= 480) {
             *line_texture->textdata = rbg->LineColorRamAdress | (linecl << 24);
             line_texture->textdata++;
           }
@@ -3273,9 +3278,6 @@ static void Vdp2DrawRotation_in_sync(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs) {
     texture->textdata += texture->w;
     }
 
-    rbg->info.cellw = rbg->hres;
-    rbg->info.cellh = (rbg->vres * (info->endLine - info->startLine))/yabsys.VBlankLineCount;
-    rbg->info.celly = (rbg->vres * info->startLine)/yabsys.VBlankLineCount;
     rbg->info.flipfunction = 0;
 
     LOG_AREA("%d %d %d\n", rbg->info.cellw, rbg->info.cellh, rbg->info.celly);
