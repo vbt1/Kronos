@@ -26,7 +26,7 @@ extern "C"{
 
 #define YGLDEBUG
 
-#define DEBUGWIP printf
+#define DEBUGWIP
 
 const char prg_generate_rbg[] =
 SHADER_VERSION_COMPUTE
@@ -277,7 +277,6 @@ SHADER_VERSION_COMPUTE
 "    uint cc_ = 1u;\n"
 "    switch (specialcolormode)\n"
 "    {\n"
-//Changer alpha avec cc suivant Vdp2GetCCOn
 "    case 1:\n"
 "      if (specialcolorfunction == 0) { cc_ = 0; } break;\n"
 "    case 2:\n"
