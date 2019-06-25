@@ -337,7 +337,7 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
 				ygles.c
 				yglshaderes.c
         upscale_shader.c
-				rbg_compute.cpp												
+				rbg_compute.cpp
 			)
 		endif()
         include(FindGLEW)

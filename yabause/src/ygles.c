@@ -2576,8 +2576,8 @@ int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache *
   // vtxa = (program->vertexAttribute + (program->currentQuad * 2));
   // memset(vtxa,0,sizeof(float)*24);
 
-  if (_Ygl->rbg_use_compute_shader) {
-
+  if (rbg->use_cs) {
+// printf("(%f %f) (%f %f) (%f %f) (%f %f)\n", input->vertices[0],input->vertices[1],input->vertices[2],input->vertices[3],input->vertices[4],input->vertices[5],input->vertices[6],input->vertices[7]);
     if (varVdp2Regs == NULL) {
       printf("varVdp2Regs is NULL %d\n", __LINE__);
       abort();
