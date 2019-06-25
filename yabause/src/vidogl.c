@@ -2722,15 +2722,19 @@ static void FASTCALL Vdp2DrawRotation(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs)
     linecl = ((~varVdp2Regs->CCRLB & 0x1F) << 3);
   }
 
-
-  if (vdp2height >= 448) lineInc <<= 1;
-  if (vdp2height >= 448) rbg->vres = (vdp2height >> 1);
-  else rbg->vres = vdp2height;
-  if (vdp2width >= 640) rbg->hres = (vdp2width >> 1);
-  else rbg->hres = vdp2width;
-
   if (rbg->use_cs) {
+    if (vdp2height >= 448) lineInc <<= 1;
+    if (vdp2height >= 448) rbg->vres = (_Ygl->height >> 1);
+    else rbg->vres = _Ygl->height;
+    if (vdp2width >= 640) rbg->hres = (_Ygl->width >> 1);
+    else rbg->hres = _Ygl->width;
 	  RBGGenerator_init(rbg->hres, rbg->vres);
+  } else {
+    if (vdp2height >= 448) lineInc <<= 1;
+    if (vdp2height >= 448) rbg->vres = (vdp2height >> 1);
+    else rbg->vres = vdp2height;
+    if (vdp2width >= 640) rbg->hres = (vdp2width >> 1);
+    else rbg->hres = vdp2width;
   }
 
   info->vertices[0] = 0;

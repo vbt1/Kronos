@@ -311,9 +311,9 @@ SHADER_VERSION_COMPUTE
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
-"  if (texel.y < startLine || texel.y >= endLine ) return;\n"
 "  float posx = float(texel.x) * hres_scale;\n"
-"  float posy = float(texel.y) * vres_scale;\n";
+"  float posy = float(texel.y) * vres_scale;\n"
+"  if (posy < startLine || posy >= endLine ) return;\n";
 
 const char prg_rbg_rpmd0_2w[] =
 "  paramid = 0; \n"
@@ -2459,8 +2459,8 @@ DEBUGWIP("Init\n");
 	ErrorHandle("glBufferSubData");
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_paraA_);
 
-	uniform.hres_scale = 1.0;
-	uniform.vres_scale = 1.0;
+	uniform.hres_scale = (float)_Ygl->rheight/(float)_Ygl->height;
+	uniform.vres_scale = (float)_Ygl->rwidth/(float)_Ygl->width;
 	uniform.cellw = rbg->info.cellw;
 	uniform.cellh = rbg->info.cellh;
 	uniform.paladdr_ = rbg->info.paladdr;

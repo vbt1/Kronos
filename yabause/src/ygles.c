@@ -3993,7 +3993,6 @@ void setupMaxSize() {
 
   if ((_Ygl->rwidth != 0) && (_Ygl->width > GlWidth)) _Ygl->width = _Ygl->rwidth * (GlWidth/_Ygl->rwidth + 1);
   if ((_Ygl->rheight != 0) && (_Ygl->height > GlHeight)) _Ygl->height = _Ygl->rheight * (GlHeight/_Ygl->rheight + 1);
-
   if (oldWidth != _Ygl->width) rebuild_frame_buffer = 1;
   if (oldHeight != _Ygl->height) rebuild_frame_buffer = 1;
 }
