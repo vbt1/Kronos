@@ -354,6 +354,7 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
 				yglcache.c
 				ygles.c
 				yglshaderes.c
+				rbg_compute.cpp
                                 upscale_shader.c )
 		endif()
 	endif(OPENGL_FOUND)

@@ -812,6 +812,12 @@ int YglSetupWindow(YglProgram * prg);
 void YglEraseWriteVDP1();
 void YglFrameChangeVDP1();
 
+extern void RBGGenerator_init(int width, int height);
+extern void RBGGenerator_resize(int width, int height);
+extern void RBGGenerator_update(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs );
+extern GLuint RBGGenerator_getTexture( int id );
+extern void RBGGenerator_onFinish();
+
 
 // Keep a way to switch to gles shaders for embedded devices
 #if defined(_OGLES3_)
