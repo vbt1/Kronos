@@ -7331,6 +7331,25 @@ void VIDOGLSetSettingValueMode(int type, int value) {
       _Ygl->polygonmode = value;
     }
   break;
+  case VDP_SETTING_COMPUTE_SHADER:
+    if (value == COMPUTE_RBG_ON && _Ygl->rbg_use_compute_shader != COMPUTE_RBG_ON) {
+      int maj, min;
+      glGetIntegerv(GL_MAJOR_VERSION, &maj);
+      glGetIntegerv(GL_MINOR_VERSION, &min);
+#if defined(_OGLES3_)
+      if ((maj >=3) && (min >=1)) {
+#else
+      if ((maj >=4) && (min >=3)) {
+#endif
+          _Ygl->rbg_use_compute_shader = value;
+      } else {
+        YuiMsg("Compute shader usage is not possible - fallback on CPU tesselation\n");
+        _Ygl->rbg_use_compute_shader = COMPUTE_RBG_OFF;
+      }
+    } else {
+      _Ygl->rbg_use_compute_shader = value;
+    }
+  break;
   case VDP_SETTING_ASPECT_RATIO:
     _Ygl->stretch = value;
   break;

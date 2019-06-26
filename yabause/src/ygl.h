@@ -465,6 +465,12 @@ typedef enum
 
 typedef enum
 {
+    COMPUTE_RBG_OFF = 0,
+    COMPUTE_RBG_ON,
+} COMPUTESHADERMODE;
+
+typedef enum
+{
     ORIGINAL_MESH = 0,
     IMPROVED_MESH
 } MESHMODE;
@@ -492,7 +498,8 @@ typedef enum {
     VDP_SETTING_UPSCALMODE,
     VDP_SETTING_ASPECT_RATIO,
     VDP_SETTING_SCANLINE,
-    VDP_SETTING_MESH_MODE
+    VDP_SETTING_MESH_MODE,
+    VDP_SETTING_COMPUTE_SHADER
 } enSettings;
 
 

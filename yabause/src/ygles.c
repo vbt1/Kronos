@@ -1398,7 +1398,7 @@ int YglInit(int width, int height, unsigned int depth) {
   _Ygl->rheight = 240;
   _Ygl->density = 1;
   _Ygl->resolution_mode = 1;
-  _Ygl->rbg_use_compute_shader = 1;
+  _Ygl->rbg_use_compute_shader = 0;
 
   initLevels(&_Ygl->vdp2levels, SPRITE);
   initLevels(&_Ygl->vdp1levels, 2);
