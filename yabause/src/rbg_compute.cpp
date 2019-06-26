@@ -171,14 +171,14 @@ SHADER_VERSION_COMPUTE
 "  return 0;\n"
 " }\n"
 
-"bool isWindowInside(int x, int y) {\n"
+"bool isWindowInside(uint x, uint y)\n"
 "{\n"
-"  int upLx = rotWin[y] & 0xFFFF;\n"
-"  int upRx = (rotWin[y] >> 16) & 0xFFFF;\n"
+"  uint upLx = rotWin[y] & 0xFFFFu;\n"
+"  uint upRx = (rotWin[y] >> 16) & 0xFFFFu;\n"
 "  // inside\n"
 "  if (window_area_mode == 1)\n"
 "  {\n"
-"    if (rotWin[y] == 0) return false;\n"
+"    if (rotWin[y] == 0u) return false;\n"
 "    if (x >= upLx && x <= upRx)\n"
 "    {\n"
 "      return true;\n"
@@ -189,7 +189,7 @@ SHADER_VERSION_COMPUTE
 "    // outside\n"
 "  }\n"
 "  else {\n"
-"    if (rotWin[y] == 0) return true;\n"
+"    if (rotWin[y] == 0u) return true;\n"
 "    if (x < upLx) return true;\n"
 "    if (x > upRx) return true;\n"
 "    return false;\n"
@@ -346,7 +346,7 @@ const char prg_rbg_rpmd2_2w[] =
 
 
 const char prg_get_param_mode03[] =
-"  if( isWindowInside( int(posx), int(posy) ) ) { "
+"  if( isWindowInside( uint(posx), uint(posy) ) ) { "
 "    paramid = 0; \n"
 "    if( para[paramid].coefenab != 0 ){ \n"
 "      if( GetKValue(paramid,posx,posy,ky,lineaddr ) == -1 ) { \n"
@@ -2456,9 +2456,11 @@ DEBUGWIP("Init\n");
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, 0x800, NULL, GL_DYNAMIC_DRAW);
 	}
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x800, (void*)rbg->info.RotWin);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssbo_rotwin_);
+	if (rbg->info.RotWin != NULL) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x800, (void*)rbg->info.RotWin);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssbo_rotwin_);
+  }
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraA);
