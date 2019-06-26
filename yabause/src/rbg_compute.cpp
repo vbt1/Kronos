@@ -118,7 +118,7 @@ SHADER_VERSION_COMPUTE
 "  int specialcolorfunction;\n"
 "  uint specialcode;\n"
 "  int colornumber;\n"
-// "  int window_area_mode;"
+"  int window_area_mode;"
 "  uint alpha;\n"
 "  uint priority;\n"
 "  int cram_shift;\n"
@@ -137,6 +137,7 @@ SHADER_VERSION_COMPUTE
 // "  vdp2WindowInfo pWinInfo[];\n"
 // "};\n"
 "layout(std430, binding = 5) readonly buffer VDP2C { uint cram[]; };\n"
+"layout(std430, binding = 6) readonly buffer ROTW { uint  rotWin[]; };\n"
 " int GetKValue( int paramid, float posx, float posy, out float ky, out uint lineaddr ){ \n"
 "  uint kdata;\n"
 "  int kindex = int( ceil(para[paramid].deltaKAst*posy+(para[paramid].deltaKAx*posx)) ); \n"
@@ -892,12 +893,12 @@ struct RBGUniform {
     specialcolormode = 0;
     specialcolorfunction=0;
     specialcode=0;
-	//window_area_mode = 0;
-	alpha = 0;
-	priority = 0;
-	cram_shift = 1;
-	startLine = 0;
-	endLine = 0;
+		window_area_mode = 0;
+		alpha = 0;
+		priority = 0;
+		cram_shift = 1;
+		startLine = 0;
+		endLine = 0;
   }
   float hres_scale;
   float vres_scale;
@@ -918,7 +919,7 @@ struct RBGUniform {
   int specialcolorfunction;
   unsigned int specialcode;
   int colornumber;
-//  int window_area_mode;
+  int window_area_mode;
   unsigned int alpha;
   unsigned int priority;
   int cram_shift;
@@ -1061,6 +1062,7 @@ class RBGGenerator{
   GLuint tex_surface_1 = 0;
   GLuint ssbo_vram_ = 0;
   GLuint ssbo_cram_ = 0;
+	GLuint ssbo_rotwin_ = 0;
   GLuint ssbo_window_ = 0;
   GLuint ssbo_paraA_ = 0;
   int tex_width_ = 0;
@@ -2449,6 +2451,15 @@ DEBUGWIP("Init\n");
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssbo_cram_);
 	}
 
+	if (ssbo_rotwin_ == 0) {
+		glGenBuffers(1, &ssbo_rotwin_);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 0x800, NULL, GL_DYNAMIC_DRAW);
+	}
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x800, (void*)rbg->info.RotWin);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssbo_rotwin_);
+
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraA);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size_, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraB);
@@ -2474,7 +2485,7 @@ DEBUGWIP("Init\n");
   uniform.specialcolorfunction = rbg->info.specialcolorfunction;
   uniform.specialcode = rbg->info.specialcode;
 	uniform.colornumber = rbg->info.colornumber;
-	// uniform.window_area_mode = rbg->info.WindwAreaMode;
+	uniform.window_area_mode = rbg->info.RotWinMode;
 	uniform.alpha = rbg->info.alpha;
 	uniform.priority = rbg->info.priority;
 
