@@ -338,6 +338,7 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
 				yglshaderes.c
         upscale_shader.c
 				rbg_compute.cpp
+				vdp2_compute.cpp
 			)
 		endif()
         include(FindGLEW)
@@ -355,6 +356,7 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
 				ygles.c
 				yglshaderes.c
 				rbg_compute.cpp
+				vdp2_compute.cpp
                                 upscale_shader.c )
 		endif()
 	endif(OPENGL_FOUND)

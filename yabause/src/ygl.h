@@ -826,6 +826,8 @@ extern void RBGGenerator_update(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs );
 extern GLuint RBGGenerator_getTexture( int id );
 extern void RBGGenerator_onFinish();
 
+extern void VDP2Generator_update(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs);
+
 
 // Keep a way to switch to gles shaders for embedded devices
 #if defined(_OGLES3_)

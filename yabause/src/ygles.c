@@ -3484,6 +3484,9 @@ void YglRender(Vdp2 *varVdp2Regs) {
    glDisable(GL_DEPTH_TEST);
    glDisable(GL_BLEND);
 
+  if (_Ygl->rbg_use_compute_shader != 0)
+    VDP2Generator_init(_Ygl->width, _Ygl->height);
+
 #if 0
    if ( (varVdp2Regs->CCCTL & 0x400) != 0 ) {
      printf("Extended Color calculation!\n");
@@ -3653,8 +3656,10 @@ void YglRender(Vdp2 *varVdp2Regs) {
   glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
   glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
 
-  YglBlitTexture( _Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
-
+  if (_Ygl->rbg_use_compute_shader == 0)
+    YglBlitTexture( _Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
+  else
+    VDP2Generator_update(_Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
 
     //if((img[0] == 0) && (img[1] == 0) && (img[2] == 0)) { // Break doom...
       //if (Vdp1External.disptoggle & 0x01) YglRenderFrameBuffer(0, 8, varVdp2Regs);
