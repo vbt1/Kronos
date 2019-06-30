@@ -1186,7 +1186,7 @@ int YglGenerateScreenBuffer(){
 
   YGLDEBUG("YglGenerateScreenBuffer: %d,%d\n", _Ygl->rwidth, _Ygl->rheight);
 
-  //RBGGenerator_resize(_Ygl->rwidth, _Ygl->rheight);
+  VDP2Generator_resize(_Ygl->width, _Ygl->height);
 
   if (_Ygl->screen_fbotex[0] != 0) {
     glDeleteTextures(SPRITE,&_Ygl->screen_fbotex[0]);
