@@ -34,8 +34,8 @@ SHADER_VERSION_COMPUTE
 "precision highp float; \n"
 "#endif\n"
 "layout(local_size_x = 4, local_size_y = 4) in;\n"
-"layout(rgba8, binding = 0) writeonly highp uniform image2D outSurface;\n"
-"layout(std140, binding = 1) uniform VDP2DrawInfo { \n"
+"layout(rgba8, binding = 14) writeonly highp uniform image2D outSurface;\n"
+"layout(std140, binding = 15) uniform VDP2DrawInfo { \n"
 "  int u_lncl[7];  \n"
 "  float u_emu_height;\n"
 "  float u_vheight; \n"
@@ -48,20 +48,20 @@ SHADER_VERSION_COMPUTE
 "  int extended_cc; \n"
 "  int use_cc_win; \n"
 "};\n"
-"layout(binding = 2) uniform sampler2D s_back;  \n"
-"layout(binding = 3) uniform sampler2D s_lncl;  \n"
-"layout(binding = 4) uniform sampler2D s_cc_win;  \n"
-"layout(binding = 5) uniform sampler2D s_vdp2reg; \n"
-"layout(binding = 6) uniform sampler2D s_vdp1FrameBuffer;\n"
-"layout(binding = 7) uniform sampler2D s_vdp1FrameBufferAttr;\n"
-"layout(binding = 8) uniform sampler2D s_color; \n"
-"layout(binding = 9) uniform sampler2D s_line; \n"
-"layout(binding = 10) uniform sampler2D s_texture0;  \n"
-"layout(binding = 11) uniform sampler2D s_texture1;  \n"
-"layout(binding = 12) uniform sampler2D s_texture2;  \n"
-"layout(binding = 13) uniform sampler2D s_texture3;  \n"
-"layout(binding = 14) uniform sampler2D s_texture4;  \n"
-"layout(binding = 15) uniform sampler2D s_texture5;  \n"
+"layout(binding = 0) uniform sampler2D s_texture0;  \n"
+"layout(binding = 1) uniform sampler2D s_texture1;  \n"
+"layout(binding = 2) uniform sampler2D s_texture2;  \n"
+"layout(binding = 3) uniform sampler2D s_texture3;  \n"
+"layout(binding = 4) uniform sampler2D s_texture4;  \n"
+"layout(binding = 5) uniform sampler2D s_texture5;  \n"
+"layout(binding = 7) uniform sampler2D s_back;  \n"
+"layout(binding = 8) uniform sampler2D s_lncl;  \n"
+"layout(binding = 9) uniform sampler2D s_vdp1FrameBuffer;\n"
+"layout(binding = 10) uniform sampler2D s_vdp1FrameBufferAttr;\n"
+"layout(binding = 11) uniform sampler2D s_color; \n"
+"layout(binding = 12) uniform sampler2D s_vdp2reg; \n"
+"layout(binding = 13) uniform sampler2D s_cc_win;  \n"
+
 //"layout(std430, binding = 5) readonly buffer VDP2C { uint cram[]; };\n"
 //"layout(std430, binding = 6) readonly buffer ROTW { uint  rotWin[]; };\n";
 "vec4 finalColor;\n"
@@ -646,79 +646,146 @@ static const char vdp2blit_end_f[] =" }\n"
 "}\n";
 
 
-const GLchar * a_prg_vdp2_composer[] = {
-	vdp2blit_start_f,
-	Yglprg_vdp2_drawfb_cram_no_color_col_f,
-	Yglprg_vdp2_drawfb_cram_epiloge_none_f,
-	vdp2blit_end_f
+const GLchar * a_prg_vdp2_composer[20][4] = {
+	{
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_no_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_none_f,
+		vdp2blit_end_f
+  }, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_no_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_as_is_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_no_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_src_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_no_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_dst_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_less_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_none_f,
+		vdp2blit_end_f
+  }, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_less_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_as_is_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_less_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_src_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_less_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_dst_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_equal_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_none_f,
+		vdp2blit_end_f
+  }, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_equal_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_as_is_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_equal_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_src_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_equal_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_dst_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_more_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_none_f,
+		vdp2blit_end_f
+  }, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_more_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_as_is_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_more_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_src_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_more_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_dst_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_msb_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_none_f,
+		vdp2blit_end_f
+  }, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_msb_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_as_is_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_msb_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_src_alpha_f,
+		vdp2blit_end_f
+	}, {
+		vdp2blit_start_f,
+		Yglprg_vdp2_drawfb_cram_msb_color_col_f,
+		Yglprg_vdp2_drawfb_cram_epiloge_dst_alpha_f,
+		vdp2blit_end_f
+	}
 };
 
-struct VDP2Uniform {
-  VDP2Uniform() {
-    pagesize = 0;
-    patternshift = 0;
-    planew = 0;
-    pagewh = 0;
-    patterndatasize = 0;
-    supplementdata = 0;
-    auxmode = 0;
-    patternwh = 0;
-    coloroffset = 0;
-    transparencyenable = 0;
-    specialcolormode = 0;
-    specialcolorfunction=0;
-    specialcode=0;
-		window_area_mode = 0;
-		alpha = 0;
-		priority = 0;
-		cram_shift = 1;
-		startLine = 0;
-		endLine = 0;
+struct VDP2DrawInfo {
+  VDP2DrawInfo() {
+		int u_lncl[7] = {0};
+		float u_emu_height = 0;
+		float u_vheight = 0;
+		int fbon = 0;
+		int screen_nb = 0;
+		int mode[7] = {0};
+		int isRGB[6] = {0};
+		int isBlur[7] = {0};
+		int ram_mode = 0;
+		int extended_cc = 0;
+		int use_cc_win = 0;
   }
-  float hres_scale;
-  float vres_scale;
-  int cellw;
-  int cellh;
-  int paladdr_;
-  int pagesize;
-  int patternshift;
-  int planew;
-  int pagewh;
-  int patterndatasize;
-  int supplementdata;
-  int auxmode;
-  int patternwh;
-  unsigned int coloroffset;
-  int transparencyenable;
-  int specialcolormode;
-  int specialcolorfunction;
-  unsigned int specialcode;
-  int colornumber;
-  int window_area_mode;
-  unsigned int alpha;
-  unsigned int priority;
-  int cram_shift;
-	int startLine;
-	int endLine;
-	unsigned int specialprimode;
-	unsigned int specialfunction;
+	int u_lncl[7];
+	float u_emu_height;
+	float u_vheight;
+	int fbon;
+	int screen_nb;
+	int mode[7];
+	int isRGB[6];
+	int isBlur[7];
+	int ram_mode;
+	int extended_cc;
+	int use_cc_win;
 };
 
 class VDP2Generator{
-  GLuint prg_vdp2_composer = 0;
+  GLuint prg_vdp2_composer[20] = {0};
 
   GLuint tex_surface_ = 0;
-  GLuint tex_surface_1 = 0;
-  GLuint ssbo_vram_ = 0;
-  GLuint ssbo_cram_ = 0;
-	GLuint ssbo_rotwin_ = 0;
-  GLuint ssbo_window_ = 0;
-  GLuint ssbo_paraA_ = 0;
   int tex_width_ = 0;
   int tex_height_ = 0;
   static VDP2Generator * instance_;
   GLuint scene_uniform = 0;
-  VDP2Uniform uniform;
+  VDP2DrawInfo uniform;
   int struct_size_;
 
   void * mapped_vram = nullptr;
@@ -728,11 +795,6 @@ protected:
     tex_surface_ = 0;
     tex_width_ = 0;
     tex_height_ = 0;
-	struct_size_ = sizeof(vdp2rotationparameter_struct);
-	int am = sizeof(vdp2rotationparameter_struct) % 16;
-	if (am != 0) {
-		struct_size_ += 16 - am;
-	}
   }
 
 public:
@@ -773,26 +835,6 @@ public:
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	ErrorHandle("glTexParameteri");
-
-	if (tex_surface_1 != 0) {
-		glDeleteTextures(1, &tex_surface_1);
-	}
-	glGenTextures(1, &tex_surface_1);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, tex_surface_1);
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-	ErrorHandle("glBindTexture");
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_width_, tex_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, tex_width_, tex_height_);
-	ErrorHandle("glTexStorage2D");
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	ErrorHandle("glTexParameteri");
-
-	YGLDEBUG("resize tex_surface_=%d, tex_surface_1=%d\n",tex_surface_,tex_surface_1);
-
   }
 
   GLuint createProgram(int count, const GLchar** prg_strs) {
@@ -845,33 +887,24 @@ public:
   //-----------------------------------------------
   void init( int width, int height ) {
 
-	resize(width,height);
-	if (ssbo_vram_ != 0) return; // always inisialized!
+		if (scene_uniform != 0) return; // always inisialized!
 
-DEBUGWIP("Init\n");
+	  DEBUGWIP("Init\n");
 
-  glGenBuffers(1, &ssbo_vram_);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, 0x100000,(void*)Vdp2Ram,GL_DYNAMIC_DRAW);
+	  glGenBuffers(1, &scene_uniform);
+	  glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
+	  glBufferData(GL_UNIFORM_BUFFER, sizeof(VDP2DrawInfo), &uniform, GL_DYNAMIC_DRAW);
+	  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-  glGenBuffers(1, &ssbo_paraA_);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, struct_size_*2, NULL, GL_DYNAMIC_DRAW);
-
-  glGenBuffers(1, &scene_uniform);
-  glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
-  glBufferData(GL_UNIFORM_BUFFER, sizeof(VDP2Uniform), &uniform, GL_DYNAMIC_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	// glGenBuffers(1, &ssbo_window_);
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_window_);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vdp2WindowInfo)*512, NULL, GL_DYNAMIC_DRAW);
-
-	prg_vdp2_composer = createProgram(sizeof(a_prg_vdp2_composer) / sizeof(char*), (const GLchar**)a_prg_vdp2_composer);
+    for (int i=0; i<20; i++) {
+			//printf("i %d %d\n", i, sizeof(a_prg_vdp2_composer[i]) / sizeof(char*));
+			prg_vdp2_composer[i] = createProgram(sizeof(a_prg_vdp2_composer[i]) / sizeof(char*), (const GLchar**)a_prg_vdp2_composer[i]);
+		}
   }
 
   bool ErrorHandle(const char* name)
   {
+  #ifdef DEBUG
     GLenum   error_code = glGetError();
     if (error_code == GL_NO_ERROR) {
       return  true;
@@ -891,6 +924,9 @@ DEBUGWIP("Init\n");
       error_code = glGetError();
     } while (error_code != GL_NO_ERROR);
     return  false;
+	#else
+	  return true;
+	#endif
   }
 
   template<typename T>
@@ -904,134 +940,117 @@ DEBUGWIP("Init\n");
 #define COMPILE_COLOR_DOT( BASE, COLOR , DOT )
 #define S(A) A, sizeof(A)/sizeof(char*)
 
+  int getProgramId(int mode, Vdp2 *varVdp2Regs) {
+		int pgid = 0;
+
+		const int SPCCN = ((varVdp2Regs->CCCTL >> 6) & 0x01); // hard/vdp2/hon/p12_14.htm#NxCCEN_
+		const int CCRTMD = ((varVdp2Regs->CCCTL >> 9) & 0x01); // hard/vdp2/hon/p12_14.htm#CCRTMD_
+		const int CCMD = ((varVdp2Regs->CCCTL >> 8) & 0x01);  // hard/vdp2/hon/p12_14.htm#CCMD_
+		const int SPLCEN = (varVdp2Regs->LNCLEN & 0x20); // hard/vdp2/hon/p11_30.htm#NxLCEN_
+
+		if ( SPCCN ) {
+			const int SPCCCS = (varVdp2Regs->SPCTL >> 12) & 0x3;
+			switch (SPCCCS)
+			{
+				case 0:
+					pgid = 4;
+					break;
+				case 1:
+					pgid = 8;
+					break;
+				case 2:
+					pgid = 12;
+					break;
+				case 3:
+					pgid = 16;
+					break;
+		 	}
+	 	}
+	 	pgid += mode-NONE;
+
+	 	return pgid;
+	}
 
 	void update( YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs) {
-#if 0
+
     GLuint error;
     int local_size_x = 4;
     int local_size_y = 4;
+	  int nbScreen = 6;
 
     int work_groups_x = 1 + (tex_width_ - 1) / local_size_x;
     int work_groups_y = 1 + (tex_height_ - 1) / local_size_y;
 
+		int gltext[14] = {GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3, GL_TEXTURE4, GL_TEXTURE5, GL_TEXTURE6, GL_TEXTURE7, GL_TEXTURE8, GL_TEXTURE9, GL_TEXTURE10, GL_TEXTURE11, GL_TEXTURE12, GL_TEXTURE13};
+
     error = glGetError();
 
-    DEBUGWIP("prog %d\n", __LINE__);glUseProgram(prg_vdp2_composer);
+	  DEBUGWIP("prog %d\n", __LINE__);
+		glUseProgram(prg_vdp2_composer[getProgramId(getSpriteRenderMode(varVdp2Regs), varVdp2Regs)]);
 
-	ErrorHandle("glUseProgram");
+		ErrorHandle("glUseProgram");
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-  //glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp2Ram);
-  if(mapped_vram == nullptr) mapped_vram = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-  memcpy(mapped_vram, Vdp2Ram, 0x100000);
-  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-  mapped_vram = nullptr;
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_vram_);
-  ErrorHandle("glBindBufferBase");
+		memcpy(&uniform.u_lncl[0],lncl, 7*sizeof(int));
+		memcpy(&uniform.mode[0], modescreens, 7*sizeof(int));
+		memcpy(&uniform.isRGB[0], isRGB, 6*sizeof(int));
+		memcpy(&uniform.isBlur[0], isBlur, 7*sizeof(int));
+		uniform.u_emu_height = (float)_Ygl->rheight / (float)_Ygl->rheight;
+		uniform.u_vheight = (float)_Ygl->rheight;
+		uniform.fbon =  (_Ygl->vdp1On[_Ygl->readframe] != 0);
+		uniform.ram_mode = Vdp2Internal.ColorMode;
+		uniform.extended_cc = ((varVdp2Regs->CCCTL & 0x400) != 0);
+		uniform.use_cc_win = (_Ygl->use_cc_win != 0);
 
-	if (rbg->info.specialcolormode == 3 || rbg->paraA.k_mem_type != 0 || rbg->paraB.k_mem_type != 0 ) {
-		if (ssbo_cram_ == 0) {
-			glGenBuffers(1, &ssbo_cram_);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cram_);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, 0x1000, NULL, GL_DYNAMIC_DRAW);
-		}
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cram_);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x1000, (void*)Vdp2ColorRam);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssbo_cram_);
-	}
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_2D, vdp1fb[0]);
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_2D, vdp1fb[1]);
 
-	if (ssbo_rotwin_ == 0) {
-		glGenBuffers(1, &ssbo_rotwin_);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, 0x800, NULL, GL_DYNAMIC_DRAW);
-	}
-	if (rbg->info.RotWin != NULL) {
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_rotwin_);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x800, (void*)rbg->info.RotWin);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ssbo_rotwin_);
-  }
+		if (_Ygl->use_cc_win != 0) {
+	    glActiveTexture(GL_TEXTURE13);
+	    glBindTexture(GL_TEXTURE_2D, _Ygl->window_cc_fbotex);
+	  }
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_paraA_);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraA);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size_, sizeof(vdp2rotationparameter_struct), (void*)&rbg->paraB);
-	ErrorHandle("glBufferSubData");
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_paraA_);
+		int id = 0;
+	  for (int i=0; i<nbScreen; i++) {
+	    if (prioscreens[i] != 0) {
+	      glActiveTexture(gltext[i]);
+	      glBindTexture(GL_TEXTURE_2D, prioscreens[i]);
+	      id++;
+	    }
+	  }
+	  uniform.screen_nb = id;
 
-	uniform.hres_scale = (float)_Ygl->rheight/(float)_Ygl->height;
-	uniform.vres_scale = (float)_Ygl->rwidth/(float)_Ygl->width;
-	uniform.cellw = rbg->info.cellw;
-	uniform.cellh = rbg->info.cellh;
-	uniform.paladdr_ = rbg->info.paladdr;
-  uniform.pagesize = rbg->pagesize;
-  uniform.patternshift = rbg->patternshift;
-  uniform.planew = rbg->info.planew;
-  uniform.pagewh = rbg->info.pagewh;
-  uniform.patterndatasize = rbg->info.patterndatasize;
-  uniform.supplementdata = rbg->info.supplementdata;
-  uniform.auxmode = rbg->info.auxmode;
-  uniform.patternwh = rbg->info.patternwh;
-  uniform.coloroffset = rbg->info.coloroffset;
-  uniform.transparencyenable = rbg->info.transparencyenable;
-  uniform.specialcolormode = rbg->info.specialcolormode;
-  uniform.specialcolorfunction = rbg->info.specialcolorfunction;
-  uniform.specialcode = rbg->info.specialcode;
-	uniform.colornumber = rbg->info.colornumber;
-	uniform.window_area_mode = rbg->info.RotWinMode;
-	uniform.alpha = rbg->info.alpha;
-	uniform.priority = rbg->info.priority;
+	  glActiveTexture(gltext[7]);
+	  glBindTexture(GL_TEXTURE_2D, _Ygl->back_fbotex[0]);
 
-	if (Vdp2Internal.ColorMode < 2) {
-		uniform.cram_shift = 1;
-	}
-	else {
-		uniform.cram_shift = 2;
-	}
+	  glActiveTexture(gltext[8]);
+	  glBindTexture(GL_TEXTURE_2D, _Ygl->lincolor_tex);
 
-	uniform.startLine = rbg->info.startLine;
-	uniform.endLine = rbg->info.endLine;
-	uniform.specialprimode = rbg->info.specialprimode;
-	uniform.specialfunction = rbg->info.specialfunction;
+		glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VDP2DrawInfo), (void*)&uniform);
+		ErrorHandle("glBufferSubData");
+		glBindBufferBase(GL_UNIFORM_BUFFER, 15, scene_uniform);
 
-  glBindBuffer(GL_UNIFORM_BUFFER, scene_uniform);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(VDP2Uniform), (void*)&uniform);
-	ErrorHandle("glBufferSubData");
-  glBindBufferBase(GL_UNIFORM_BUFFER, 3, scene_uniform);
-
-	if (rbg->rgb_type == 0x04  ) {
-		DEBUGWIP("Draw RBG1\n");
-		glBindImageTexture(0, tex_surface_1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-		ErrorHandle("glBindImageTexture 1");
-	}
-	else {
 		DEBUGWIP("Draw RBG0\n");
-		glBindImageTexture(0, tex_surface_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		glBindImageTexture(14, tex_surface_, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 		ErrorHandle("glBindImageTexture 0");
-	}
 
-  glDispatchCompute(work_groups_x, work_groups_y, 1);
-	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-  ErrorHandle("glDispatchCompute");
+	  glDispatchCompute(work_groups_x, work_groups_y, 1);
+		// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	  ErrorHandle("glDispatchCompute");
 
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	#endif
+	  glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
   //-----------------------------------------------
   GLuint getTexture( int id ) {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		if (id == 1) {
-			return tex_surface_;
-		}
-		return tex_surface_1;
+		return tex_surface_;
   }
 
   //-----------------------------------------------
   void onFinish() {
-    if ( ssbo_vram_ != 0 && mapped_vram == nullptr) {
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-      mapped_vram = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 0x100000, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0 );
-    }
   }
 
 };
