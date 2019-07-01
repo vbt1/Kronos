@@ -963,10 +963,10 @@ public:
 		uniform.extended_cc = ((varVdp2Regs->CCCTL & 0x400) != 0);
 		uniform.use_cc_win = (_Ygl->use_cc_win != 0);
 
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE7);
 	  glBindTexture(GL_TEXTURE_2D, _Ygl->back_fbotex[0]);
 
-	  glActiveTexture(GL_TEXTURE7);
+	  glActiveTexture(GL_TEXTURE8);
 	  glBindTexture(GL_TEXTURE_2D, _Ygl->lincolor_tex);
 
 		glActiveTexture(GL_TEXTURE9);
