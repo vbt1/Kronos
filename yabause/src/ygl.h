@@ -600,6 +600,8 @@ typedef struct {
    GLuint original_fbo;
    GLuint original_fbotex[NB_RENDER_LAYER];
 
+   GLuint compute_tex;
+
    GLuint back_fbo;
    GLuint back_fbotex[2];
 
@@ -671,7 +673,6 @@ typedef struct {
    GLsync syncVdp1[2];
    GLuint default_fbo;
    YglPerLineInfo bg[enBGMAX];
-   u32 targetfbo;
    int vpd1_running;
    int needVdp1Render;
    GLint m_viewport[4];
@@ -826,7 +827,7 @@ extern void RBGGenerator_update(RBGDrawInfo * rbg, Vdp2 *varVdp2Regs );
 extern GLuint RBGGenerator_getTexture( int id );
 extern void RBGGenerator_onFinish();
 
-extern void VDP2Generator_update(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs);
+extern void VDP2Generator_update(int tex, YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs);
 
 
 // Keep a way to switch to gles shaders for embedded devices

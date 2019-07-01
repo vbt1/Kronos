@@ -1077,7 +1077,12 @@ int YglGenFrameBuffer() {
     abort();
   }
 
-  YglGenerateOriginalBuffer();
+  if (_Ygl->rbg_use_compute_shader == 1) {
+    YglGenerateComputeBuffer();
+  } else {
+    YglGenerateOriginalBuffer();
+  }
+
   YglGenerateBackBuffer();
   YglGenerateWindowBuffer();
   YglGenerateWindowCCBuffer();
@@ -1268,6 +1273,22 @@ static int YglGenerateBackBuffer(){
 }
 
 //////////////////////////////////////////////////////////////////////////////
+int YglGenerateComputeBuffer() {
+  if (_Ygl->compute_tex != 0) {
+    glDeleteTextures(1,&_Ygl->compute_tex);
+  }
+  glGenTextures(1, &_Ygl->compute_tex);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, _Ygl->compute_tex);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex_width_, tex_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, _Ygl->width, _Ygl->height);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  return 0;
+}
 int YglGenerateOriginalBuffer(){
 
   int status;
@@ -3520,30 +3541,26 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
    YglGenFrameBuffer();
 
-   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
-   glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
-   glClearBufferfv(GL_COLOR, 0, col);
+  if (_Ygl->rbg_use_compute_shader == 0) {
+    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
+    glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
+    glClearBufferfv(GL_COLOR, 0, col);
 #ifdef DEBUG_BLIT
-   glClearBufferfv(GL_COLOR, 1, col);
-   glClearBufferfv(GL_COLOR, 2, col);
-   glClearBufferfv(GL_COLOR, 3, col);
-   glClearBufferfv(GL_COLOR, 4, col);
+    glClearBufferfv(GL_COLOR, 1, col);
+    glClearBufferfv(GL_COLOR, 2, col);
+    glClearBufferfv(GL_COLOR, 3, col);
+    glClearBufferfv(GL_COLOR, 4, col);
 #endif
-   if ((Vdp2Regs->TVMD & 0x8000) == 0) goto render_finish;
-
-   _Ygl->targetfbo = _Ygl->original_fbo;
+  }
    glDepthMask(GL_FALSE);
-
    glViewport(0, 0, _Ygl->rwidth, _Ygl->rheight);
-
    glGetIntegerv( GL_VIEWPORT, _Ygl->m_viewport );
-
    glScissor(0, 0, _Ygl->rwidth, _Ygl->rheight);
    glEnable(GL_SCISSOR_TEST);
 
    //glClearBufferfv(GL_COLOR, 0, colopaque);
    //glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
-
+   if ((Vdp2Regs->TVMD & 0x8000) == 0) goto render_finish;
    if (YglTM_vdp2 == NULL) goto render_finish;
    glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -3652,27 +3669,16 @@ void YglRender(Vdp2 *varVdp2Regs) {
     VDP1fb = &_Ygl->vdp1FrameBuff[_Ygl->readframe*2];
   }
 
-  glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
-  glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
-  glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
-
-  if (_Ygl->rbg_use_compute_shader == 0)
+  if (_Ygl->rbg_use_compute_shader == 0) {
+    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
+    glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
+    glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
     YglBlitTexture( _Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
-  else
-    VDP2Generator_update(_Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
-
-    //if((img[0] == 0) && (img[1] == 0) && (img[2] == 0)) { // Break doom...
-      //if (Vdp1External.disptoggle & 0x01) YglRenderFrameBuffer(0, 8, varVdp2Regs);
-      srcTexture = _Ygl->original_fbotex[0];
-    //} else {
-     // if (nbPass > 1) {
-     //   YglBlitImage(img, varVdp2Regs);
-     //   srcTexture = _Ygl->original_fbotex;
-     // } else {
-    //    srcTexture = _Ygl->original_fbotex;
-     // }
-    //}
-
+    srcTexture = _Ygl->original_fbotex[0];
+  } else {
+    VDP2Generator_update(_Ygl->compute_tex, _Ygl->bg, prioscreens, modescreens, isRGB, isBlur, lncl_draw, VDP1fb, varVdp2Regs);
+    srcTexture = _Ygl->compute_tex;
+  }
    glViewport(x, y, w, h);
    glScissor(x, y, w, h);
    glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
