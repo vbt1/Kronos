@@ -947,7 +947,7 @@ public:
     int work_groups_x = 1 + (tex_width_ - 1) / local_size_x;
     int work_groups_y = 1 + (tex_height_ - 1) / local_size_y;
 
-		int gltext[9] = {GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3, GL_TEXTURE4, GL_TEXTURE5, GL_TEXTURE6, GL_TEXTURE7, GL_TEXTURE8};
+		int gltext[6] = {GL_TEXTURE0, GL_TEXTURE1, GL_TEXTURE2, GL_TEXTURE3, GL_TEXTURE4, GL_TEXTURE5};
 
     error = glGetError();
 
@@ -967,10 +967,19 @@ public:
 		uniform.extended_cc = ((varVdp2Regs->CCCTL & 0x400) != 0);
 		uniform.use_cc_win = (_Ygl->use_cc_win != 0);
 
+		glActiveTexture(GL_TEXTURE6);
+	  glBindTexture(GL_TEXTURE_2D, _Ygl->back_fbotex[0]);
+
+	  glActiveTexture(GL_TEXTURE7);
+	  glBindTexture(GL_TEXTURE_2D, _Ygl->lincolor_tex);
+
 		glActiveTexture(GL_TEXTURE9);
 		glBindTexture(GL_TEXTURE_2D, vdp1fb[0]);
 		glActiveTexture(GL_TEXTURE10);
 		glBindTexture(GL_TEXTURE_2D, vdp1fb[1]);
+
+		glActiveTexture(GL_TEXTURE11);
+	  glBindTexture(GL_TEXTURE_2D, _Ygl->cram_tex);
 
 		glActiveTexture(GL_TEXTURE12);
 	  glBindTexture(GL_TEXTURE_2D, _Ygl->vdp2reg_tex);
@@ -989,13 +998,6 @@ public:
 	    }
 	  }
 	  uniform.screen_nb = id;
-
-	  glActiveTexture(gltext[7]);
-	  glBindTexture(GL_TEXTURE_2D, _Ygl->back_fbotex[0]);
-
-	  glActiveTexture(gltext[8]);
-	  glBindTexture(GL_TEXTURE_2D, _Ygl->lincolor_tex);
-
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, scene_uniform);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, struct_size_, (void*)&uniform);
