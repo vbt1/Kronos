@@ -855,17 +855,10 @@ public:
 
 		if (scene_uniform != 0) return; // always inisialized!
 
-	  printf("Init %d %d\n", sizeof(VDP2DrawInfo), struct_size_);
-
 		glGenBuffers(1, &scene_uniform);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, scene_uniform);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, struct_size_, NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    for (int i=0; i<20; i++) {
-			//printf("i %d %d\n", i, sizeof(a_prg_vdp2_composer[i]) / sizeof(char*));
-			prg_vdp2_composer[i] = createProgram(sizeof(a_prg_vdp2_composer[i]) / sizeof(char*), (const GLchar**)a_prg_vdp2_composer[i]);
-		}
   }
 
   bool ErrorHandle(const char* name)
@@ -952,7 +945,10 @@ public:
     error = glGetError();
 
 	  DEBUGWIP("prog %d\n", __LINE__);
-		glUseProgram(prg_vdp2_composer[getProgramId(getSpriteRenderMode(varVdp2Regs), varVdp2Regs)]);
+		int progId = getProgramId(getSpriteRenderMode(varVdp2Regs), varVdp2Regs);
+		if (prg_vdp2_composer[progId] == 0)
+			prg_vdp2_composer[progId] = createProgram(sizeof(a_prg_vdp2_composer[progId]) / sizeof(char*), (const GLchar**)a_prg_vdp2_composer[progId]);
+		glUseProgram(prg_vdp2_composer[progId]);
 
 		ErrorHandle("glUseProgram");
 
