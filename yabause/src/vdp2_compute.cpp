@@ -59,7 +59,7 @@ SHADER_VERSION_COMPUTE
 "layout(binding = 9) uniform sampler2D s_vdp1FrameBuffer;\n"
 "layout(binding = 10) uniform sampler2D s_vdp1FrameBufferAttr;\n"
 "layout(binding = 11) uniform sampler2D s_color; \n"
-"layout(binding = 12) uniform sampler2D s_vdp2reg; \n"
+"layout(std430, binding = 12) readonly buffer VDP2reg { int s_vdp2reg[]; }; \n"
 "layout(binding = 13) uniform sampler2D s_cc_win;  \n"
 
 "vec4 finalColor;\n"
@@ -100,7 +100,9 @@ SHADER_VERSION_COMPUTE
 "  int prio; \n"
 "  int meshPrio;\n"
 "}; \n"
-
+"float getVdp2RegAsFloat(int id) {\n"
+"  return float(s_vdp2reg[id])/255.0;\n"
+"};\n"
 "FBCol getFB(int x, vec2 texcoord){ \n"
 "  FBCol ret;\n"
 "  ret.color = vec4(0.0);\n"
@@ -115,13 +117,13 @@ SHADER_VERSION_COMPUTE
 "  vec4 tmpColor = vec4(0.0);\n"
 "  vec4 tmpmeshColor = vec4(0.0);\n"
 "  int line = int((u_vheight-texel.y) * u_emu_height)*24;\n"
-"  vec3 u_coloroffset = vec3(texelFetch(s_vdp2reg, ivec2(17 + line,0), 0).r, texelFetch(s_vdp2reg, ivec2(18+line,0), 0).r, texelFetch(s_vdp2reg, ivec2(19+line,0), 0).r);\n"
-"  vec3 u_coloroffset_sign = vec3(texelFetch(s_vdp2reg, ivec2(20 + line, 0), 0).r, texelFetch(s_vdp2reg, ivec2(21+line,0), 0).r, texelFetch(s_vdp2reg, ivec2(22+line,0), 0).r);\n"
+"  vec3 u_coloroffset = vec3(getVdp2RegAsFloat(17 + line), getVdp2RegAsFloat(18 + line), getVdp2RegAsFloat(19 + line));\n"
+"  vec3 u_coloroffset_sign = vec3(getVdp2RegAsFloat(20 + line), getVdp2RegAsFloat(21 + line), getVdp2RegAsFloat(22 + line));\n"
 "  if (u_coloroffset_sign.r != 0.0) u_coloroffset.r = float(int(u_coloroffset.r*255.0)-256.0)/255.0;\n"
 "  if (u_coloroffset_sign.g != 0.0) u_coloroffset.g = float(int(u_coloroffset.g*255.0)-256.0)/255.0;\n"
 "  if (u_coloroffset_sign.b != 0.0) u_coloroffset.b = float(int(u_coloroffset.b*255.0)-256.0)/255.0;\n"
-"  int u_color_ram_offset = int(texelFetch(s_vdp2reg, ivec2(23+line,0), 0).r*255.0)<<8;\n"
-"  int u_cctl = int(texelFetch(s_vdp2reg, ivec2(16+line,0), 0).r*255.0);\n"
+"  int u_color_ram_offset = s_vdp2reg[23+line]<<8;\n"
+"  int u_cctl = s_vdp2reg[16+line];\n"
 "  int additional = int(fbColor.a * 255.0);\n"
 "  int additionalAttr = int(fbColorAttr.a * 255.0);\n"
 "  int additionalAlpha = int(fbColorAttr.r * 255.0);\n"
@@ -129,8 +131,8 @@ SHADER_VERSION_COMPUTE
 "  int prinumber = (additional&0x07); \n"
 "  int primesh = additionalAttr&0x7;\n"
 "  int tmpmeshprio = 0;\n"
-"  int depth = int(texelFetch(s_vdp2reg, ivec2(prinumber+8+line,0), 0).r*255.0);\n"
-"  int alpha = int(texelFetch(s_vdp2reg, ivec2(((additional>>3)&0x07)+line,0), 0).r*255.0)<<3; \n"
+"  int depth = s_vdp2reg[prinumber+8+line];\n"
+"  int alpha = s_vdp2reg[((additional>>3)&0x07)+line]<<3; \n"
 "  int opaque = 0xF8;\n"
 "  int tmpmesh = 0;\n"
 "  int msb = int(fbColor.b*255.0)&0x1;\n"
@@ -156,7 +158,7 @@ SHADER_VERSION_COMPUTE
 "          ret.meshColor.a = fbColor.a;\n"
 "          ret.mesh = 1;\n"
 "        }\n"
-"        ret.meshPrio = int(texelFetch(s_vdp2reg, ivec2(primesh+8+line,0), 0).r*255.0);\n"
+"        ret.meshPrio = s_vdp2reg[primesh+8+line];\n"
 "        return ret; \n"
 "      } // hard/vdp1/hon/p02_11.htm 0 data is ignoerd \n"
 "      if( colindex != 0 || prinumber != 0) {\n"
@@ -181,7 +183,7 @@ SHADER_VERSION_COMPUTE
 "      vdp1mode = 5;\n"
 "      fbmode = 0;\n"
 "    } else { \n"
-"      if (int(texelFetch(s_vdp2reg, ivec2((additionalAttr & 0x7)+8+line,0), 0).r*255.0)-1 == depth) {\n"
+"      if (s_vdp2reg[(additionalAttr & 0x7)+8+line]-1 == depth) {\n"
 "        tmpColor.rgb = tmpColor.rgb * 0.5;\n"
 "      }\n"
 "    }\n"
@@ -200,7 +202,7 @@ SHADER_VERSION_COMPUTE
 "      }\n"
 "    }\n"
 "    tmpmeshColor.a = fbColor.a;\n"
-"    tmpmeshprio = int(texelFetch(s_vdp2reg, ivec2(primesh+8+line,0), 0).r*255.0);"
+"    tmpmeshprio = s_vdp2reg[primesh+8+line];"
 "    tmpmesh = 1;\n"
 "  }\n"
 "  if (fbmode != 0) {\n";
@@ -769,6 +771,7 @@ class VDP2Generator{
   int tex_height_ = 0;
   static VDP2Generator * instance_;
   GLuint scene_uniform = 0;
+	GLuint ssbo_vdp2reg_ = 0;
   VDP2DrawInfo uniform;
 	int struct_size_;
 
@@ -777,6 +780,7 @@ protected:
     tex_width_ = 0;
     tex_height_ = 0;
 		scene_uniform = 0;
+		ssbo_vdp2reg_ = 0;
 		struct_size_ = sizeof(VDP2DrawInfo);
 		int am = sizeof(VDP2DrawInfo) % 4;
 		if (am != 0) {
@@ -859,7 +863,13 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, scene_uniform);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, struct_size_, NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-  }
+
+		glGenBuffers(1, &ssbo_vdp2reg_);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp2reg_);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 512*sizeof(int)*NB_VDP2_REG,(void*)YglGetVDP2RegPointer(), GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	}
 
   bool ErrorHandle(const char* name)
   {
@@ -977,9 +987,15 @@ public:
 		glActiveTexture(GL_TEXTURE11);
 	  glBindTexture(GL_TEXTURE_2D, _Ygl->cram_tex);
 
+#if 0
 		glActiveTexture(GL_TEXTURE12);
 	  glBindTexture(GL_TEXTURE_2D, _Ygl->vdp2reg_tex);
-
+#else
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp2reg_);
+		u8* vdp2buf = YglGetVDP2RegPointer();
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 512*sizeof(int)*NB_VDP2_REG,(void*)vdp2buf);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, ssbo_vdp2reg_);
+#endif
 		if (_Ygl->use_cc_win != 0) {
 	    glActiveTexture(GL_TEXTURE13);
 	    glBindTexture(GL_TEXTURE_2D, _Ygl->window_cc_fbotex);
@@ -1021,25 +1037,25 @@ VDP2Generator * VDP2Generator::instance_ = nullptr;
 
 extern "C" {
   void VDP2Generator_init(int width, int height) {
-    if (_Ygl->rbg_use_compute_shader == 0) return;
+    if (_Ygl->vdp2_use_compute_shader == 0) return;
 
     VDP2Generator * instance = VDP2Generator::getInstance();
     instance->init( width, height);
   }
   void VDP2Generator_resize(int width, int height) {
-    if (_Ygl->rbg_use_compute_shader == 0) return;
+    if (_Ygl->vdp2_use_compute_shader == 0) return;
     YGLDEBUG("VDP2Generator_resize\n");
 	  VDP2Generator * instance = VDP2Generator::getInstance();
 	  instance->resize(width, height);
   }
   void VDP2Generator_update(int tex, YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs ) {
-    if (_Ygl->rbg_use_compute_shader == 0) return;
+    if (_Ygl->vdp2_use_compute_shader == 0) return;
     VDP2Generator * instance = VDP2Generator::getInstance();
     instance->update(tex, bg, prioscreens, modescreens, isRGB, isBlur, lncl, vdp1fb, varVdp2Regs);
   }
   void VDP2Generator_onFinish() {
 
-    if (_Ygl->rbg_use_compute_shader == 0) return;
+    if (_Ygl->vdp2_use_compute_shader == 0) return;
     VDP2Generator * instance = VDP2Generator::getInstance();
     instance->onFinish();
   }

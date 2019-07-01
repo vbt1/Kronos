@@ -654,7 +654,7 @@ typedef struct {
 
    u32 vdp2reg_tex;
    u32 vdp2reg_pbo;
-   u8 * vdp2reg_buf;
+   u8* vdp2reg_buf;
    u8 * vdp2buf;
 
    u32 back_tex;
@@ -709,6 +709,7 @@ typedef struct {
    int vdp1_stencil_mode;
 
    int rbg_use_compute_shader;
+   int vdp2_use_compute_shader;
 
 } Ygl;
 
@@ -773,6 +774,8 @@ int YglSetLevelBlendmode( int pri, int mode );
 extern int YglBlitSimple(int texture, int blend);
 extern int YglBlitTexture(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* isRGB, int * isBlur, int* lncl, GLuint* vdp1fb, Vdp2 *varVdp2Regs);
 extern SpriteMode getSpriteRenderMode(Vdp2* varVdp2Regs);
+
+extern u8 * YglGetVDP2RegPointer();
 
 int Ygl_uniformVDP2DrawFramebuffer( void * p, float * offsetcol, SpriteMode mode, Vdp2* varVdp2Regs);
 

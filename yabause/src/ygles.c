@@ -1077,7 +1077,7 @@ int YglGenFrameBuffer() {
     abort();
   }
 
-  if (_Ygl->rbg_use_compute_shader == 1) {
+  if (_Ygl->vdp2_use_compute_shader == 1) {
     YglGenerateComputeBuffer();
   } else {
     YglGenerateOriginalBuffer();
@@ -1388,7 +1388,17 @@ void initLevels(YglLevel** levels, int size) {
     }
   }
 }
-
+static int getVdp2CSUsage(int maj, int min) {
+#ifndef VDP2_BLIT_CS
+  return 0;
+#endif
+  #if defined(_OGLES3_)
+      if ((maj >=3) && (min >=1)) return 1;
+  #else
+      if ((maj >=4) && (min >=3))  return 1;
+  #endif
+  return 0;
+}
 //////////////////////////////////////////////////////////////////////////////
 int YglInit(int width, int height, unsigned int depth) {
   unsigned int i,j;
@@ -1420,6 +1430,7 @@ int YglInit(int width, int height, unsigned int depth) {
   _Ygl->density = 1;
   _Ygl->resolution_mode = 1;
   _Ygl->rbg_use_compute_shader = 0;
+  _Ygl->vdp2_use_compute_shader = getVdp2CSUsage(maj, min);
 
   initLevels(&_Ygl->vdp2levels, SPRITE);
   initLevels(&_Ygl->vdp1levels, 2);
@@ -1504,7 +1515,7 @@ int YglInit(int width, int height, unsigned int depth) {
   _Ygl->vdp1fb_exactbuf[0] = (u8*)malloc(512*704*2);
   _Ygl->vdp1fb_exactbuf[1] = (u8*)malloc(512*704*2);
 
-  _Ygl->vdp2buf = (u8*)malloc(512 * NB_VDP2_REG);
+  _Ygl->vdp2buf = (u32*)malloc(512 * sizeof(int)* NB_VDP2_REG);
 
   _Ygl->smallfbo = 0;
   _Ygl->smallfbotex = 0;
@@ -3162,6 +3173,7 @@ static void updateColorOffset(Vdp2 *varVdp2Regs) {
 }
 
 u8 * YglGetVDP2RegPointer(){
+if (_Ygl->vdp2_use_compute_shader == 0) {
   int error;
   if (_Ygl->vdp2reg_tex == 0){
     glGenTextures(1, &_Ygl->vdp2reg_tex);
@@ -3183,65 +3195,69 @@ u8 * YglGetVDP2RegPointer(){
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->vdp2reg_pbo);
   _Ygl->vdp2reg_buf = (u8 *)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, 512 * NB_VDP2_REG, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
-  return _Ygl->vdp2reg_buf;
+} else {
+  if (_Ygl->vdp2reg_buf == NULL) _Ygl->vdp2reg_buf = (u32*)malloc(512 * NB_VDP2_REG * sizeof(int));
+}
+  return (u8*)_Ygl->vdp2reg_buf;
 }
 
 void YglSetVDP2Reg(u32 * pbuf, int start, int size){
-
-  glBindTexture(GL_TEXTURE_2D, _Ygl->vdp2reg_tex);
-  //if (_Ygl->lincolor_buf == pbuf) {
+  if (_Ygl->vdp2_use_compute_shader == 0) {
+    glBindTexture(GL_TEXTURE_2D, _Ygl->vdp2reg_tex);
+    //if (_Ygl->lincolor_buf == pbuf) {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _Ygl->vdp2reg_pbo);
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     glTexSubImage2D(GL_TEXTURE_2D, 0, NB_VDP2_REG * start, 0, NB_VDP2_REG * size, 1, GL_RED, GL_UNSIGNED_BYTE, 0);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     _Ygl->vdp2reg_buf = NULL;
   //}
-  glBindTexture(GL_TEXTURE_2D, 0 );
+    glBindTexture(GL_TEXTURE_2D, 0 );
+  }
   return;
 }
 
 void YglUpdateVdp2Reg() {
   int needupdate = 0;
+  int size = (_Ygl->vdp2_use_compute_shader == 0)?sizeof(char):sizeof(int);
   int step = ((Vdp2Lines[0].TVMD >> 6) & 0x3 == 3)?2:1;
   for (int i = 0; i<_Ygl->rheight; i++) {
     Vdp2 *varVdp2Regs = &Vdp2Lines[i/step];
-    u8 bufline[NB_VDP2_REG] = {0};
+    u8 bufline[NB_VDP2_REG*4] = {0};
     updateColorOffset(varVdp2Regs);
 
-    bufline[S0CCRT] = (0x1F - ((varVdp2Regs->CCRSA >> 0) & 0x1F));
-    bufline[S1CCRT] = (0x1F - ((varVdp2Regs->CCRSA >> 8) & 0x1F));
-    bufline[S2CCRT] = (0x1F - ((varVdp2Regs->CCRSB >> 0) & 0x1F));
-    bufline[S3CCRT] = (0x1F - ((varVdp2Regs->CCRSB >> 8) & 0x1F));
-    bufline[S4CCRT] = (0x1F - ((varVdp2Regs->CCRSC >> 0) & 0x1F));
-    bufline[S5CCRT] = (0x1F - ((varVdp2Regs->CCRSC >> 8) & 0x1F));
-    bufline[S6CCRT] = (0x1F - ((varVdp2Regs->CCRSD >> 0) & 0x1F));
-    bufline[S7CCRT] = (0x1F - ((varVdp2Regs->CCRSD >> 8) & 0x1F));
-    bufline[S0PRI] = ((varVdp2Regs->PRISA >> 0) & 0x7);
-    bufline[S1PRI] = ((varVdp2Regs->PRISA >> 8) & 0x7);
-    bufline[S2PRI] = ((varVdp2Regs->PRISB >> 0) & 0x7);
-    bufline[S3PRI] = ((varVdp2Regs->PRISB >> 8) & 0x7);
-    bufline[S4PRI] = ((varVdp2Regs->PRISC >> 0) & 0x7);
-    bufline[S5PRI] = ((varVdp2Regs->PRISC >> 8) & 0x7);
-    bufline[S6PRI] = ((varVdp2Regs->PRISD >> 0) & 0x7);
-    bufline[S7PRI] = ((varVdp2Regs->PRISD >> 8) & 0x7);
-    bufline[SPCC] = ((varVdp2Regs->SPCTL >> 8) & 0x07);
-    bufline[VDP1COR] = vdp1cor & 0xFF;
-    bufline[VDP1COG] = vdp1cog & 0xFF;
-    bufline[VDP1COB] = vdp1cob & 0xFF;
-    bufline[VDP1CORS] = (vdp1cor >> 8) & 0xFF;
-    bufline[VDP1COGS] = (vdp1cog >> 8) & 0xFF;
-    bufline[VDP1COBS] = (vdp1cob >> 8) & 0xFF;
-    bufline[CRAOFB] = ((varVdp2Regs->CRAOFB>>4) & 0x7);
+    bufline[S0CCRT*size] = (0x1F - ((varVdp2Regs->CCRSA >> 0) & 0x1F));
+    bufline[S1CCRT*size] = (0x1F - ((varVdp2Regs->CCRSA >> 8) & 0x1F));
+    bufline[S2CCRT*size] = (0x1F - ((varVdp2Regs->CCRSB >> 0) & 0x1F));
+    bufline[S3CCRT*size] = (0x1F - ((varVdp2Regs->CCRSB >> 8) & 0x1F));
+    bufline[S4CCRT*size] = (0x1F - ((varVdp2Regs->CCRSC >> 0) & 0x1F));
+    bufline[S5CCRT*size] = (0x1F - ((varVdp2Regs->CCRSC >> 8) & 0x1F));
+    bufline[S6CCRT*size] = (0x1F - ((varVdp2Regs->CCRSD >> 0) & 0x1F));
+    bufline[S7CCRT*size] = (0x1F - ((varVdp2Regs->CCRSD >> 8) & 0x1F));
+    bufline[S0PRI*size] = ((varVdp2Regs->PRISA >> 0) & 0x7);
+    bufline[S1PRI*size] = ((varVdp2Regs->PRISA >> 8) & 0x7);
+    bufline[S2PRI*size] = ((varVdp2Regs->PRISB >> 0) & 0x7);
+    bufline[S3PRI*size] = ((varVdp2Regs->PRISB >> 8) & 0x7);
+    bufline[S4PRI*size] = ((varVdp2Regs->PRISC >> 0) & 0x7);
+    bufline[S6PRI*size] = ((varVdp2Regs->PRISD >> 0) & 0x7);
+    bufline[S5PRI*size] = ((varVdp2Regs->PRISC >> 8) & 0x7);
+    bufline[SPCC*size] = ((varVdp2Regs->SPCTL >> 8) & 0x07);
+    bufline[S7PRI*size] = ((varVdp2Regs->PRISD >> 8) & 0x7);
+    bufline[VDP1COR*size] = vdp1cor & 0xFF;
+    bufline[VDP1COG*size] = vdp1cog & 0xFF;
+    bufline[VDP1COB*size] = vdp1cob & 0xFF;
+    bufline[VDP1CORS*size] = (vdp1cor >> 8) & 0xFF;
+    bufline[VDP1COGS*size] = (vdp1cog >> 8) & 0xFF;
+    bufline[VDP1COBS*size] = (vdp1cob >> 8) & 0xFF;
+    bufline[CRAOFB*size] = ((varVdp2Regs->CRAOFB>>4) & 0x7);
 
-    if (memcmp(bufline, &_Ygl->vdp2buf[i*NB_VDP2_REG], NB_VDP2_REG) != 0){
+    if (memcmp(bufline, &_Ygl->vdp2buf[i*NB_VDP2_REG*size], NB_VDP2_REG*size) != 0){
       needupdate = 1;
-      memcpy(&_Ygl->vdp2buf[i*NB_VDP2_REG], bufline, NB_VDP2_REG);
+      memcpy(&_Ygl->vdp2buf[i*NB_VDP2_REG*size], bufline, NB_VDP2_REG*size);
     }
   }
   if (needupdate) {
       u8 * pbuf = YglGetVDP2RegPointer();
-      memcpy(pbuf, _Ygl->vdp2buf, _Ygl->rheight*NB_VDP2_REG);
+      memcpy(pbuf, _Ygl->vdp2buf, _Ygl->rheight*size*NB_VDP2_REG);
       YglSetVDP2Reg(pbuf, 0, _Ygl->rheight);
       needupdate = 0;
   }
@@ -3505,7 +3521,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
    glDisable(GL_DEPTH_TEST);
    glDisable(GL_BLEND);
 
-  if (_Ygl->rbg_use_compute_shader != 0)
+  if (_Ygl->vdp2_use_compute_shader != 0)
     VDP2Generator_init(_Ygl->width, _Ygl->height);
 
 #if 0
@@ -3541,7 +3557,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
    YglGenFrameBuffer();
 
-  if (_Ygl->rbg_use_compute_shader == 0) {
+  if (_Ygl->vdp2_use_compute_shader == 0) {
     glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
     glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
     glClearBufferfv(GL_COLOR, 0, col);
@@ -3669,7 +3685,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
     VDP1fb = &_Ygl->vdp1FrameBuff[_Ygl->readframe*2];
   }
 
-  if (_Ygl->rbg_use_compute_shader == 0) {
+  if (_Ygl->vdp2_use_compute_shader == 0) {
     glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
     glDrawBuffers(NB_RENDER_LAYER, &DrawBuffers[0]);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
