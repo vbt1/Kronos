@@ -639,7 +639,6 @@ typedef struct {
    YglMatrix mtxModelView;
 
    YglProgram windowpg;
-   YglProgram renderfb;
 
    YglLevel * vdp1levels;
    YglLevel * vdp2levels;
@@ -777,7 +776,7 @@ extern SpriteMode getSpriteRenderMode(Vdp2* varVdp2Regs);
 
 extern u8 * YglGetVDP2RegPointer();
 
-int Ygl_uniformVDP2DrawFramebuffer( void * p, float * offsetcol, SpriteMode mode, Vdp2* varVdp2Regs);
+int Ygl_uniformVDP2DrawFramebuffer(float * offsetcol, SpriteMode mode, Vdp2* varVdp2Regs);
 
 void YglScalef(YglMatrix *result, GLfloat sx, GLfloat sy, GLfloat sz);
 void YglTranslatef(YglMatrix *result, GLfloat tx, GLfloat ty, GLfloat tz);
