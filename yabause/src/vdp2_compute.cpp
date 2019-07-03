@@ -24,9 +24,9 @@ extern "C"{
 #include "vidshared.h"
 }
 
-#define YGLDEBUG
+#define YGLDEBUG printf
 
-#define DEBUGWIP
+#define DEBUGWIP printf
 
 static const char vdp2blit_start_f[] =
 SHADER_VERSION_COMPUTE
