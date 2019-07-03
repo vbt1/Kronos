@@ -3923,8 +3923,6 @@ void YglGetWindowPointer(int id) {
   int status;
   GLuint error;
 
-  YGLDEBUG("YglGetWindowPointer: %d,%d", _Ygl->width, _Ygl->height);
-
 
   if (_Ygl->window_tex[0] == 0) {
     glGenTextures(2, &_Ygl->window_tex[0]);
