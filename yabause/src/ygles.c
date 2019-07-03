@@ -32,7 +32,7 @@
 
 #define __USE_OPENGL_DEBUG__
 
-#define YGLDEBUG
+#define YGLDEBUG YuiMsg
 //#define YGLDEBUG printf
 //#define YGLDEBUG LOG
 //#define YGLDEBUG yprintf
@@ -90,11 +90,9 @@ static void MessageCallback( GLenum source,
                       const GLchar* message,
                       const void* userParam )
 {
-#ifndef __WIN32__
-  printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+  YuiMsg("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
            ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
             type, severity, message );
-#endif
 }
 #endif
 
@@ -1447,7 +1445,7 @@ int YglInit(int width, int height, unsigned int depth) {
 #if defined(_USEGLEW_) && !defined(__LIBRETRO__)
   glewExperimental=GL_TRUE;
   if (glewInit() != 0) {
-    printf("Glew can not init\n");
+    YuiMsg("Glew can not init\n");
     YabSetError(YAB_ERR_CANNOTINIT, _("Glew"));
     exit(-1);
   }
@@ -2611,7 +2609,7 @@ int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache *
   if (rbg->use_cs) {
 // printf("(%f %f) (%f %f) (%f %f) (%f %f)\n", input->vertices[0],input->vertices[1],input->vertices[2],input->vertices[3],input->vertices[4],input->vertices[5],input->vertices[6],input->vertices[7]);
     if (varVdp2Regs == NULL) {
-      printf("varVdp2Regs is NULL %d\n", __LINE__);
+      YuiMsg("varVdp2Regs is NULL %d\n", __LINE__);
       abort();
     }
 

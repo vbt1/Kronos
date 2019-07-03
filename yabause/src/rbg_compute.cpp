@@ -24,9 +24,9 @@ extern "C"{
 #include "vidshared.h"
 }
 
-#define YGLDEBUG printf
+#define YGLDEBUG YuiMsg
 
-#define DEBUGWIP printf
+#define DEBUGWIP YuiMsg
 
 const char prg_generate_rbg[] =
 SHADER_VERSION_COMPUTE
