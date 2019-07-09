@@ -606,6 +606,7 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
 // #endif
 //Ajouter dans la liste
   YabThreadLock(tm->mtx);
+  YabThreadLock(tp->mtx);
   tplist *prev = tm->start;
   tplist *current = tm->start;
   while(current != NULL) {
@@ -633,6 +634,7 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
   }
   //Ajouter dans le tableau en commencant du plus bas.
   YabThreadUnLock(tp->mtx);
+  YabThreadUnLock(tm->mtx);
   YglTMReset(tp);
   YglCacheReset(tp);
 }
@@ -662,6 +664,8 @@ YglTexturePlane* YglTmPull(u32 flg){
       //The pool has at least one element, pop it and return it
       if (prev != NULL)
         prev->next = NULL;
+      else
+        YglTM_pool->start = NULL;
       ret = tp->plane;
     }
   }
