@@ -31,7 +31,7 @@ static u32 YglgetHash(u64 addr)
   return ((addr>>4) & HASHSIZE);
 }
 
-static YglCacheHash * YglgetNewCash(YglTextureManager * tm) {
+static YglCacheHash * YglgetNewCash(YglTexturePlane * tm) {
 
   YglCacheHash * rtn;
 
@@ -44,7 +44,7 @@ static YglCacheHash * YglgetNewCash(YglTextureManager * tm) {
   return rtn;
 }
 
-int YglIsCached(YglTextureManager * tm, u64 addr, YglCache * c) {
+int YglIsCached(YglTexturePlane * tm, u64 addr, YglCache * c) {
 
   u32 hashkey;
   hashkey = YglgetHash(addr);  /* get hash */
@@ -70,7 +70,7 @@ int YglIsCached(YglTextureManager * tm, u64 addr, YglCache * c) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-void YglCacheAdd(YglTextureManager * tm, u64 addr, YglCache * c) {
+void YglCacheAdd(YglTexturePlane * tm, u64 addr, YglCache * c) {
 
   u32 hashkey;
   YglCacheHash *add;
@@ -108,7 +108,7 @@ void YglCacheAdd(YglTextureManager * tm, u64 addr, YglCache * c) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-void YglCacheReset(YglTextureManager * tm) {
+void YglCacheReset(YglTexturePlane * tm) {
 	memset(tm->HashTable, 0, sizeof(tm->HashTable));
 	tm->CashLink_index = 0;
 }

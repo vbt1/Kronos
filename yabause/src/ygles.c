@@ -283,7 +283,10 @@ void YglLoadIdentity(YglMatrix *result)
     result->m[3][3] = 1.0f;
 }
 
+YglTexturePlane * YglTP_vdp2 = NULL;
+YglTexturePlane * YglTP_vdp1[2] = { NULL, NULL };
 
+YglTextureManager * YglTM_pool = NULL;
 YglTextureManager * YglTM_vdp2 = NULL;
 YglTextureManager * YglTM_vdp1[2] = { NULL, NULL };
 Ygl * _Ygl;
@@ -533,6 +536,7 @@ YglTexturePlane * YglTMInitPlane(unsigned int w, unsigned int h) {
   tm->width = w;
   tm->height = h;
   tm->mtx =  YabThreadCreateMutex();
+  tm->fence = 0;
 
   tm->currentX = 0;
   tm->currentY = 0;
@@ -560,32 +564,28 @@ YglTexturePlane * YglTMInitPlane(unsigned int w, unsigned int h) {
 }
 
 YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
-
-  GLuint error;
   YglTextureManager * tm;
   tm = (YglTextureManager *)malloc(sizeof(YglTextureManager));
   memset(tm, 0, sizeof(YglTextureManager));
-  tm->nbPlanes = 0;
+  tm->start = NULL;
   tm->width = h;
   tm->height = h;
   tm->mtx =  YabThreadCreateMutex();
-  YglGetColorRamPointer();
   return tm;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void YglTMDeInit(YglTextureManager * tm) {
-  for (int i = 0; i < tm->nbPlanes; i++) {
-    YglTexturePlane *tp = tm->planes[i];
-    glDeleteTextures(1, &tp->textureID);
-    glDeleteBuffers(1, &tp->pixelBufferID);
-    YabThreadFreeMutex(tp->mtx);
-    free(tp);
-    tm->planes[i] = NULL;
+  YglTexturePlane *cur = tm->start;
+  while(cur != NULL) {
+    glDeleteTextures(1, &cur->textureID);
+    glDeleteBuffers(1, &cur->pixelBufferID);
+    YabThreadFreeMutex(cur->mtx);
+    free(cur);
   }
+  tm->start = NULL;
   free(tm);
-  tm->nbPlanes = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -604,7 +604,24 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
 //     waitVdp1Textures(1);
 //   else WaitVdp2Async(1);
 // #endif
-  YabThreadLock(tp->mtx);
+//Ajouter dans la liste
+  YabThreadLock(tm->mtx);
+  tplist *prev = tm->start;
+  tplist *current = tm->start;
+  while(current != NULL) {
+    prev = current;
+    current = current->next;
+  }
+  if (prev != NULL) {
+    prev->next = (tplist*)malloc(sizeof(tplist));
+    prev->next->next = NULL;
+    prev->next->plane = tp;
+  } else {
+    tm->start = (tplist*)malloc(sizeof(tplist));
+    tm->start->next = NULL;
+    tm->start->plane = tp;
+  }
+
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tp->textureID);
   if (tp->texture != NULL ) {
@@ -620,24 +637,34 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
   YglCacheReset(tp);
 }
 
-YglTexturePlane* YglTmPull(YglTextureManager* tm, u32 flg){
+YglTexturePlane* YglTmPull(u32 flg){
   YglTexturePlane* ret = NULL;
+
   // if (tm == YglTM_vdp1[0])
   //   waitVdp1End(0);
   // if (tm == YglTM_vdp1[1])
   //   waitVdp1End(1);
-  YabThreadLock(tm->mtx);
-
-  for (int i = tm->nbPlanes - 1; i>=0 ; i--) {
-    if (tm->planes[i] != NULL) {
-      ret = tm->planes[i];
-      tm->planes[i] = NULL;
+  YabThreadLock(YglTM_pool->mtx);
+  {
+    int found = 0;
+    tplist *prev = NULL;
+    tplist *tp = NULL;
+    tplist *next = YglTM_pool->start;
+    while(next != NULL) {
+      prev = tp;
+      tp = next;
+      next = next->next;
+    }
+    if (tp == NULL) {
+      //the pool is isEmpty : generate a plane and return it.
+      ret = YglTMInitPlane(YglTM_pool->width, YglTM_pool->height);
+    } else {
+      //The pool has at least one element, pop it and return it
+      if (prev != NULL)
+        prev->next = NULL;
+      ret = tp->plane;
     }
   }
-  if (ret == NULL) {
-    ret = YglTMInitPlane(tm->width, tm->height);
-  }
-
   if (ret->texture == NULL) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, ret->textureID);
@@ -647,7 +674,7 @@ YglTexturePlane* YglTmPull(YglTextureManager* tm, u32 flg){
       abort();
     }
   }
-  YabThreadUnLock(tm->mtx);
+  YabThreadUnLock(YglTM_pool->mtx);
   return ret;
 }
 
@@ -659,6 +686,7 @@ static void YglTMRealloc(YglTexturePlane * tm, unsigned int width, unsigned int 
   int dh;
 
 //Ici mettre un fence par plane
+// Beoin de mettre un flag "underWork" et attendre le vdp1 et le vdp2
 // #ifdef VDP1_TEXTURE_ASYNC
 //   if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
 //     waitVdp1Textures(1);
@@ -1251,7 +1279,7 @@ int YglGenerateScreenBuffer(){
 
   //Generate fbo and texture fr rbh compute shader
   if (_Ygl->rbg_compute_fbotex != 0) {
-    glDeleteTextures(2,&_Ygl->rbg_compute_fbotex);
+    glDeleteTextures(2,&_Ygl->rbg_compute_fbotex[0]);
   }
   glGenTextures(2, &_Ygl->rbg_compute_fbotex[0]);
   glBindTexture(GL_TEXTURE_2D, _Ygl->rbg_compute_fbotex[0]);
@@ -1563,6 +1591,7 @@ int YglInit(int width, int height, unsigned int depth) {
   YglTM_vdp1[0] = YglTMInit(1024, 1024);
   YglTM_vdp1[1] = YglTMInit(1024, 1024);
   YglTM_vdp2 = YglTMInit(1024, 1024);
+  YglTM_pool = YglTMInit(1024, 1024);
 
   _Ygl->vdp1fb_exactbuf[0] = (u8*)malloc(512*704*2);
   _Ygl->vdp1fb_exactbuf[1] = (u8*)malloc(512*704*2);
@@ -1620,7 +1649,7 @@ void YglDeInit(void) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-YglProgram * YglGetProgram( YglSprite * input, int prg, YglTextureManager *tm, int prio)
+YglProgram * YglGetProgram( YglSprite * input, int prg, YglTexturePlane *tm, int prio)
 {
    YglLevel   *level;
    YglProgram *program;
@@ -1631,7 +1660,7 @@ YglProgram * YglGetProgram( YglSprite * input, int prg, YglTextureManager *tm, i
       return NULL;
    }
 
-   if(tm == YglTM_vdp1[_Ygl->drawframe]){
+   if(tm == YglTP_vdp1[_Ygl->drawframe]){
      level = &_Ygl->vdp1levels[_Ygl->drawframe];
    } else {
      level = &_Ygl->vdp2levels[input->idScreen];
@@ -1723,11 +1752,11 @@ static int YglCheckTriangle( const float * point ){
   return 0;
 }
 
-static int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm);
-static int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm);
-static int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm);
+static int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm);
+static int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm);
+static int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm);
 
-void YglCacheQuadGrowShading(YglSprite * input, float * colors, YglCache * cache, YglTextureManager *tm){
+void YglCacheQuadGrowShading(YglSprite * input, float * colors, YglCache * cache, YglTexturePlane *tm){
     _Ygl->needVdp1Render = 1;
     if ((Vdp1Regs->TVMR & 0x1) == 1) colors = NULL;
     if (_Ygl->polygonmode == GPU_TESSERATION) {
@@ -1746,7 +1775,7 @@ void YglCacheQuadGrowShading(YglSprite * input, float * colors, YglCache * cache
     }
 }
 
-int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors, YglCache * c, YglTextureManager *tm){
+int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors, YglCache * c, YglTexturePlane *tm){
   _Ygl->needVdp1Render = 1;
   if ((Vdp1Regs->TVMR & 0x1) == 1) colors = NULL;
   if (_Ygl->polygonmode == GPU_TESSERATION) {
@@ -1763,7 +1792,7 @@ int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors, Y
   }
 }
 
-int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm ) {
+int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm ) {
   unsigned int x, y;
   YglProgram *program;
   int prg = PG_VDP1_GOURAUDSHADING;
@@ -2014,7 +2043,7 @@ int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * co
   return 0;
 }
 
-int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm) {
+int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm) {
    unsigned int x, y;
    YglProgram *program;
    texturecoordinate_struct *tmp;
@@ -2198,7 +2227,7 @@ int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors
    return 0;
 }
 
-int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm) {
+int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTexturePlane *tm) {
   unsigned int x, y;
   YglProgram *program;
   texturecoordinate_struct *tmp;
@@ -2341,17 +2370,17 @@ int YglQuadGrowShading_tesselation_in(YglSprite * input, YglTexture * output, fl
 }
 
 
-static void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, int cash_flg, YglTextureManager *tm);
+static void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, int cash_flg, YglTexturePlane *tm);
 
-void YglQuadOffset(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, YglTextureManager *tm) {
+void YglQuadOffset(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, YglTexturePlane *tm) {
   YglQuadOffset_in(input, output, c, cx, cy, sx, sy, 1, tm);
 }
 
-void YglCachedQuadOffset(vdp2draw_struct * input, YglCache * cache, int cx, int cy, float sx, float sy, YglTextureManager *tm) {
+void YglCachedQuadOffset(vdp2draw_struct * input, YglCache * cache, int cx, int cy, float sx, float sy, YglTexturePlane *tm) {
   YglQuadOffset_in(input, NULL, cache, cx, cy, sx, sy, 0, tm);
 }
 
-void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, int cash_flg, YglTextureManager *tm) {
+void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cx, int cy, float sx, float sy, int cash_flg, YglTexturePlane *tm) {
   unsigned int x, y;
   YglProgram *program;
   texturecoordinate_struct *tmp;
@@ -2464,18 +2493,18 @@ void YglQuadOffset_in(vdp2draw_struct * input, YglTexture * output, YglCache * c
 }
 
 
-static int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cash_flg, YglTextureManager *tm);
+static int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cash_flg, YglTexturePlane *tm);
 
-float * YglQuad(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglTextureManager *tm){
+float * YglQuad(vdp2draw_struct * input, YglTexture * output, YglCache * c, YglTexturePlane *tm){
   YglQuad_in(input, output, c, 1, tm);
   return 0;
 }
 
-void YglCachedQuad(vdp2draw_struct * input, YglCache * cache, YglTextureManager *tm){
+void YglCachedQuad(vdp2draw_struct * input, YglCache * cache, YglTexturePlane *tm){
   YglQuad_in(input, NULL, cache, 0, tm);
 }
 
-int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cash_flg, YglTextureManager *tm) {
+int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int cash_flg, YglTexturePlane *tm) {
   unsigned int x, y;
   YglProgram *program;
   texturecoordinate_struct *tmp;
@@ -2604,7 +2633,7 @@ int YglQuad_in(vdp2draw_struct * input, YglTexture * output, YglCache * c, int c
 }
 
 
-int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache * line, int rbg_type, YglTextureManager *tm, Vdp2 *varVdp2Regs) {
+int YglQuadRbg0(RBGDrawInfo * rbg, YglTexture * output, YglCache * c, YglCache * line, int rbg_type, YglTexturePlane *tm, Vdp2 *varVdp2Regs) {
   unsigned int x, y;
   YglProgram *program;
   texturecoordinate_struct *tmp;
@@ -2816,13 +2845,12 @@ static void waitVdp1End(int id) {
 
 static void executeTMVDP1(int in, int out) {
   if (_Ygl->needVdp1Render != 0){
-    YglTmPush(YglTM_vdp1[in]);
+    YglTmPush(YglTM_vdp1[in], YglTP_vdp1[in]);
     //YuiUseOGLOnThisThread();
-    YglRenderVDP1();
+    YglTP_vdp1[in]->fence = YglRenderVDP1();
     //YuiRevokeOGLOnThisThread();
-    _Ygl->syncVdp1[in] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     YglReset(_Ygl->vdp1levels[out]);
-    YglTmPull(YglTM_vdp1[out], 0);
+    YglTP_vdp1[out] = YglTmPull(0);
     _Ygl->needVdp1Render = 0;
   }
 }
@@ -2848,7 +2876,7 @@ static int renderVDP1Level( YglLevel * level, int j, int* cprg, YglMatrix *mat, 
     }
 
     if(level->prg[j].setupUniform) {
-      level->prg[j].setupUniform((void*)&level->prg[j], YglTM_vdp1[_Ygl->drawframe], varVdp2Regs, SPRITE);
+      level->prg[j].setupUniform((void*)&level->prg[j], YglTP_vdp1[_Ygl->drawframe], varVdp2Regs, SPRITE);
     }
     if( level->prg[j].currentQuad != 0 ) {
       ret = 1;
@@ -2875,7 +2903,7 @@ static int renderVDP1Level( YglLevel * level, int j, int* cprg, YglMatrix *mat, 
       }
     }
     if( level->prg[j].cleanupUniform ){
-      level->prg[j].cleanupUniform((void*)&level->prg[j], YglTM_vdp1[_Ygl->drawframe]);
+      level->prg[j].cleanupUniform((void*)&level->prg[j], YglTP_vdp1[_Ygl->drawframe]);
     }
   _Ygl->min_fb_x = 1024;
   _Ygl->max_fb_x = 0;
@@ -2884,7 +2912,7 @@ static int renderVDP1Level( YglLevel * level, int j, int* cprg, YglMatrix *mat, 
     return ret;
 }
 
-void YglRenderVDP1(void) {
+GLsync YglRenderVDP1(void) {
   YglLevel * level;
   GLuint cprg=0;
   int i,j;
@@ -2916,7 +2944,7 @@ void YglRenderVDP1(void) {
   level = &(_Ygl->vdp1levels[_Ygl->drawframe]);
     if( level == NULL ) {
         //YabThreadUnLock(_Ygl->mutex);
-        return;
+        return 0;
     }
   cprg = -1;
 
@@ -2954,7 +2982,7 @@ void YglRenderVDP1(void) {
   glEnable(GL_SCISSOR_TEST);
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, YglTM_vdp1[_Ygl->drawframe]->textureID);
+  glBindTexture(GL_TEXTURE_2D, YglTP_vdp1[_Ygl->drawframe]->textureID);
 
   if (_Ygl->vdp1_stencil_mode != 0) {
     glEnable(GL_STENCIL_TEST);
@@ -2998,6 +3026,8 @@ void YglRenderVDP1(void) {
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
   //glEnable(GL_DEPTH_TEST);
   FrameProfileAdd("YglRenderVDP1 end");
+
+  return glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3420,7 +3450,7 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
     if (level->prg[j].currentQuad != 0) {
       glActiveTexture(GL_TEXTURE0);
       if (level->prg[j].interuput_texture == 0)
-        glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
+        glBindTexture(GL_TEXTURE_2D, YglTP_vdp2->textureID);
       else
         glBindTexture(GL_TEXTURE_2D, RBGGenerator_getTexture(level->prg[j].interuput_texture));
       ret = 1;
@@ -3432,7 +3462,7 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
       }
       if (level->prg[j].setupUniform)
       {
-        level->prg[j].setupUniform((void*)&level->prg[j], YglTM_vdp2, varVdp2Regs, id);
+        level->prg[j].setupUniform((void*)&level->prg[j], YglTP_vdp2, varVdp2Regs, id);
       }
 
       glUniformMatrix4fv(level->prg[j].mtxModelView, 1, GL_FALSE, (GLfloat*)&_Ygl->mtxModelView.m[0][0]);
@@ -3458,7 +3488,7 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
       if (level->prg[j].cleanupUniform)
       {
         level->prg[j].matrix = (GLfloat*)&_Ygl->mtxModelView.m[0][0];
-        level->prg[j].cleanupUniform((void*)&level->prg[j], YglTM_vdp2);
+        level->prg[j].cleanupUniform((void*)&level->prg[j], YglTP_vdp2);
       }
     }
     level->prg[j].currentQuad = 0;
@@ -3548,7 +3578,7 @@ SpriteMode setupBlend(Vdp2 *varVdp2Regs, int layer) {
   return ret;
 }
 
-void YglRender(Vdp2 *varVdp2Regs) {
+GLsync YglRender(Vdp2 *varVdp2Regs) {
    GLuint cprg=0;
    GLuint srcTexture;
    GLuint *VDP1fb;
@@ -3629,8 +3659,8 @@ void YglRender(Vdp2 *varVdp2Regs) {
    //glClearBufferfv(GL_COLOR, 0, colopaque);
    //glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
    if ((Vdp2Regs->TVMD & 0x8000) == 0) goto render_finish;
-   if (YglTM_vdp2 == NULL) goto render_finish;
-   glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
+   if (YglTP_vdp2 == NULL) goto render_finish;
+   glBindTexture(GL_TEXTURE_2D, YglTP_vdp2->textureID);
    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    YglUpdateVdp2Reg();
@@ -3639,7 +3669,7 @@ void YglRender(Vdp2 *varVdp2Regs) {
    cprg = -1;
 
    glActiveTexture(GL_TEXTURE0);
-   glBindTexture(GL_TEXTURE_2D, YglTM_vdp2->textureID);
+   glBindTexture(GL_TEXTURE_2D, YglTP_vdp2->textureID);
 
   int min = 8;
   int oldPrio = 0;
@@ -3781,10 +3811,8 @@ render_finish:
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   OSDDisplayMessages(NULL,0,0);
 
-  _Ygl->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
-  glFlush();
   FrameProfileAdd("YglRender end");
-  return;
+  return glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
