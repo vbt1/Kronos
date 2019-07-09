@@ -524,12 +524,12 @@ int YglCalcTextureQ(
 
 //////////////////////////////////////////////////////////////////////////////
 
-YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
+YglTexturePlane * YglTMInitPlane(unsigned int w, unsigned int h) {
 
   GLuint error;
-  YglTextureManager * tm;
-  tm = (YglTextureManager *)malloc(sizeof(YglTextureManager));
-  memset(tm, 0, sizeof(YglTextureManager));
+  YglTexturePlane * tm;
+  tm = (YglTexturePlane *)malloc(sizeof(YglTexturePlane));
+  memset(tm, 0, sizeof(YglTexturePlane));
   tm->width = w;
   tm->height = h;
   tm->mtx =  YabThreadCreateMutex();
@@ -556,22 +556,41 @@ YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
   tm->texture = (unsigned int *)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, tm->width * tm->height * 4, GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  YglGetColorRamPointer();
+  return tm;
+}
 
+YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
+
+  GLuint error;
+  YglTextureManager * tm;
+  tm = (YglTextureManager *)malloc(sizeof(YglTextureManager));
+  memset(tm, 0, sizeof(YglTextureManager));
+  tm->nbPlanes = 0;
+  tm->width = h;
+  tm->height = h;
+  tm->mtx =  YabThreadCreateMutex();
+  YglGetColorRamPointer();
   return tm;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void YglTMDeInit(YglTextureManager * tm) {
-  glDeleteTextures(1, &tm->textureID);
-  glDeleteBuffers(1, &tm->pixelBufferID);
+  for (int i = 0; i < tm->nbPlanes; i++) {
+    YglTexturePlane *tp = tm->planes[i];
+    glDeleteTextures(1, &tp->textureID);
+    glDeleteBuffers(1, &tp->pixelBufferID);
+    YabThreadFreeMutex(tp->mtx);
+    free(tp);
+    tm->planes[i] = NULL;
+  }
   free(tm);
+  tm->nbPlanes = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-void YglTMReset(YglTextureManager * tm  ) {
+void YglTMReset(YglTexturePlane * tm  ) {
   YabThreadLock(tm->mtx);
   tm->currentX = 0;
   tm->currentY = 0;
@@ -579,71 +598,72 @@ void YglTMReset(YglTextureManager * tm  ) {
   YabThreadUnLock(tm->mtx);
 }
 
-#if 0
-void YglTMReserve(YglTextureManager * tm, unsigned int w, unsigned int h){
-
-  if (tm->width < w){
-    YGLDEBUG("can't allocate texture: %dx%d\n", w, h);
-    YglTMRealloc(tm, w, tm->height);
-  }
-  if ((tm->height - tm->currentY) < h) {
-    YGLDEBUG("can't allocate texture: %dx%d\n", w, h);
-    YglTMRealloc(tm, tm->width, tm->height + (h * 2));
-    return;
-  }
-}
-#endif
-void YglTmPush(YglTextureManager * tm){
-#ifdef VDP1_TEXTURE_ASYNC
-  if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
-    waitVdp1Textures(1);
-  else WaitVdp2Async(1);
-#endif
-  YabThreadLock(tm->mtx);
+void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
+// #ifdef VDP1_TEXTURE_ASYNC
+//   if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
+//     waitVdp1Textures(1);
+//   else WaitVdp2Async(1);
+// #endif
+  YabThreadLock(tp->mtx);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, tm->textureID);
-  if (tm->texture != NULL ) {
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tm->pixelBufferID);
+  glBindTexture(GL_TEXTURE_2D, tp->textureID);
+  if (tp->texture != NULL ) {
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tp->pixelBufferID);
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tm->width, tm->yMax, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tp->width, tp->yMax, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    tm->texture = NULL;
+    tp->texture = NULL;
   }
-  YabThreadUnLock(tm->mtx);
-  YglTMReset(tm);
-  YglCacheReset(tm);
+  //Ajouter dans le tableau en commencant du plus bas.
+  YabThreadUnLock(tp->mtx);
+  YglTMReset(tp);
+  YglCacheReset(tp);
 }
 
-void YglTmPull(YglTextureManager * tm, u32 flg){
-  if (tm == YglTM_vdp1[0])
-    waitVdp1End(0);
-  if (tm == YglTM_vdp1[1])
-    waitVdp1End(1);
+YglTexturePlane* YglTmPull(YglTextureManager* tm, u32 flg){
+  YglTexturePlane* ret = NULL;
+  // if (tm == YglTM_vdp1[0])
+  //   waitVdp1End(0);
+  // if (tm == YglTM_vdp1[1])
+  //   waitVdp1End(1);
   YabThreadLock(tm->mtx);
-  if (tm->texture == NULL) {
+
+  for (int i = tm->nbPlanes - 1; i>=0 ; i--) {
+    if (tm->planes[i] != NULL) {
+      ret = tm->planes[i];
+      tm->planes[i] = NULL;
+    }
+  }
+  if (ret == NULL) {
+    ret = YglTMInitPlane(tm->width, tm->height);
+  }
+
+  if (ret->texture == NULL) {
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tm->textureID);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tm->pixelBufferID);
-    tm->texture = (int*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, tm->width * tm->height * 4, GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | flg | GL_MAP_UNSYNCHRONIZED_BIT  );
-    if (tm->texture == NULL){
+    glBindTexture(GL_TEXTURE_2D, ret->textureID);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, ret->pixelBufferID);
+    ret->texture = (int*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, ret->width * ret->height * 4, GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | flg | GL_MAP_UNSYNCHRONIZED_BIT  );
+    if (ret->texture == NULL){
       abort();
     }
   }
   YabThreadUnLock(tm->mtx);
+  return ret;
 }
 
-static void YglTMRealloc(YglTextureManager * tm, unsigned int width, unsigned int height ){
+static void YglTMRealloc(YglTexturePlane * tm, unsigned int width, unsigned int height ){
   GLuint new_textureID;
   GLuint new_pixelBufferID;
   unsigned int * new_texture;
   GLuint error;
   int dh;
 
-#ifdef VDP1_TEXTURE_ASYNC
-  if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
-    waitVdp1Textures(1);
-  else WaitVdp2Async(1);
-#endif
+//Ici mettre un fence par plane
+// #ifdef VDP1_TEXTURE_ASYNC
+//   if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
+//     waitVdp1Textures(1);
+//   else WaitVdp2Async(1);
+// #endif
 
   if (tm->texture != NULL) {
     glActiveTexture(GL_TEXTURE0);
@@ -696,15 +716,16 @@ static void YglTMRealloc(YglTextureManager * tm, unsigned int width, unsigned in
 
 void YglTMCheck()
 {
-  YglTextureManager * tm = YglTM_vdp1[_Ygl->drawframe];
-  if ((tm->width > 2048) || (tm->height > 2048)) {
-    executeTMVDP1(_Ygl->drawframe,_Ygl->drawframe);
-    YglTMRealloc(tm, 1024, 1024);
-  }
+  //A revoir avec les planes
+  // YglTextureManager * tm = YglTM_vdp1[_Ygl->drawframe];
+  // if ((tm->width > 2048) || (tm->height > 2048)) {
+  //   executeTMVDP1(_Ygl->drawframe,_Ygl->drawframe);
+  //   YglTMRealloc(tm, 1024, 1024);
+  // }
 }
 
 //////////////////////////////////////////////////////////////////////////////
-static void YglTMAllocate_in(YglTextureManager * tm, YglTexture * output, unsigned int w, unsigned int h, unsigned int * x, unsigned int * y) {
+static void YglTMAllocate_in(YglTexturePlane * tm, YglTexture * output, unsigned int w, unsigned int h, unsigned int * x, unsigned int * y) {
   if( tm->width < w ){
     YGLDEBUG("can't allocate texture: %dx%d\n", w, h);
     YglTMRealloc( tm, w, tm->height);
@@ -746,7 +767,7 @@ void releaseCurrentOpenGLContext() {
   YabThreadUnLock(_Ygl->mutex);
 }
 
-void YglTMAllocate(YglTextureManager * tm, YglTexture * output, unsigned int w, unsigned int h, unsigned int * x, unsigned int * y) {
+void YglTMAllocate(YglTexturePlane * tm, YglTexture * output, unsigned int w, unsigned int h, unsigned int * x, unsigned int * y) {
   YabThreadLock(tm->mtx);
   YglTMAllocate_in(tm, output, w, h, x, y);
   YabThreadUnLock(tm->mtx);
