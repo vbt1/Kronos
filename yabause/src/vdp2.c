@@ -497,6 +497,7 @@ void Vdp2HBlankIN(void) {
 
 void Vdp2HBlankOUT(void) {
   int i;
+  YglCheckFBSwitch(0);
   if (yabsys.LineCount < yabsys.VBlankLineCount)
   {
     Vdp2Regs->TVSTAT &= ~0x0004;
@@ -603,7 +604,6 @@ void Vdp2VBlankOUT(void) {
       if (SmpcRegs->EXLE & 0x1)
          Vdp2SendExternalLatch((PORTDATA1.data[3]<<8)|PORTDATA1.data[4], (PORTDATA1.data[5]<<8)|PORTDATA1.data[6]);
    }
-
 }
 
 //////////////////////////////////////////////////////////////////////////////

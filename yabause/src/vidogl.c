@@ -3475,7 +3475,7 @@ void VIDOGLVdp1Draw()
 
   FrameProfileAdd("Vdp1Command start");
 
-  YglTP_vdp1[_Ygl->drawframe] = YglTmPull(0);
+  if (YglTP_vdp1 == NULL) YglTP_vdp1 = YglTmPull(0);
 
   maxpri = 0x00;
   minpri = 0x07;
@@ -4074,14 +4074,14 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
     if (sprite.w > 0 && sprite.h > 0)
     {
-      if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+      if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
       {
-        YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
+        YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1);
         return;
       }
 
-      YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
-      YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+      YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1);
+      YglCacheAdd(YglTP_vdp1, tmp, &cash);
       Vdp1ReadTexture(&cmd, &sprite, &texture, &Vdp2Lines[0]);
       return;
     }
@@ -4091,14 +4091,14 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   {
     if (sprite.w > 0 && sprite.h > 0)
     {
-      if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+      if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
       {
-        YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
+        YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1);
         return;
       }
 
-      YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
-      YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+      YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1);
+      YglCacheAdd(YglTP_vdp1, tmp, &cash);
 
       Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
     }
@@ -4302,14 +4302,14 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
     if (sprite.w > 0 && sprite.h > 0)
     {
-      if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+      if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
       {
-        YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
+        YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1);
         return;
       }
 
-      YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
-      YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+      YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1);
+      YglCacheAdd(YglTP_vdp1, tmp, &cash);
       Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
       return;
     }
@@ -4321,14 +4321,14 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
     if (sprite.w > 0 && sprite.h > 0)
     {
-      if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+      if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
       {
-        YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
+        YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1);
         return;
       }
 
-      YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
-      YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+      YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1);
+      YglCacheAdd(YglTP_vdp1, tmp, &cash);
       Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
     }
 
@@ -4542,26 +4542,26 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
       col[(i << 2) + 3] = 1.0f;
     }
 
-    if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+    if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
     {
-      YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
+      YglCacheQuadGrowShading(&sprite, col, &cash, YglTP_vdp1);
       return;
     }
 
-    YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1[_Ygl->drawframe]);
-    YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+    YglQuadGrowShading(&sprite, &texture, col, &cash, YglTP_vdp1);
+    YglCacheAdd(YglTP_vdp1, tmp, &cash);
     Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
     return;
   }
   else // No Gouraud shading, use same color for all 4 vertices
   {
-    if (1 == YglIsCached(YglTP_vdp1[_Ygl->drawframe], tmp, &cash))
+    if (1 == YglIsCached(YglTP_vdp1, tmp, &cash))
     {
-      YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
+      YglCacheQuadGrowShading(&sprite, NULL, &cash, YglTP_vdp1);
       return;
     }
-    YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1[_Ygl->drawframe]);
-    YglCacheAdd(YglTP_vdp1[_Ygl->drawframe], tmp, &cash);
+    YglQuadGrowShading(&sprite, &texture, NULL, &cash, YglTP_vdp1);
+    YglCacheAdd(YglTP_vdp1, tmp, &cash);
     Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
   }
 
@@ -4790,10 +4790,10 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if (gouraud == 1)
   {
-    YglQuadGrowShading(&sprite, &texture, col, NULL, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&sprite, &texture, col, NULL, YglTP_vdp1);
   }
   else {
-    YglQuadGrowShading(&sprite, &texture, NULL, NULL, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&sprite, &texture, NULL, NULL, YglTP_vdp1);
   }
 
   *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
@@ -4914,10 +4914,10 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     linecol[13] = col[(1 << 2) + 1];
     linecol[14] = col[(1 << 2) + 2];
     linecol[15] = col[(1 << 2) + 3];
-    YglQuadGrowShading(&polygon, &texture, linecol, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&polygon, &texture, linecol, &c, YglTP_vdp1);
   }
   else {
-    YglQuadGrowShading(&polygon, &texture, NULL, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&polygon, &texture, NULL, &c, YglTP_vdp1);
   }
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
@@ -4991,10 +4991,10 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     linecol[14] = col[(2 << 2) + 2];
     linecol[15] = col[(2 << 2) + 3];
 
-    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1);
   }
   else {
-    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1);
   }
 
   makeLinePolygon(&v[4], &v[6], line_poygon);
@@ -5023,10 +5023,10 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     linecol[13] = col[(3 << 2) + 1];
     linecol[14] = col[(3 << 2) + 2];
     linecol[15] = col[(3 << 2) + 3];
-    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1);
   }
   else {
-    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1[_Ygl->drawframe]);
+    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1);
   }
 
 
@@ -5057,10 +5057,10 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
       linecol[13] = col[(0 << 2) + 1];
       linecol[14] = col[(0 << 2) + 2];
       linecol[15] = col[(0 << 2) + 3];
-      YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1[_Ygl->drawframe]);
+      YglCacheQuadGrowShading(&polygon, linecol, &c, YglTP_vdp1);
     }
     else {
-      YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1[_Ygl->drawframe]);
+      YglCacheQuadGrowShading(&polygon, NULL, &c, YglTP_vdp1);
     }
   }
 
@@ -5170,10 +5170,10 @@ void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
 
   if (gouraud == 1) {
-    YglQuadGrowShading(&polygon, &texture, col, NULL, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&polygon, &texture, col, NULL, YglTP_vdp1);
   }
   else {
-    YglQuadGrowShading(&polygon, &texture, NULL, NULL, YglTP_vdp1[_Ygl->drawframe]);
+    YglQuadGrowShading(&polygon, &texture, NULL, NULL, YglTP_vdp1);
   }
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
@@ -5218,16 +5218,15 @@ int VIDOGLVdp2Reset(void)
 
 void VIDOGLVdp2Draw(void)
 {
-  YglCheckFBSwitch(1);
   //varVdp2Regs = Vdp2RestoreRegs(0, Vdp2Lines);
   //if (varVdp2Regs == NULL) varVdp2Regs = Vdp2Regs;
   VIDOGLVdp2SetResolution(Vdp2Lines[0].TVMD);
-  YglTP_vdp2 = YglTmPull(0);
+  if (YglTP_vdp2 == NULL) YglTP_vdp2 = YglTmPull(0);
   if (_Ygl->rwidth > YglTP_vdp2->width) {
     int new_width = _Ygl->rwidth;
     int new_height = YglTP_vdp2->height;
-    YglTMDeInit(YglTM_vdp2);
-    YglTM_vdp2 = YglTMInit(new_width, new_height);
+    YglTMDeInit(YglTM_vdp2[_Ygl->field]);
+    YglTM_vdp2[_Ygl->field] = YglTMInit(new_width, new_height);
   }
 
   if (Vdp2Regs->TVMD & 0x8000) {
@@ -6820,11 +6819,14 @@ void waitVdp2DrawScreensEnd(int sync, int abort) {
       int empty = WaitVdp2Async(sync);
       if (empty == 0) {
         //Vdp2 has been evaluated we can render
-        YglTmPush(YglTM_vdp2, YglTP_vdp2);
+        YglTmPush(YglTM_vdp2[_Ygl->field], YglTP_vdp2);
         //YuiUseOGLOnThisThread();
         YglUpdateVDP1FB();
         //YuiRevokeOGLOnThisThread();
+        YglCheckFBSwitch(1);
+        _Ygl->field = !_Ygl->field;
         YglTP_vdp2->fence = YglRender(&Vdp2Lines[0]);
+        YglTP_vdp2 = NULL;
       }
     }
   }

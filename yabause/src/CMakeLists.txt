@@ -113,6 +113,7 @@ endif()
 
 
 option(YAB_WANT_ASAN_DEBUG "Enable ASAN compilation sanitizer" OFF)
+#to run : LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.4 ./src/qt/kronos
 if (YAB_WANT_ASAN_DEBUG)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
    set(KRONOS_LIBRARIES ${KRONOS_LIBRARIES} "-L/lib/x86_64-linux-gnu -lpthread -lasan")

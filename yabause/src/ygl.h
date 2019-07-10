@@ -251,7 +251,7 @@ typedef struct _YglCacheHash {
 	struct _YglCacheHash * next;
 } YglCacheHash;
 
-typedef struct {
+typedef struct s_YglTexturePlane{
 	unsigned int currentX;
 	unsigned int currentY;
 	unsigned int yMax;
@@ -265,26 +265,22 @@ typedef struct {
 	GLuint textureID;
 	GLuint pixelBufferID;
   GLsync fence;
+  struct s_YglTexturePlane* next;
 } YglTexturePlane;
 
-typedef struct s_tplist {
-  struct s_tplist* next;
-  YglTexturePlane* plane;
-} tplist;
-
 typedef struct {
-  tplist* start;
+  YglTexturePlane* start;
   unsigned int width;
   unsigned int height;
   YabMutex *mtx;
 } YglTextureManager;
 
-extern YglTexturePlane * YglTP_vdp1[2];
+extern YglTexturePlane * YglTP_vdp1;
 extern YglTexturePlane * YglTP_vdp2;
 
 extern YglTextureManager * YglTM_pool;
 extern YglTextureManager * YglTM_vdp1[2];
-extern YglTextureManager * YglTM_vdp2;
+extern YglTextureManager * YglTM_vdp2[2];
 
 YglTextureManager * YglTMInit(unsigned int, unsigned int);
 void YglTMDeInit(YglTextureManager * tm );
@@ -730,6 +726,8 @@ typedef struct {
 
    int rbg_use_compute_shader;
    int vdp2_use_compute_shader;
+
+   int field;
 
 } Ygl;
 
