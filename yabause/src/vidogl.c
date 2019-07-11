@@ -6814,7 +6814,6 @@ int WaitVdp2Async(int sync) {
 
 void waitVdp2DrawScreensEnd(int sync, int abort) {
   if (abort == 0){
-    YglCheckFBSwitch(0);
     if ((vdp2busy == 1)) {
       int empty = WaitVdp2Async(sync);
       if (empty == 0) {
@@ -6828,7 +6827,11 @@ void waitVdp2DrawScreensEnd(int sync, int abort) {
         YglTP_vdp2->fence = YglRender(&Vdp2Lines[0]);
         YglTP_vdp2 = NULL;
       }
+      else
+        YglCheckFBSwitch(0);
     }
+    else
+      YglCheckFBSwitch(0);
   }
 }
 

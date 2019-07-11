@@ -3087,6 +3087,7 @@ GLsync YglRenderVDP1(void) {
   glDisable(GL_SCISSOR_TEST);
   //YabThreadUnLock(_Ygl->mutex);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
+  glFlush();
   //glEnable(GL_DEPTH_TEST);
   FrameProfileAdd("YglRenderVDP1 end");
   GLsync ret = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
@@ -3478,6 +3479,8 @@ void YglUpdateVDP1FB(void) {
 }
 
 void YglCheckFBSwitch(int sync) {
+  YglTmFlush(YglTM_vdp1[_Ygl->readframe], sync);
+  YglTmFlush(YglTM_vdp1[_Ygl->drawframe], 0);
   int ret = YglTmFlush(YglTM_vdp2[!_Ygl->field], sync);
   if (ret == 1) {
     YuiSwapBuffers();
@@ -3691,7 +3694,7 @@ GLsync YglRender(Vdp2 *varVdp2Regs) {
 
    YglGenFrameBuffer();
 
-   YglTmFlush(YglTM_vdp1[_Ygl->readframe], 1);
+   //YglTmFlush(YglTM_vdp1[_Ygl->readframe], 1);
 
   if (_Ygl->vdp2_use_compute_shader == 0) {
     glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->original_fbo);
