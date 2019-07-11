@@ -273,6 +273,7 @@ typedef struct {
   unsigned int width;
   unsigned int height;
   YabMutex *mtx;
+  int used;
 } YglTextureManager;
 
 extern YglTexturePlane * YglTP_vdp1;

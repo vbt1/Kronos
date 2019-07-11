@@ -1338,6 +1338,7 @@ int Ygl_uniformStartUserClip(void * p, YglTexturePlane *tm, Vdp2 *varVdp2Regs, i
       glEnableVertexAttribArray(prg->vertexp);
 
       glDrawArrays(GL_TRIANGLES, 0, 6);
+      glFlush();
 
       glColorMask( GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE );
       glStencilFunc(GL_ALWAYS,0,0x0);
@@ -3073,6 +3074,7 @@ int YglDrawBackScreen() {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, _Ygl->back_tex);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glDisableVertexAttribArray(0);
@@ -3180,6 +3182,7 @@ int YglBlitTexture(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* 
   glUniform1iv(glGetUniformLocation(vdp2blit_prg, "u_lncl"), 7, lncl); //_Ygl->prioVa
 
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   for (int i = 0; i<14; i++) {
@@ -3309,6 +3312,7 @@ int YglBlitOpaque(int texture) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glActiveTexture(GL_TEXTURE0);
@@ -3438,6 +3442,7 @@ int YglBlitSimple(int texture, int blend) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glActiveTexture(GL_TEXTURE0);
@@ -3662,6 +3667,7 @@ int YglBlitVDP1(u32 srcTexture, float w, float h, int write) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, srcTexture);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glActiveTexture(GL_TEXTURE0);
@@ -3925,6 +3931,7 @@ int YglBlitFramebuffer(u32 srcTexture, float w, float h, float dispw, float disp
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   }
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glActiveTexture(GL_TEXTURE0);
@@ -4023,6 +4030,7 @@ int YglClear() {
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(0);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFlush();
 
   // Clean up
   glDisableVertexAttribArray(0);
@@ -4173,6 +4181,7 @@ int YglBlitMosaic(u32 srcTexture, float w, float h, GLfloat* matrix, int * mosai
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, srcTexture);
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  glFlush();
 
   // Clean up
   glActiveTexture(GL_TEXTURE0);

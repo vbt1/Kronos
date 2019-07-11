@@ -611,6 +611,7 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
 // #endif
 //Ajouter dans la liste
   YabThreadLock(tm->mtx);
+  tm->used = 1;
   YglTexturePlane *prev = tm->start;
   YglTexturePlane *current = tm->start;
   while(current != NULL) {
@@ -657,10 +658,10 @@ static GLsync checkFence(GLsync fence) {
   else return 0;
 }
 
-int YglTmFlush(YglTextureManager* tm, int sync) {
-  int ret = -1;
+void YglTmFlush(YglTextureManager* tm, int sync) {
   int isEmpty = 0;
   YabThreadLock(tm->mtx);
+  if(tm->used)
   {
     YglTexturePlane *prev = NULL;
     YglTexturePlane *tp = tm->start;
@@ -691,10 +692,8 @@ int YglTmFlush(YglTextureManager* tm, int sync) {
       tp = next;
     }
   }
-  if ((tm->start == NULL) && (isEmpty == 1)) ret = 1;
-  else if (isEmpty == 1) ret = 0;
+  if (tm->start == NULL) tm->used = 0;
   YabThreadUnLock(tm->mtx);
-  return ret;
 }
 
 YglTexturePlane* YglTmPull(u32 flg){
@@ -2964,6 +2963,7 @@ static int renderVDP1Level( YglLevel * level, int j, int* cprg, YglMatrix *mat, 
       }else{
         glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad / 2);
       }
+      glFlush();
     }
     if( level->prg[j].cleanupUniform ){
       level->prg[j].cleanupUniform((void*)&level->prg[j], YglTP_vdp1);
@@ -3087,7 +3087,6 @@ GLsync YglRenderVDP1(void) {
   glDisable(GL_SCISSOR_TEST);
   //YabThreadUnLock(_Ygl->mutex);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
-  glFlush();
   //glEnable(GL_DEPTH_TEST);
   FrameProfileAdd("YglRenderVDP1 end");
   GLsync ret = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
@@ -3214,6 +3213,7 @@ void YglSetVdp2Window(Vdp2 *varVdp2Regs)
            glVertexAttribPointer(_Ygl->windowpg.vertexp, 2, GL_FLOAT, GL_FALSE, 0, 0 );
            glEnableVertexAttribArray(_Ygl->windowpg.vertexp);
            glDrawArrays(GL_TRIANGLE_STRIP,0,4);
+           glFlush();
          }
        }
      }
@@ -3274,6 +3274,7 @@ void YglSetCCWindow(Vdp2 *varVdp2Regs)
       glVertexAttribPointer(_Ygl->windowpg.vertexp, 2, GL_FLOAT, GL_FALSE, 0, 0 );
       glEnableVertexAttribArray(_Ygl->windowpg.vertexp);
       glDrawArrays(GL_TRIANGLE_STRIP,0,4);
+      glFlush();
     }
   return;
 }
@@ -3479,12 +3480,10 @@ void YglUpdateVDP1FB(void) {
 }
 
 void YglCheckFBSwitch(int sync) {
-  YglTmFlush(YglTM_vdp1[_Ygl->readframe], sync);
-  YglTmFlush(YglTM_vdp1[_Ygl->drawframe], 0);
-  int ret = YglTmFlush(YglTM_vdp2[!_Ygl->field], sync);
-  if (ret == 1) {
-    YuiSwapBuffers();
-  }
+  YglTmFlush(YglTM_vdp1[0], 0);
+  YglTmFlush(YglTM_vdp1[1], 0);
+  YglTmFlush(YglTM_vdp2[0], 0);
+  YglTmFlush(YglTM_vdp2[1], 0);
 }
 
 static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
@@ -3539,6 +3538,7 @@ static int DrawVDP2Screen(Vdp2 *varVdp2Regs, int id) {
       }
 
       glDrawArrays(GL_TRIANGLES, 0, level->prg[j].currentQuad / 2);
+      glFlush();
 
       if (level->prg[j].cleanupUniform)
       {
@@ -3867,7 +3867,6 @@ render_finish:
   glDisable(GL_STENCIL_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   OSDDisplayMessages(NULL,0,0);
-  glFlush();
   FrameProfileAdd("YglRender end");
   GLsync ret = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
   return ret;

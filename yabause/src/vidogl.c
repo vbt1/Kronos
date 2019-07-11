@@ -6825,6 +6825,7 @@ void waitVdp2DrawScreensEnd(int sync, int abort) {
         YglCheckFBSwitch(1);
         _Ygl->field = !_Ygl->field;
         YglTP_vdp2->fence = YglRender(&Vdp2Lines[0]);
+        YuiSwapBuffers();
         YglTP_vdp2 = NULL;
       }
       else
