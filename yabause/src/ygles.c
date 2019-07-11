@@ -639,8 +639,6 @@ void YglTmPush(YglTextureManager * tm, YglTexturePlane * tp){
   }
   //Ajouter dans le tableau en commencant du plus bas.
   YabThreadUnLock(tm->mtx);
-  YglTMReset(tp);
-  YglCacheReset(tp);
 }
 
 static GLsync checkFence(GLsync fence) {
@@ -683,6 +681,8 @@ void YglTmFlush(YglTextureManager* tm, int sync) {
             prev->next = tp->next;
           else
             tm->start = tp->next;
+          YglTMReset(tp);
+          YglCacheReset(tp);
           YglTmPush(YglTM_pool, tp);
           tp = NULL;
         }
