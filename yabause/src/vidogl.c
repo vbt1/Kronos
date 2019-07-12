@@ -3452,7 +3452,6 @@ void VIDOGLVdp1Draw()
   Vdp2 *varVdp2Regs = &Vdp2Lines[Vdp1External.plot_trigger_line];
   _Ygl->vpd1_running = 1;
 
-
 #ifdef PERFRAME_LOG
   if (ppfp == NULL) {
     ppfp = fopen("ppfp0.txt", "w");
