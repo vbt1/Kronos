@@ -1021,7 +1021,7 @@ printf("%dx%d\n",  _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
   if (_Ygl->rboid_depth != 0) glDeleteRenderbuffers(1, &_Ygl->rboid_depth);
   glGenRenderbuffers(1, &_Ygl->rboid_depth);
   glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->rboid_depth);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width, _Ygl->height);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
 
   if (_Ygl->vdp1fbo != 0)
     glDeleteFramebuffers(1, &_Ygl->vdp1fbo);
@@ -1047,7 +1047,7 @@ printf("%dx%d\n",  _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
   if (_Ygl->rboid_depth_win != 0) glDeleteRenderbuffers(1, &_Ygl->rboid_depth_win);
   glGenRenderbuffers(1, &_Ygl->rboid_depth_win);
   glBindRenderbuffer(GL_RENDERBUFFER, _Ygl->rboid_depth_win);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width, _Ygl->height);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
 
   if (_Ygl->vdp1fbowin != 0)
     glDeleteFramebuffers(1, &_Ygl->vdp1fbowin);
@@ -3688,8 +3688,12 @@ void YglRender(Vdp2 *varVdp2Regs) {
     glClearBufferfv(GL_COLOR, 0, _Ygl->clear);
   }
 
+
   //Ici si use_win[SPRITE] est a 1, il faut faire un blit simple avec test stencil
   if (_Ygl->use_win[SPRITE] == 1) {
+    glViewport(0, 0, _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
+    glScissor(0, 0, _Ygl->width/_Ygl->vdp1wratio, _Ygl->height/_Ygl->vdp1hratio);
+
     glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbowin);
     glClearBufferfi(GL_DEPTH_STENCIL, 0, 0, 0);
 
@@ -3714,6 +3718,9 @@ void YglRender(Vdp2 *varVdp2Regs) {
     YglBlitSimple(_Ygl->vdp1FrameBuff[_Ygl->readframe*2+1], 0);
     glDisable(GL_STENCIL_TEST);
     VDP1fb = &_Ygl->vdp1FrameBuff[4];
+
+    glViewport(0, 0, _Ygl->width, _Ygl->height);
+    glScissor(0, 0, _Ygl->width, _Ygl->height);
   } else {
     VDP1fb = &_Ygl->vdp1FrameBuff[_Ygl->readframe*2];
   }

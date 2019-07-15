@@ -4014,8 +4014,8 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   expandVertices(vert, sprite.vertices, 0);
 
   for (int i = 0; i<4; i++) {
-    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX);
-    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY);
+    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX) * _Ygl->vdp1wratio;
+    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY) * _Ygl->vdp1hratio;
   }
 
   tmp = cmd.CMDSRCA;
@@ -4237,8 +4237,8 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   expandVertices(vert, sprite.vertices, 0);
 
   for (int i =0; i<4; i++) {
-    sprite.vertices[2*i] = (sprite.vertices[2*i]);
-    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1]);
+    sprite.vertices[2*i] = (sprite.vertices[2*i]) * _Ygl->vdp1wratio;
+    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1]) * _Ygl->vdp1hratio;
   }
 
   tmp = cmd.CMDSRCA;
@@ -4487,8 +4487,8 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   fixVerticesSize(sprite.vertices);
 
   for (int i = 0; i<4; i++) {
-    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX);
-    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY);
+    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX) * _Ygl->vdp1wratio;
+    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY) * _Ygl->vdp1hratio;
   }
 
   tmp = cmd.CMDSRCA;
@@ -4723,8 +4723,8 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   fixVerticesSize(sprite.vertices);
 
   for (int i = 0; i<4; i++) {
-    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX);
-    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY);
+    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX) * _Ygl->vdp1wratio;
+    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY) * _Ygl->vdp1hratio;
   }
 
   color = cmd.CMDCOLR;
@@ -4867,14 +4867,14 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
 
   makeLinePolygon(&v[0], &v[2], line_poygon);
-  polygon.vertices[0] = line_poygon[0];
-  polygon.vertices[1] = line_poygon[1];
-  polygon.vertices[2] = line_poygon[2];
-  polygon.vertices[3] = line_poygon[3];
-  polygon.vertices[4] = line_poygon[4];
-  polygon.vertices[5] = line_poygon[5];
-  polygon.vertices[6] = line_poygon[6];
-  polygon.vertices[7] = line_poygon[7];
+  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
+  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
+  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
+  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
+  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
+  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
+  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
+  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
 
   if (IS_REPLACE(CMDPMOD)) {
     polygon.blendmode = VDP1_COLOR_CL_REPLACE;
@@ -4960,14 +4960,14 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
 
   makeLinePolygon(&v[2], &v[4], line_poygon);
-  polygon.vertices[0] = line_poygon[0];
-  polygon.vertices[1] = line_poygon[1];
-  polygon.vertices[2] = line_poygon[2];
-  polygon.vertices[3] = line_poygon[3];
-  polygon.vertices[4] = line_poygon[4];
-  polygon.vertices[5] = line_poygon[5];
-  polygon.vertices[6] = line_poygon[6];
-  polygon.vertices[7] = line_poygon[7];
+  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
+  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
+  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
+  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
+  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
+  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
+  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
+  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
   if (gouraud) {
     linecol[0] = col[(1 << 2) + 0];
     linecol[1] = col[(1 << 2) + 1];
@@ -4996,14 +4996,14 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
 
   makeLinePolygon(&v[4], &v[6], line_poygon);
-  polygon.vertices[0] = line_poygon[0];
-  polygon.vertices[1] = line_poygon[1];
-  polygon.vertices[2] = line_poygon[2];
-  polygon.vertices[3] = line_poygon[3];
-  polygon.vertices[4] = line_poygon[4];
-  polygon.vertices[5] = line_poygon[5];
-  polygon.vertices[6] = line_poygon[6];
-  polygon.vertices[7] = line_poygon[7];
+  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
+  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
+  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
+  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
+  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
+  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
+  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
+  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
   if (gouraud) {
     linecol[0] = col[(2 << 2) + 0];
     linecol[1] = col[(2 << 2) + 1];
@@ -5030,14 +5030,14 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if (!(v[6] == v[0] && v[7] == v[1])) {
     makeLinePolygon(&v[6], &v[0], line_poygon);
-    polygon.vertices[0] = line_poygon[0];
-    polygon.vertices[1] = line_poygon[1];
-    polygon.vertices[2] = line_poygon[2];
-    polygon.vertices[3] = line_poygon[3];
-    polygon.vertices[4] = line_poygon[4];
-    polygon.vertices[5] = line_poygon[5];
-    polygon.vertices[6] = line_poygon[6];
-    polygon.vertices[7] = line_poygon[7];
+    polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
+    polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
+    polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
+    polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
+    polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
+    polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
+    polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
+    polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
     if (gouraud) {
       linecol[0] = col[(3 << 2) + 0];
       linecol[1] = col[(3 << 2) + 1];
@@ -5135,14 +5135,14 @@ void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
 
   makeLinePolygon(&v[0], &v[2], line_poygon);
-  polygon.vertices[0] = line_poygon[0];
-  polygon.vertices[1] = line_poygon[1];
-  polygon.vertices[2] = line_poygon[2];
-  polygon.vertices[3] = line_poygon[3];
-  polygon.vertices[4] = line_poygon[4];
-  polygon.vertices[5] = line_poygon[5];
-  polygon.vertices[6] = line_poygon[6];
-  polygon.vertices[7] = line_poygon[7];
+  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
+  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
+  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
+  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
+  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
+  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
+  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
+  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
 
   polygon.w = 1;
   polygon.h = 1;
