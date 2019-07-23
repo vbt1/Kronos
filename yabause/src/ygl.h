@@ -266,7 +266,6 @@ typedef struct {
 	GLuint pixelBufferID;
 } YglTextureManager;
 
-extern YglTextureManager * YglTM_vdp1[2];
 extern YglTextureManager * YglTM_vdp2;
 
 YglTextureManager * YglTMInit(unsigned int, unsigned int);
@@ -276,7 +275,6 @@ void YglTMReserve(YglTextureManager * tm, unsigned int w, unsigned int h);
 void YglTMAllocate(YglTextureManager * tm, YglTexture *, unsigned int, unsigned int, unsigned int *, unsigned int *);
 void YglTmPush(YglTextureManager * tm);
 void YglTmPull(YglTextureManager * tm, u32 flg);
-void YglTMCheck();
 
 void YglCacheInit(YglTextureManager * tm);
 void YglCacheDeInit(YglTextureManager * tm);
@@ -588,6 +586,7 @@ typedef struct {
    GLuint vdp1fbo;
    GLuint vdp1fbowin;
    GLuint vdp1FrameBuff[6];
+   GLuint* vdp1Tex; //Texture for VDP1 CS
    GLuint smallfbo;
    GLuint smallfbotex;
    GLuint vdp1pixelBufferID;
@@ -646,7 +645,6 @@ typedef struct {
 
    YglProgram windowpg;
 
-   YglLevel * vdp1levels;
    YglLevel * vdp2levels;
 
    // Thread
@@ -675,11 +673,9 @@ typedef struct {
    RESOLUTION_MODE resolution_mode;
    COMPUTESHADERMODE use_cs;
    GLsync sync;
-   GLsync syncVdp1[2];
    GLuint default_fbo;
    YglPerLineInfo bg[enBGMAX];
    int vpd1_running;
-   int needVdp1Render;
    GLint m_viewport[4];
    int min_fb_x;
    int max_fb_x;

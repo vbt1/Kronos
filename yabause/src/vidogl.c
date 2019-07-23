@@ -35,6 +35,7 @@
 #include "yabause.h"
 #include "ygl.h"
 #include "yui.h"
+#include "vdp1/vdp1_compute.h"
 #include "frameprofile.h"
 #ifdef SPRITE_CACHE
 #include "patternManager.h"
@@ -46,6 +47,8 @@
 #define CLAMP(A,LOW,HIGH) ((A)<(LOW)?(LOW):((A)>(HIGH))?(HIGH):(A))
 
 #define LOG_AREA
+
+#define LOG_CMD
 
 static int vidogl_renderer_started = 0;
 static Vdp2 baseVdp2Regs;
@@ -3350,8 +3353,6 @@ int VIDOGLInit(void)
     return -1;
 
   SetSaturnResolution(320, 224);
-  YglReset(_Ygl->vdp1levels[0]);
-  YglReset(_Ygl->vdp1levels[1]);
   for (int i=0; i<SPRITE; i++)
     YglReset(_Ygl->vdp2levels[i]);
 
@@ -3472,8 +3473,6 @@ void VIDOGLVdp1Draw()
   u8 *sprprilist = (u8 *)&(Vdp2Lines[0].PRISA);
 
   FrameProfileAdd("Vdp1Command start");
-
-  YglTmPull(YglTM_vdp1[_Ygl->drawframe], 0);
 
   maxpri = 0x00;
   minpri = 0x07;
@@ -3965,6 +3964,8 @@ printf("[(%f %f)]%f [(%f %f)]%f [(%f %f)]%f [(%f %f)]%f\n", nx[0], ny[0], entran
 
 void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  LOG_CMD("%d\n", __LINE__);
+#if 0
   vdp1cmd_struct cmd;
   YglSprite sprite;
   YglTexture texture;
@@ -4101,12 +4102,15 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
       Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
     }
   }
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  LOG_CMD("%d\n", __LINE__);
+#if 0
   vdp1cmd_struct cmd;
   YglSprite sprite;
   YglTexture texture;
@@ -4331,7 +4335,7 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     }
 
   }
-
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4422,6 +4426,8 @@ void fixVerticesSize(float *vert) {
 
 void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  LOG_CMD("%d\n", __LINE__);
+#if 0
   vdp1cmd_struct cmd;
   YglSprite sprite;
   YglTexture texture;
@@ -4562,7 +4568,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     YglCacheAdd(YglTM_vdp1[_Ygl->drawframe], tmp, &cash);
     Vdp1ReadTexture(&cmd, &sprite, &texture, varVdp2Regs);
   }
-
+#endif
   return;
       }
 
@@ -4671,9 +4677,64 @@ static int isLine(s16 *v) {
 
 void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  vdp1cmd_struct cmd;
+  int badgeometry = 1;
+  cmdparameter vdp1cmd; //Should be better if cmdparameter == vdp1cmd_struct
 
-//The polygon calculation seems not so good. A good test game is break point. All the lines are blinking and none is really thin and straight.
+  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
 
+  if (((cmd.CMDXA & 0xFC00) == 0x0) || ((cmd.CMDXA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYA & 0xFC00) == 0x0) || ((cmd.CMDYA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXB & 0xFC00) == 0x0) || ((cmd.CMDXB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYB & 0xFC00) == 0x0) || ((cmd.CMDYB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXC & 0xFC00) == 0x0) || ((cmd.CMDXC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYC & 0xFC00) == 0x0) || ((cmd.CMDYC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXD & 0xFC00) == 0x0) || ((cmd.CMDXD & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYD & 0xFC00) == 0x0) || ((cmd.CMDYD & 0xFC00) == 0xFC00)) badgeometry = 0;
+
+  if (badgeometry == 1) return;
+
+  vdp1cmd.P[0] = (s16)cmd.CMDXA + Vdp1Regs->localX;
+  vdp1cmd.P[1] = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  vdp1cmd.P[2] = (s16)cmd.CMDXB + Vdp1Regs->localX;
+  vdp1cmd.P[3] = (s16)cmd.CMDYB + Vdp1Regs->localY;
+  vdp1cmd.P[4] = (s16)cmd.CMDXC + Vdp1Regs->localX;
+  vdp1cmd.P[5] = (s16)cmd.CMDYC + Vdp1Regs->localY;
+  vdp1cmd.P[6] = (s16)cmd.CMDXD + Vdp1Regs->localX;
+  vdp1cmd.P[7] = (s16)cmd.CMDYD + Vdp1Regs->localY;
+
+  //gouraud
+  memset(vdp1cmd.G, 0, sizeof(float)*4);
+  if ((cmd.CMDPMOD & 4))
+  {
+    for (int i = 0; i < 4; i++){
+      u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+      char r = (color2 & 0x001F) - 16;
+      char g = ((color2 & 0x03E0) >> 5) - 16;
+      char b = ((color2 & 0x7C00) >> 10) - 16;
+      char a = 255;
+      vdp1cmd.G[i] = (r&0xFF) | (g&0xFF)<<8 | (b&0xFF)<<16 | (a&0xFF)<<24;
+    }
+  }
+  //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  vdp1_add(&vdp1cmd);
+
+  // color = cmd.CMDCOLR;
+  // sprite.uclipmode = (cmd.CMDPMOD >> 9) & 0x03
+  //
+  // sprite.priority = 0;
+  // sprite.w = 1;
+  // sprite.h = 1;
+  // sprite.flip = 0;
+  // sprite.cor = 0x00;
+  // sprite.cog = 0x00;
+  // sprite.cob = 0x00;
+
+//MAnque la couleur...
+
+LOG_CMD("%d\n", __LINE__);
+#if 0
   u16 color;
   YglSprite sprite;
   YglTexture texture;
@@ -4795,10 +4856,13 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
 
   *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  #endif
 }
 
 void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  LOG_CMD("%d\n", __LINE__);
+#if 0
   s16 v[8];
   float line_poygon[8];
   u16 color;
@@ -5062,13 +5126,15 @@ void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     }
   }
 
-
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
+  LOG_CMD("%d\n", __LINE__);
+#if 0
   s16 v[4];
   u16 color;
   u16 CMDPMOD;
@@ -5175,6 +5241,7 @@ void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5195,6 +5262,7 @@ void VIDOGLVdp1SystemClipping(u8 * ram, Vdp1 * regs)
   Vdp1Regs->systemclipY1 = 0;
   Vdp1Regs->systemclipX2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x14);
   Vdp1Regs->systemclipY2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x16);
+  //printf("System (0,0) (%d,%d)\n", Vdp1Regs->systemclipX2, Vdp1Regs->systemclipY2);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5203,6 +5271,7 @@ void VIDOGLVdp1LocalCoordinate(u8 * ram, Vdp1 * regs)
 {
   Vdp1Regs->localX = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0xC);
   Vdp1Regs->localY = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0xE);
+  //printf("Local %d %d\n", Vdp1Regs->localX, Vdp1Regs->localY);
 }
 
 //////////////////////////////////////////////////////////////////////////////

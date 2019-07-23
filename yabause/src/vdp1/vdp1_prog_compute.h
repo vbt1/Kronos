@@ -20,6 +20,7 @@ SHADER_VERSION_COMPUTE
 
 "struct cmdparameter_struct{ \n"
 "  int P[8];\n"
+"  int G[4];\n"
 "};\n"
 
 "layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
@@ -173,7 +174,7 @@ static const char vdp1_test_f[] =
 //"    else finalColor = vec4(float(cmd[cmdindex].P[1].x)/800.0, float(cmd[cmdindex].P[1].y)/480.0, 1.0, 1.0);\n"
 "    vec2 texcoord = getTexCoord(texel, cmdindex);\n"
 "    uint col = color[uint(texcoord.y * colHeight)*  colWidth + uint(texcoord.x * colWidth)];\n"
-"    float a = float((col>>24u)&0xFFu)/255.0f;\n"
+"    float a = (0x80 | 0x0)/255.0f;\n"//float((col>>24u)&0xFFu)/255.0f;\n"
 "    float b = float((col>>16u)&0xFFu)/255.0f;\n"
 "    float g = float((col>>8u)&0xFFu)/255.0f;\n"
 "    float r = float((col>>0u)&0xFFu)/255.0f;\n"

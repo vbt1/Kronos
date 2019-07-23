@@ -10,9 +10,10 @@ enum
 typedef struct
 {
   int P[8];
+  int G[4];
 } cmdparameter;
 
-extern int vdp1_compute_init(int width, int height, float ratiow, float ratioh);
+extern int* vdp1_compute_init(int width, int height, float ratiow, float ratioh);
 extern int vdp1_compute();
 extern int vdp1_add(cmdparameter* cmd);
 

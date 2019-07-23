@@ -1620,9 +1620,6 @@ void VIDDummyVdp2DispOff(void)
 
 void Vdp1HBlankIN(void)
 {
-#if defined(HAVE_LIBGL) || defined(__ANDROID__) || defined(IOS)
-  YglTMCheck();
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
