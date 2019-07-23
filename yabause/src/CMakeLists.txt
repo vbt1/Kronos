@@ -345,6 +345,7 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
         upscale_shader.c
 				rbg_compute.cpp
 				vdp2_compute.cpp
+				vdp1/vdp1_compute.c
 			)
 		endif()
         include(FindGLEW)
@@ -355,16 +356,21 @@ if (YAB_WANT_OPENGL AND (YAB_RGB STREQUAL ""))
         else()
 		    add_definitions(-DGLEW_STATIC)
 		    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/gllibs/include/ )
-			set(kronos_SOURCES
-				${kronos_SOURCES}
-				gllibs/glew/glew.c
-				yglcache.c
-				ygles.c
-				yglshaderes.c
-				rbg_compute.cpp
-				vdp2_compute.cpp
-        upscale_shader.c )
-		endif()
+		    endif()
+				set(kronos_SOURCES
+					${kronos_SOURCES}
+					gllibs/glew/glew.c
+					yglcache.c
+					ygles.c
+					yglshaderes.c
+					rbg_compute.cpp
+					vdp2_compute.cpp
+					upscale_shader.c
+					vdp1/vdp1_compute.c )
+				set(kronos_HEADERS
+					${kronos_HEADERS}
+				  vdp1/vdp1_compute.h
+				  vdp1/vdp1_prog_compute.h)
 	endif(OPENGL_FOUND)
 endif ()
 option(SPRITE_CACHE "Vdp1 sprite cache" ON)
