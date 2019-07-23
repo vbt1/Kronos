@@ -4680,6 +4680,7 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   vdp1cmd_struct cmd;
   int badgeometry = 1;
   cmdparameter vdp1cmd; //Should be better if cmdparameter == vdp1cmd_struct
+  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
 
@@ -4712,10 +4713,19 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
       char r = (color2 & 0x001F) - 16;
       char g = ((color2 & 0x03E0) >> 5) - 16;
       char b = ((color2 & 0x7C00) >> 10) - 16;
-      char a = 255;
-      vdp1cmd.G[i] = (r&0xFF) | (g&0xFF)<<8 | (b&0xFF)<<16 | (a&0xFF)<<24;
+      char a = 0xFF;
+      vdp1cmd.G[i] = ((r<<3)&0xFF) | ((g<<3)&0xFF)<<8 | ((b<<3)&0xFF)<<16 | (a&0xFF)<<24;
     }
   }
+  vdp1cmd.priority = 0;
+  vdp1cmd.w = 1;
+  vdp1cmd.h = 1;
+  vdp1cmd.flip = 0;
+  vdp1cmd.cor = 0x0;
+  vdp1cmd.cog = 0x0;
+  vdp1cmd.cob = 0x0;
+  vdp1cmd.SPCTL = varVdp2Regs->SPCTL;
+  vdp1cmd.type = POLYGON;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&vdp1cmd);

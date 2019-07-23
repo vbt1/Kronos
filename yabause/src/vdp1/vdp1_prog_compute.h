@@ -20,7 +20,17 @@ SHADER_VERSION_COMPUTE
 
 "struct cmdparameter_struct{ \n"
 "  int P[8];\n"
-"  int G[4];\n"
+"  int Gouraud[4];\n"
+"  int priority;\n"
+"  int w;\n"
+"  int h;\n"
+"  int flip;\n"
+"  int cor;\n"
+"  int cog;\n"
+"  int cob;\n"
+"  int SPCTL;\n"
+"  int type;\n"
+"  int padding[3];\n"
 "};\n"
 
 "layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
