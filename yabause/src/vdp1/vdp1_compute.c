@@ -44,11 +44,11 @@ static const GLchar * a_prg_vdp1[NB_PRG][3] = {
 		vdp1_0_Pal_f,
 		vdp1_end_f
 	},
-	//VDP1_0_MIX
+	//CLEAR
 	{
-		vdp1_start_f,
-		vdp1_0_Mix_f,
-		vdp1_end_f
+		vdp1_clear_f,
+		NULL,
+		NULL
   },
 	//TEST_PRG
 	{
@@ -91,9 +91,14 @@ int ErrorHandle(const char* name)
 
 static GLuint createProgram(int count, const GLchar** prg_strs) {
   GLint status;
+	int exactCount = 0;
   GLuint result = glCreateShader(GL_COMPUTE_SHADER);
 
-  glShaderSource(result, count, prg_strs, NULL);
+  for (int id = 0; id < count; id++) {
+		if (prg_strs[id] != NULL) exactCount++;
+		else break;
+	}
+  glShaderSource(result, exactCount, prg_strs, NULL);
   glCompileShader(result);
   glGetShaderiv(result, GL_COMPILE_STATUS, &status);
 
@@ -216,7 +221,18 @@ int vdp1_add(vdp1cmd_struct* cmd) {
   }
 }
 
-int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
+void vdp1_clear() {
+	int progId = CLEAR;
+	//printf("USe Prog %d\n", progId);
+	if (prg_vdp1[progId] == 0)
+    prg_vdp1[progId] = createProgram(sizeof(a_prg_vdp1[progId]) / sizeof(char*), (const GLchar**)a_prg_vdp1[progId]);
+  glUseProgram(prg_vdp1[progId]);
+
+	glBindImageTexture(0, compute_tex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glDispatchCompute(work_groups_x, work_groups_y, 1); //might be better to launch only the right number of workgroup
+}
+
+void vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 {
   int am = sizeof(vdp1cmd_struct) % 16;
   tex_width = width;
@@ -237,10 +253,10 @@ int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 		cmdVdp1 = (vdp1cmd_struct*)malloc(NB_COARSE_RAST*2000*sizeof(vdp1cmd_struct));
   memset(nbCmd, 0, NB_COARSE_RAST*sizeof(int));
 	memset(cmdVdp1, 0, NB_COARSE_RAST*2000*sizeof(vdp1cmd_struct*));
-	return compute_tex;
+	return;
 }
 
-int vdp1_compute(Vdp2 *varVdp2Regs) {
+int* vdp1_compute(Vdp2 *varVdp2Regs) {
   GLuint error;
 	int progId = getProgramId();
 	int needRender = 0;
@@ -249,8 +265,6 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
     prg_vdp1[progId] = createProgram(sizeof(a_prg_vdp1[progId]) / sizeof(char*), (const GLchar**)a_prg_vdp1[progId]);
   glUseProgram(prg_vdp1[progId]);
 
-	glBindTexture(GL_TEXTURE_2D, compute_tex[0]);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (int)(tex_width*tex_ratiow), (int)(tex_height*tex_ratioh), GL_BGRA, GL_UNSIGNED_BYTE, clear);
 	VDP1CPRINT("Draw VDP1\n");
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cmd_);
@@ -261,7 +275,7 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
 		}
   }
 
-  if (needRender == 0) return;
+  if (needRender == 0) return &compute_tex[0];
 
 	_Ygl->vdp1On[_Ygl->drawframe] = 1;
 
@@ -284,5 +298,5 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
   memset(nbCmd, 0, NB_COARSE_RAST*sizeof(int));
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-  return compute_tex[0];
+  return &compute_tex[0];
 }

@@ -553,6 +553,7 @@ typedef struct {
 	u32 lincolor_tex;
 	u32 linecolor_pbo;
 	u32 * lincolor_buf;
+  u32 depth;
 } YglPerLineInfo;
 
 typedef struct {

@@ -769,6 +769,7 @@ u32* getVdp1DrawingFBMemRead(int id) {
   glBindBuffer(GL_PIXEL_PACK_BUFFER, _Ygl->vdp1_pbo[id]);
   glReadPixels(0, 0, 512, 256, GL_RGBA, GL_UNSIGNED_BYTE, 0);
   fbptr = (u32 *)glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, 0x40000*2, GL_MAP_READ_BIT );
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
   return fbptr;
 }
@@ -906,7 +907,7 @@ int YglGenFrameBuffer() {
     return 0;
   }
 
-  _Ygl->vdp1Tex = vdp1_compute_init(_Ygl->rwidth, _Ygl->rheight, (float)(_Ygl->width)/(float)(_Ygl->rwidth), (float)(_Ygl->height)/(float)(_Ygl->rheight));
+  vdp1_compute_init(_Ygl->rwidth, _Ygl->rheight, (float)(_Ygl->width)/(float)(_Ygl->rwidth), (float)(_Ygl->height)/(float)(_Ygl->rheight));
 
   if (_Ygl->upfbo != 0){
     glDeleteFramebuffers(1, &_Ygl->upfbo);
@@ -1521,7 +1522,7 @@ int YglInit(int width, int height, unsigned int depth) {
   _Ygl->vdp1fb_exactbuf[0] = (u8*)malloc(512*704*2);
   _Ygl->vdp1fb_exactbuf[1] = (u8*)malloc(512*704*2);
 
-  _Ygl->vdp1Tex = vdp1_compute_init(_Ygl->rwidth, _Ygl->rheight, _Ygl->widthRatio, _Ygl->heightRatio);
+  vdp1_compute_init(_Ygl->rwidth, _Ygl->rheight, _Ygl->widthRatio, _Ygl->heightRatio);
 
   _Ygl->vdp2buf = (u32*)malloc(512 * sizeof(int)* NB_VDP2_REG);
 
@@ -2703,6 +2704,9 @@ void YglEraseWriteVDP1(void) {
   u32 alpha = 0;
   int status = 0;
   GLenum DrawBuffers[4]= {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2,GL_COLOR_ATTACHMENT3};
+
+  vdp1_clear();
+
   if (_Ygl->vdp1On[_Ygl->readframe] == 0) return; //No update on the fb, no need to clear
   _Ygl->vdp1On[_Ygl->readframe] = 0;
   if (_Ygl->vdp1FrameBuff[0] == 0) return;
@@ -2768,7 +2772,7 @@ void YglFrameChangeVDP1(){
 void YglRenderVDP1(void) {
   FrameProfileAdd("YglRenderVDP1 start");
   FRAMELOG("YglRenderVDP1: drawframe =%d", _Ygl->drawframe);
-  vdp1_compute(&Vdp2Lines[0]);
+  _Ygl->vdp1Tex = vdp1_compute(&Vdp2Lines[0]);
   FrameProfileAdd("YglRenderVDP1 end");
 }
 
@@ -3798,7 +3802,6 @@ void YglGetWindowPointer(int id) {
 void YglSetWindow(int id) {
   glBindTexture(GL_TEXTURE_2D, _Ygl->window_tex[id]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, _Ygl->win[id] );
-
   glBindTexture(GL_TEXTURE_2D, 0);
   return;
 }
@@ -3957,7 +3960,12 @@ void VIDOGLSync(){
 // Per line operation
 u32 * YglGetPerlineBuf(YglPerLineInfo * perline, int linecount, int depth ){
   int error;
-  if (perline->lincolor_tex == 0){
+  if ((perline->lincolor_tex == 0) || (perline->depth != depth)){
+    if (perline->lincolor_tex != 0){
+       glDeleteTextures(1, &perline->lincolor_tex);
+       glDeleteBuffers(1,&perline->linecolor_pbo);
+    }
+    perline->depth = depth;
     glGenTextures(1, &perline->lincolor_tex);
 
     glGenBuffers(1, &perline->linecolor_pbo);
@@ -3984,6 +3992,7 @@ u32 * YglGetPerlineBuf(YglPerLineInfo * perline, int linecount, int depth ){
 
 void YglSetPerlineBuf(YglPerLineInfo * perline, u32 * pbuf, int linecount, int depth){
 
+  if (perline->depth != depth) return;
   glBindTexture(GL_TEXTURE_2D, perline->lincolor_tex);
   //if (_Ygl->lincolor_buf == pbuf) {
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, perline->linecolor_pbo);

@@ -15,6 +15,21 @@
 #define LOCAL_SIZE_X 8
 #define LOCAL_SIZE_Y 8
 
+static const char vdp1_clear_f[] =
+SHADER_VERSION_COMPUTE
+"#ifdef GL_ES\n"
+"precision highp float;\n"
+"#endif\n"
+"layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
+"layout(rgba8, binding = 0) writeonly highp uniform image2D outSurface;\n"
+"void main()\n"
+"{\n"
+"  ivec2 size = imageSize(outSurface);\n"
+"  ivec2 texel = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);\n"
+"  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
+"  imageStore(outSurface,texel,vec4(0.0));\n"
+"}\n";
+
 static const char vdp1_start_f[] =
 SHADER_VERSION_COMPUTE
 "#ifdef GL_ES\n"
@@ -943,10 +958,11 @@ SHADER_VERSION_COMPUTE
 "  vec4 finalColor = vec4(0.0);\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.x, size.y - gl_GlobalInvocationID.y);\n"
+"  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
 "  ivec2 index = ivec2((texel.x*"Stringify(NB_COARSE_RAST_X)")/size.x, (texel.y*"Stringify(NB_COARSE_RAST_Y)")/size.y);\n"
 "  uint lindex = index.y*"Stringify(NB_COARSE_RAST_X)"+ index.x;\n"
 "  uint cmdIndex = lindex * 2000u;\n"
-"  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
+
 "  if (nbCmd[lindex] == 0u) return;\n"
 "  int cmdindex = getCmd(texel, cmdIndex, 0u, nbCmd[lindex]);\n"
 "  if (cmdindex == -1) return;\n"

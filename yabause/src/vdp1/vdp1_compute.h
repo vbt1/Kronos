@@ -7,13 +7,14 @@
 enum
 {
   VDP1_0_PAL = 0,
-  VDP1_0_MIX,
+  CLEAR,
   TEST_PRG,
   NB_PRG
 };
 
-extern int* vdp1_compute_init(int width, int height, float ratiow, float ratioh);
-extern int vdp1_compute(Vdp2 *varVdp2Regs);
+extern void vdp1_compute_init(int width, int height, float ratiow, float ratioh);
+extern int* vdp1_compute(Vdp2 *varVdp2Regs);
 extern int vdp1_add(vdp1cmd_struct* cmd);
+extern void vdp1_clear();
 
 #endif //VDP1_COMPUTE_H

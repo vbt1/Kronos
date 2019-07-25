@@ -3503,7 +3503,7 @@ void VIDOGLVdp1Draw()
       line_shift = 0;
     }
 
-    linebuf = YglGetPerlineBuf(&_Ygl->bg[SPRITE], _Ygl->rheight, 1 );
+    linebuf = YglGetPerlineBuf(&_Ygl->bg[SPRITE], _Ygl->rheight, 1+8+8 );
     for (line = 0; line < _Ygl->rheight; line++) {
       linebuf[line] = 0xFF000000;
       Vdp2 * lVdp2Regs = &Vdp2Lines[line >> line_shift];
