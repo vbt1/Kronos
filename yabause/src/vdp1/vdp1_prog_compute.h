@@ -494,9 +494,9 @@ SHADER_VERSION_COMPUTE
 
 "vec4 VDP1COLOR(uint C, uint A, uint P, uint shadow, uint color) {\n"
 "  uint col = color;\n"
-"  if (C == 1) col &= 0x7FFF;\n"
-"  else col &= 0xFFFFFF;\n"
-"  uint ret = 0x80000000 | (C << 30) | (A << 27) | (P << 24) | (shadow << 23) | col;\n"
+"  if (C == 1u) col &= 0x7FFFu;\n"
+"  else col &= 0xFFFFFFu;\n"
+"  uint ret = 0x80000000u | (C << 30) | (A << 27) | (P << 24) | (shadow << 23) | col;\n"
 "  return vec4(float((ret>>0)&0xFFu),float((ret>>8)&0xFFu),float((ret>>16)&0xFFu),float((ret>>24)&0xFFu));\n"
 "}\n"
 
@@ -668,10 +668,6 @@ SHADER_VERSION_COMPUTE
 
 "void main()\n"
 "{\n"
-"  float a = 0.0;\n"
-"  float r = 0.0;\n"
-"  float g = 0.0;\n"
-"  float b = 0.0;\n"
 "  cmdparameter_struct pixcmd;\n"
 "  uint discarded = 0;\n"
 "  vec4 finalColor = vec4(0.0);\n"
@@ -687,28 +683,24 @@ SHADER_VERSION_COMPUTE
 "  pixcmd = cmd[cmdindex];\n"
 "  vec2 texcoord = getTexCoord(texel, pixcmd);\n"
 "  if (pixcmd.type == "Stringify(POLYGON)") {\n"
-"    vec4 color = ReadPolygonColor(pixcmd);\n"
-"    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
+"    finalColor = ReadPolygonColor(pixcmd);\n"
+"  }\n"
+"  if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
 //Implement Mesh shader (Duplicate for improve)
-"    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB_SHADOW
+"  } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB_SHADOW
 //Implement PG_VDP1_MSB_SHADOW
-"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
+"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
 //Implement PG_VDP1_GOURAUDSHADING
-"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
+"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
 //Implement PG_VDP1_SHADOW
-"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
+"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
 //Implement PG_VDP1_HALF_LUMINANCE
-"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
+"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
 //Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
-"    }\n"
-"    a = color.a/255.0;\n"
-"    b = color.b/255.0;\n"
-"    g = color.g/255.0;\n"
-"    r = color.r/255.0;\n"
 "  }\n";
 
 static const char vdp1_end_f[] =
-"  finalColor = vec4(r,g,b,a);\n"
+"  finalColor /= 255.0;\n"
 "  imageStore(outSurface,texel,finalColor);\n"
 "}\n";
 

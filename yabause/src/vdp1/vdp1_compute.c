@@ -165,6 +165,12 @@ static int generateComputeBuffer(int w, int h) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	if (clear != NULL) free(clear);
+	clear = (int*)malloc(w*h * sizeof(int));
+	memset(clear, 0, w*h * sizeof(int));
+
+
   return 0;
 }
 
@@ -221,9 +227,6 @@ int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
     struct_size += 16 - am;
   }
 
-  if (clear != NULL) free(clear);
-	clear = (int*)malloc(tex_height*tex_ratioh * tex_width*tex_ratiow * sizeof(int));
-	memset(clear, 0, tex_height*tex_ratioh * tex_width*tex_ratiow * sizeof(int));
   work_groups_x = (tex_width*tex_ratiow) / local_size_x;
   work_groups_y = (tex_height*tex_ratioh) / local_size_y;
   generateComputeBuffer(width*tex_ratiow, height*tex_ratioh);
@@ -246,10 +249,7 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
   glUseProgram(prg_vdp1[progId]);
 
 	glBindTexture(GL_TEXTURE_2D, compute_tex[0]);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width*tex_ratiow, tex_height*tex_ratioh, GL_BGRA, GL_UNSIGNED_BYTE, clear);
-
-	ErrorHandle("glUseProgram");
-
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (int)(tex_width*tex_ratiow), (int)(tex_height*tex_ratioh), GL_BGRA, GL_UNSIGNED_BYTE, clear);
 	VDP1CPRINT("Draw VDP1\n");
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cmd_);

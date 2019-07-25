@@ -4702,6 +4702,9 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.CMDYC = (s16)cmd.CMDYC + Vdp1Regs->localY;
   cmd.CMDXD = (s16)cmd.CMDXD + Vdp1Regs->localX;
   cmd.CMDYD = (s16)cmd.CMDYD + Vdp1Regs->localY;
+
+//printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
+
   //gouraud
   memset(cmd.G, 0, sizeof(float)*4);
   if ((cmd.CMDPMOD & 4))
@@ -4728,20 +4731,10 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   vdp1_add(&cmd);
 
-  // color = cmd.CMDCOLR;
-  // sprite.uclipmode = (cmd.CMDPMOD >> 9) & 0x03
-  //
-  // sprite.priority = 0;
-  // sprite.w = 1;
-  // sprite.h = 1;
-  // sprite.flip = 0;
-  // sprite.cor = 0x00;
-  // sprite.cog = 0x00;
-  // sprite.cob = 0x00;
+//Exporter la couleur en RGB
 
-//MAnque la couleur...
+  //printf("%x\n", cmd.CMDPMOD);
 
-LOG_CMD("%d\n", __LINE__);
 #if 0
   u16 color;
   YglSprite sprite;
