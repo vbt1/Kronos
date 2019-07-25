@@ -7,7 +7,8 @@
 #define Stringify(macro) QuoteIdent(macro)
 
 #define POLYGON 0
-#define SPRITE 1
+#define DISTORTED 1
+#define NORMAL 2
 
 #define NB_COARSE_RAST_X 8
 #define NB_COARSE_RAST_Y 8
@@ -156,7 +157,18 @@ SHADER_VERSION_COMPUTE
 
 "float cross( in vec2 a, in vec2 b ) { return a.x*b.y - a.y*b.x; }\n"
 
+
 "vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
+//http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
+"  vec2 p = vec2(texel)/upscale;\n"
+"  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
+"  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
+"  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
+"  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
+"  return vec2((length(a.x-p.x)+0.5)/(length(a.x-b.x)+1.0),(length(a.y-p.y)+0.5)/(length(a.y-d.y)+1.0));\n"
+"}\n"
+
+"vec2 getTexCoordDistorted(ivec2 texel, cmdparameter_struct pixcmd) {\n"
 //http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
@@ -532,7 +544,8 @@ SHADER_VERSION_COMPUTE
 "  uint colorcl = 0;\n"
 "  uint endcnt = 0;\n"
 "  uint normal_shadow = 0;\n"
-"  uint charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w));\n"
+"  uint pos = (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w));\n"
+"  uint charAddr = pixcmd.CMDSRCA * 8 + pos;\n"
 "  uint dot;\n"
 "  bool SPD = ((pixcmd.CMDPMOD & 0x40u) != 0);\n"
 "  bool END = ((pixcmd.CMDPMOD & 0x80u) != 0);\n"
@@ -546,7 +559,7 @@ SHADER_VERSION_COMPUTE
       // 4 bpp Bank mode
 "      uint colorBank = pixcmd.CMDCOLR & 0xFFF0u;\n"
 "      uint i;\n"
-"      charAddr *= 2;\n"
+"      charAddr += pos;\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
       // Pixel 1
 "      if (((dot >> 4) == 0) && !SPD) color = vec4(0.0);\n"
@@ -741,7 +754,7 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 8 bpp(256 color) Bank mode
 "      uint colorBank = pixcmd.CMDCOLR & 0xFF00u;\n"
-"      uint index = (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w));\n"
+"      uint index = pos;\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
 "      if ((dot == 0) && !SPD) {\n"
 "        color = vec4(0.0);\n"
@@ -765,9 +778,9 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 16 bpp Bank mode
 "      uint temp;\n"
-"      charAddr *= 2;\n"
+"      charAddr += pos;\n"
 "      temp = Vdp1RamReadWord(charAddr);\n"
-"      if (((temp & 0x8000u)==0x0) && !SPD) {\n"
+"      if (((temp & 0x8000u)==0x0u) && !SPD) {\n"
 "        color = vec4(0.0);\n"
 "      }\n"
 "      else if ((temp == 0x7FFFu) && !END) {\n"
@@ -957,7 +970,7 @@ SHADER_VERSION_COMPUTE
 "  uint discarded = 0;\n"
 "  vec4 finalColor = vec4(0.0);\n"
 "  ivec2 size = imageSize(outSurface);\n"
-"  ivec2 texel = ivec2(gl_GlobalInvocationID.x, size.y - gl_GlobalInvocationID.y);\n"
+"  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
 "  ivec2 index = ivec2((texel.x*"Stringify(NB_COARSE_RAST_X)")/size.x, (texel.y*"Stringify(NB_COARSE_RAST_Y)")/size.y);\n"
 "  uint lindex = index.y*"Stringify(NB_COARSE_RAST_X)"+ index.x;\n"
@@ -967,10 +980,13 @@ SHADER_VERSION_COMPUTE
 "  int cmdindex = getCmd(texel, cmdIndex, 0u, nbCmd[lindex]);\n"
 "  if (cmdindex == -1) return;\n"
 "  pixcmd = cmd[cmdindex];\n"
-"  vec2 texcoord = getTexCoord(texel, pixcmd);\n"
 "  if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "    finalColor = ReadPolygonColor(pixcmd);\n"
-"  } else if (pixcmd.type == "Stringify(SPRITE)") {\n"
+"  } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
+"    vec2 texcoord = getTexCoordDistorted(texel, pixcmd);\n"
+"    finalColor = ReadSpriteColor(pixcmd, texcoord);\n"
+"  } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
+"    vec2 texcoord = getTexCoord(texel, pixcmd);\n"
 "    finalColor = ReadSpriteColor(pixcmd, texcoord);\n"
 "  }\n"
 "  if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
@@ -989,7 +1005,7 @@ SHADER_VERSION_COMPUTE
 
 static const char vdp1_end_f[] =
 "  finalColor /= 255.0;\n"
-"  imageStore(outSurface,texel,finalColor);\n"
+"  imageStore(outSurface,ivec2(texel.x,size.y-texel.y),finalColor);\n"
 "}\n";
 
 static const char vdp1_test_f[] = "";

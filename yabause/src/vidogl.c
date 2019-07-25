@@ -4003,8 +4003,6 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     uint *cclist = (uint *)&varVdp2Regs->CCRSA;
     cclist[0] &= 0x1Fu;
   }
-//printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
-
   //gouraud
   memset(cmd.G, 0, sizeof(float)*4);
   if ((cmd.CMDPMOD & 4))
@@ -4020,7 +4018,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = SPRITE;
+  cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);
@@ -4134,64 +4132,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
     if (sprite.w > 0 && sprite.h > 0)
     {
-      if (1 == YglI  vdp1cmd_struct cmd;
-  int badgeometry = 1;
-  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
-
-  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-  if (cmd.CMDSIZE == 0) {
-    return; // BAD Command
-  }
-
-  cmd.w = ((cmd.CMDSIZE >> 8) & 0x3F) * 8;
-  cmd.h = cmd.CMDSIZE & 0xFF;
-  cmd.cor = 0;
-  cmd.cog = 0;
-  cmd.cob = 0;
-
-  cmd.flip = (cmd.CMDCTRL & 0x30) >> 4;
-
-  if (((cmd.CMDXA & 0xFC00) == 0x0) || ((cmd.CMDXA & 0xFC00) == 0xFC00)) badgeometry = 0;
-  if (((cmd.CMDYA & 0xFC00) == 0x0) || ((cmd.CMDYA & 0xFC00) == 0xFC00)) badgeometry = 0;
-
-  if (badgeometry == 1) return;
-
-  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
-  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
-
-  cmd.CMDXB = cmd.CMDXA + cmd.w;
-  cmd.CMDYB = cmd.CMDYA;
-  cmd.CMDXC = cmd.CMDXA + cmd.w;
-  cmd.CMDYC = cmd.CMDYA + cmd.h;
-  cmd.CMDXD = cmd.CMDXA;
-  cmd.CMDYD = cmd.CMDYA + cmd.h;
-
-  if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
-    // hard/vdp2/hon/p09_20.htm#no9_21
-    uint *cclist = (uint *)&varVdp2Regs->CCRSA;
-    cclist[0] &= 0x1Fu;
-  }
-//printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
-
-  //gouraud
-  memset(cmd.G, 0, sizeof(float)*4);
-  if ((cmd.CMDPMOD & 4))
-  {
-    for (int i = 0; i < 4; i++){
-      u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-      char r = (color2 & 0x001F) - 16;
-      char g = ((color2 & 0x03E0) >> 5) - 16;
-      char b = ((color2 & 0x7C00) >> 10) - 16;
-      char a = 0xFF;
-      cmd.G[i] = ((r<<3)&0xFF) | ((g<<3)&0xFF)<<8 | ((b<<3)&0xFF)<<16 | (a&0xFF)<<24;
-    }
-  }
-  cmd.priority = 0;
-  cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = SPRITE;
-  //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
-
-  vdp1_add(&cmd);sCached(YglTM_vdp1[_Ygl->drawframe], tmp, &cash))
+      if (1 == YglIsCached(YglTM_vdp1[_Ygl->drawframe], tmp, &cash))
       {
         YglCacheQuadGrowShading(&sprite, col, &cash, YglTM_vdp1[_Ygl->drawframe]);
         return;
@@ -4369,7 +4310,7 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = SPRITE;
+  cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);
@@ -4753,7 +4694,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = SPRITE;
+  cmd.type = DISTORTED;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);
