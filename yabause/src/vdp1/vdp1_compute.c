@@ -124,6 +124,7 @@ static GLuint createProgram(int count, const GLchar** prg_strs) {
 }
 
 static int generateComputeBuffer(int w, int h) {
+	printf("Generate %d %d\n", w, h);
   if (compute_tex[0] != 0) {
     glDeleteTextures(2,&compute_tex[0]);
   }
