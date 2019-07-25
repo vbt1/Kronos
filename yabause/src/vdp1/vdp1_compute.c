@@ -1,10 +1,9 @@
 #include "vdp1_compute.h"
-#include "vdp1_prog_compute.h"
-#include "sonic.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "vdp1.h"
 
 //#define VDP1CDEBUG
 #ifdef VDP1CDEBUG
@@ -34,16 +33,29 @@ static int* clear;
 
 static GLuint compute_tex[2] = {0};
 static GLuint ssbo_cmd_ = 0;
-static GLuint ssbo_vram_ = 0;
+static GLuint ssbo_vdp1ram_ = 0;
 static GLuint ssbo_nbcmd_ = 0;
 static GLuint prg_vdp1[NB_PRG] = {0};
 
 static const GLchar * a_prg_vdp1[NB_PRG][3] = {
+  //VDP1_0_PAL
+	{
+		vdp1_start_f,
+		vdp1_0_Pal_f,
+		vdp1_end_f
+	},
+	//VDP1_0_MIX
+	{
+		vdp1_start_f,
+		vdp1_0_Mix_f,
+		vdp1_end_f
+  },
+	//TEST_PRG
 	{
 		vdp1_start_f,
 		vdp1_test_f,
 		vdp1_end_f
-  }
+	}
 };
 
 static int getProgramId() {
@@ -111,23 +123,17 @@ static GLuint createProgram(int count, const GLchar** prg_strs) {
   return program;
 }
 
-static char pixel[SONIC_WIDTH*SONIC_HEIGHT*4];
-
 static int generateComputeBuffer(int w, int h) {
   if (compute_tex[0] != 0) {
     glDeleteTextures(2,&compute_tex[0]);
   }
-	if (ssbo_vram_ != 0) {
-    glDeleteBuffers(1, &ssbo_vram_);
+	if (ssbo_vdp1ram_ != 0) {
+    glDeleteBuffers(1, &ssbo_vdp1ram_);
 	}
-  for (int i = 0; i< SONIC_WIDTH*SONIC_HEIGHT; i++) {
-	  HEADER_PIXEL(&header_data, &pixel[4*i]);
-	  pixel[4*i+3] = 0xFF;
-  }
 
-	glGenBuffers(1, &ssbo_vram_);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vram_);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, SONIC_WIDTH*SONIC_HEIGHT*4, pixel, GL_STATIC_READ);
+	glGenBuffers(1, &ssbo_vdp1ram_);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp1ram_);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 0x80000, NULL, GL_DYNAMIC_DRAW);
 
   if (ssbo_cmd_ != 0) {
     glDeleteBuffers(1, &ssbo_cmd_);
@@ -218,10 +224,8 @@ int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
   if (clear != NULL) free(clear);
 	clear = (int*)malloc(tex_height*tex_ratioh * tex_width*tex_ratiow * sizeof(int));
 	memset(clear, 0, tex_height*tex_ratioh * tex_width*tex_ratiow * sizeof(int));
-printf("%d %d %f %f\n", tex_width, tex_height, tex_ratiow, tex_ratioh);
   work_groups_x = (tex_width*tex_ratiow) / local_size_x;
   work_groups_y = (tex_height*tex_ratioh) / local_size_y;
-printf("%d %d\n", work_groups_x, work_groups_y);
   generateComputeBuffer(width*tex_ratiow, height*tex_ratioh);
 	if (nbCmd == NULL)
   	nbCmd = (int*)malloc(NB_COARSE_RAST *sizeof(int));
@@ -232,10 +236,11 @@ printf("%d %d\n", work_groups_x, work_groups_y);
 	return compute_tex;
 }
 
-int vdp1_compute() {
+int vdp1_compute(Vdp2 *varVdp2Regs) {
   GLuint error;
 	int progId = getProgramId();
 	int needRender = 0;
+	printf("USe Prog %d\n", progId);
 	if (prg_vdp1[progId] == 0)
     prg_vdp1[progId] = createProgram(sizeof(a_prg_vdp1[progId]) / sizeof(char*), (const GLchar**)a_prg_vdp1[progId]);
   glUseProgram(prg_vdp1[progId]);
@@ -262,13 +267,14 @@ int vdp1_compute() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_nbcmd_);
   glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int)*NB_COARSE_RAST, (void*)nbCmd);
 
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp1ram_);
+  glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp1Ram);
+
 	glBindImageTexture(0, compute_tex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_nbcmd_);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_cmd_);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_vram_);
-	glUniform1i(4, SONIC_WIDTH);
-	glUniform1i(5, SONIC_HEIGHT);
-	glUniform2f(6, tex_ratiow, tex_ratioh);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_vdp1ram_);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_nbcmd_);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_cmd_);
+	glUniform2f(4, tex_ratiow, tex_ratioh);
 
   glDispatchCompute(work_groups_x, work_groups_y, 1); //might be better to launch only the right number of workgroup
 	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

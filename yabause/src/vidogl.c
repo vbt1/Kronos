@@ -4703,7 +4703,6 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   vdp1cmd.P[5] = (s16)cmd.CMDYC + Vdp1Regs->localY;
   vdp1cmd.P[6] = (s16)cmd.CMDXD + Vdp1Regs->localX;
   vdp1cmd.P[7] = (s16)cmd.CMDYD + Vdp1Regs->localY;
-
   //gouraud
   memset(vdp1cmd.G, 0, sizeof(float)*4);
   if ((cmd.CMDPMOD & 4))
@@ -4759,7 +4758,6 @@ LOG_CMD("%d\n", __LINE__);
   int colorcalc = 0;
   vdp1cmd_struct cmd;
   float line_polygon[8];
-  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
 
@@ -4814,19 +4812,6 @@ LOG_CMD("%d\n", __LINE__);
     }
     gouraud = 1;
   }
-//Ca semble inutile ce bout de code
-  if (color & 0x8000)
-    priority = varVdp2Regs->PRISA & 0x7;
-  else
-  {
-    Vdp1ProcessSpritePixel(varVdp2Regs->SPCTL & 0xF, &color, &shadow, &normalshadow, &priority, &colorcalc);
-#ifdef WORDS_BIGENDIAN
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority ^ 1] & 0x7;
-#else
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority] & 0x7;
-#endif
-  }
-
 
   sprite.priority = 0;
   sprite.w = 1;

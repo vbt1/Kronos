@@ -2768,7 +2768,7 @@ void YglFrameChangeVDP1(){
 void YglRenderVDP1(void) {
   FrameProfileAdd("YglRenderVDP1 start");
   FRAMELOG("YglRenderVDP1: drawframe =%d", _Ygl->drawframe);
-  vdp1_compute();
+  vdp1_compute(&Vdp2Lines[0]);
   FrameProfileAdd("YglRenderVDP1 end");
 }
 
