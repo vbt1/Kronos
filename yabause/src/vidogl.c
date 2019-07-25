@@ -3503,7 +3503,7 @@ void VIDOGLVdp1Draw()
       line_shift = 0;
     }
 
-    linebuf = YglGetPerlineBuf(&_Ygl->bg[SPRITE], _Ygl->rheight, 1+8+8 );
+    linebuf = YglGetPerlineBuf(&_Ygl->bg[SPRITE], _Ygl->rheight, 1 );
     for (line = 0; line < _Ygl->rheight; line++) {
       linebuf[line] = 0xFF000000;
       Vdp2 * lVdp2Regs = &Vdp2Lines[line >> line_shift];
@@ -4427,6 +4427,76 @@ void fixVerticesSize(float *vert) {
 void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
   LOG_CMD("%d\n", __LINE__);
+
+  vdp1cmd_struct cmd;
+  int badgeometry = 1;
+  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
+
+  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
+  if (cmd.CMDSIZE == 0) {
+    return; // BAD Command
+  }
+
+  cmd.w = ((cmd.CMDSIZE >> 8) & 0x3F) * 8;
+  cmd.h = cmd.CMDSIZE & 0xFF;
+  cmd.cor = 0;
+  cmd.cog = 0;
+  cmd.cob = 0;
+
+  cmd.flip = (cmd.CMDCTRL & 0x30) >> 4;
+
+
+  if (((cmd.CMDXA & 0xFC00) == 0x0) || ((cmd.CMDXA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYA & 0xFC00) == 0x0) || ((cmd.CMDYA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXB & 0xFC00) == 0x0) || ((cmd.CMDXB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYB & 0xFC00) == 0x0) || ((cmd.CMDYB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXC & 0xFC00) == 0x0) || ((cmd.CMDXC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYC & 0xFC00) == 0x0) || ((cmd.CMDYC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXD & 0xFC00) == 0x0) || ((cmd.CMDXD & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYD & 0xFC00) == 0x0) || ((cmd.CMDYD & 0xFC00) == 0xFC00)) badgeometry = 0;
+
+  if (badgeometry == 1) return;
+
+  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
+  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  cmd.CMDXB = (s16)cmd.CMDXB + Vdp1Regs->localX;
+  cmd.CMDYB = (s16)cmd.CMDYB + Vdp1Regs->localY;
+  cmd.CMDXC = (s16)cmd.CMDXC + Vdp1Regs->localX;
+  cmd.CMDYC = (s16)cmd.CMDYC + Vdp1Regs->localY;
+  cmd.CMDXD = (s16)cmd.CMDXD + Vdp1Regs->localX;
+  cmd.CMDYD = (s16)cmd.CMDYD + Vdp1Regs->localY;
+
+  if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
+    // hard/vdp2/hon/p09_20.htm#no9_21
+    uint *cclist = (uint *)&varVdp2Regs->CCRSA;
+    cclist[0] &= 0x1Fu;
+  }
+//printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
+
+  //gouraud
+  memset(cmd.G, 0, sizeof(float)*4);
+  if ((cmd.CMDPMOD & 4))
+  {
+    for (int i = 0; i < 4; i++){
+      u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+      char r = (color2 & 0x001F) - 16;
+      char g = ((color2 & 0x03E0) >> 5) - 16;
+      char b = ((color2 & 0x7C00) >> 10) - 16;
+      char a = 0xFF;
+      cmd.G[i] = ((r<<3)&0xFF) | ((g<<3)&0xFF)<<8 | ((b<<3)&0xFF)<<16 | (a&0xFF)<<24;
+    }
+  }
+  cmd.priority = 0;
+  cmd.SPCTL = varVdp2Regs->SPCTL;
+  cmd.type = SPRITE;
+  //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  vdp1_add(&cmd);
+
+//Exporter la couleur en RGB
+
+  //printf("%x\n", cmd.CMDPMOD);
+
 #if 0
   vdp1cmd_struct cmd;
   YglSprite sprite;
