@@ -529,7 +529,7 @@ SHADER_VERSION_COMPUTE
 "}\n"
 
 "uint VDP1COLOR16TO24(uint temp) {\n"
-"  return ((temp & 0x1Fu) << 3 | (temp & 0x3E0u) << 6 | (temp & 0x7C00u) << 9| (temp & 0x8000u) << 1); //Blue LSB is used for MSB bit.\n"
+"  return (((temp & 0x1Fu) << 3) | ((temp & 0x3E0u) << 6) | ((temp & 0x7C00u) << 9)| ((temp & 0x8000u) << 1)); //Blue LSB is used for MSB bit.\n"
 "}\n"
 
 "uint VDP1MSB(uint temp) {\n"
