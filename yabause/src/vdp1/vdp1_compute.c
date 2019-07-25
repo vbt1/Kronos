@@ -26,7 +26,7 @@ static int struct_size;
 static int work_groups_x;
 static int work_groups_y;
 
-static cmdparameter* cmdVdp1;
+static vdp1cmd_struct* cmdVdp1;
 static int* nbCmd;
 
 static int* clear;
@@ -168,15 +168,15 @@ static int generateComputeBuffer(int w, int h) {
   return 0;
 }
 
-int vdp1_add(cmdparameter* cmd) {
-	int Ax = cmd->P[0];
-	int Ay = cmd->P[1];
-	int Bx = cmd->P[2];
-	int By = cmd->P[3];
-	int Cx = cmd->P[4];
-	int Cy = cmd->P[5];
-	int Dx = cmd->P[6];
-	int Dy = cmd->P[7];
+int vdp1_add(vdp1cmd_struct* cmd) {
+	int Ax = cmd->CMDXA;
+	int Ay = cmd->CMDYA;
+	int Bx = cmd->CMDXB;
+	int By = cmd->CMDYB;
+	int Cx = cmd->CMDXC;
+	int Cy = cmd->CMDYC;
+	int Dx = cmd->CMDXD;
+	int Dy = cmd->CMDYD;
 
   int minx = (Ax < Bx)?Ax:Bx;
   int miny = (Ay < By)?Ay:By;
@@ -202,7 +202,7 @@ int vdp1_add(cmdparameter* cmd) {
         || (blkx + (tex_width/NB_COARSE_RAST_X)) < minx
         || (blky + (tex_height/NB_COARSE_RAST_Y)) < miny
         || blky > maxy)) {
-					memcpy(&cmdVdp1[(i+j*NB_COARSE_RAST_X)*2000 + nbCmd[i+j*NB_COARSE_RAST_X]], cmd, sizeof(cmdparameter));
+					memcpy(&cmdVdp1[(i+j*NB_COARSE_RAST_X)*2000 + nbCmd[i+j*NB_COARSE_RAST_X]], cmd, sizeof(vdp1cmd_struct));
           nbCmd[i+j*NB_COARSE_RAST_X]++;
       }
     }
@@ -211,12 +211,12 @@ int vdp1_add(cmdparameter* cmd) {
 
 int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 {
-  int am = sizeof(cmdparameter) % 16;
+  int am = sizeof(vdp1cmd_struct) % 16;
   tex_width = width;
   tex_height = height;
 	tex_ratiow = 1.0;//ratiow;
 	tex_ratioh = 1.0;//ratioh;
-  struct_size = sizeof(cmdparameter);
+  struct_size = sizeof(vdp1cmd_struct);
   if (am != 0) {
     struct_size += 16 - am;
   }
@@ -230,9 +230,9 @@ int* vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 	if (nbCmd == NULL)
   	nbCmd = (int*)malloc(NB_COARSE_RAST *sizeof(int));
   if (cmdVdp1 == NULL)
-		cmdVdp1 = (cmdparameter*)malloc(NB_COARSE_RAST*2000*sizeof(cmdparameter));
+		cmdVdp1 = (vdp1cmd_struct*)malloc(NB_COARSE_RAST*2000*sizeof(vdp1cmd_struct));
   memset(nbCmd, 0, NB_COARSE_RAST*sizeof(int));
-	memset(cmdVdp1, 0, NB_COARSE_RAST*2000*sizeof(cmdparameter*));
+	memset(cmdVdp1, 0, NB_COARSE_RAST*2000*sizeof(vdp1cmd_struct*));
 	return compute_tex;
 }
 
@@ -240,7 +240,7 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
   GLuint error;
 	int progId = getProgramId();
 	int needRender = 0;
-	printf("USe Prog %d\n", progId);
+	//printf("USe Prog %d\n", progId);
 	if (prg_vdp1[progId] == 0)
     prg_vdp1[progId] = createProgram(sizeof(a_prg_vdp1[progId]) / sizeof(char*), (const GLchar**)a_prg_vdp1[progId]);
   glUseProgram(prg_vdp1[progId]);
@@ -255,7 +255,7 @@ int vdp1_compute(Vdp2 *varVdp2Regs) {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cmd_);
   for (int i = 0; i < NB_COARSE_RAST; i++) {
     if (nbCmd[i] != 0) {
-    	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size*i*2000, nbCmd[i]*sizeof(cmdparameter), (void*)&cmdVdp1[2000*i]);
+    	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size*i*2000, nbCmd[i]*sizeof(vdp1cmd_struct), (void*)&cmdVdp1[2000*i]);
 			needRender = 1;
 		}
   }

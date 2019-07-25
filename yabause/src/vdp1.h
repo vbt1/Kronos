@@ -23,7 +23,7 @@
 
 #include "memory.h"
 
-#define VIDCORE_DEFAULT         -1  
+#define VIDCORE_DEFAULT         -1
 #define VIDCORE_DUMMY           0
 
 //#define YAB_ASYNC_RENDERING 1
@@ -131,21 +131,31 @@ extern Vdp1External_struct Vdp1External;
 
 typedef struct
 {
-   u16 CMDCTRL;
-   u16 CMDLINK;
-   u16 CMDPMOD;
-   u16 CMDCOLR;
-   u16 CMDSRCA;
-   u16 CMDSIZE;
-   s16 CMDXA;
-   s16 CMDYA;
-   s16 CMDXB;
-   s16 CMDYB;
-   s16 CMDXC;
-   s16 CMDYC;
-   s16 CMDXD;
-   s16 CMDYD;
-   u16 CMDGRDA;   
+  u32 G[4];
+  u32 priority;
+  u32 w;
+  u32 h;
+  u32 flip;
+  u32 cor;
+  u32 cog;
+  u32 cob;
+  u32 type;
+  u32 CMDCTRL;
+  u32 CMDLINK;
+  u32 CMDPMOD;
+  u32 CMDCOLR;
+  u32 CMDSRCA;
+  u32 CMDSIZE;
+  s32 CMDXA;
+  s32 CMDYA;
+  s32 CMDXB;
+  s32 CMDYB;
+  s32 CMDXC;
+  s32 CMDYC;
+  s32 CMDXD;
+  s32 CMDYD;
+  u32 CMDGRDA;
+  u32 SPCTL;
 } vdp1cmd_struct;
 
 int Vdp1Init(void);

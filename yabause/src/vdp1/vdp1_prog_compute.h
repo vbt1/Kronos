@@ -21,22 +21,29 @@ SHADER_VERSION_COMPUTE
 "#endif\n"
 
 "struct cmdparameter_struct{ \n"
-"  int P[8];\n"
-"  int Gouraud[4];\n"
-"  int priority;\n"
-"  int w;\n"
-"  int h;\n"
-"  int flip;\n"
-"  int cor;\n"
-"  int cog;\n"
-"  int cob;\n"
-"  int type;\n"
+"  uint G[4];\n"
+"  uint priority;\n"
+"  uint w;\n"
+"  uint h;\n"
+"  uint flip;\n"
+"  uint cor;\n"
+"  uint cob;\n"
+"  uint cog;\n"
+"  uint type;\n"
 "  uint CMDCTRL;\n"
 "  uint CMDLINK;\n"
 "  uint CMDPMOD;\n"
 "  uint CMDCOLR;\n"
 "  uint CMDSRCA;\n"
 "  uint CMDSIZE;\n"
+"  int CMDXA;\n"
+"  int CMDYA;\n"
+"  int CMDXB;\n"
+"  int CMDYB;\n"
+"  int CMDXC;\n"
+"  int CMDYC;\n"
+"  int CMDXD;\n"
+"  int CMDYD;\n"
 "  uint CMDGRDA;\n"
 "  uint SPCTL;\n"
 "};\n"
@@ -106,10 +113,10 @@ SHADER_VERSION_COMPUTE
 "uint pixIsInside (ivec2 Pin, uint idx){\n"
 "  vec2 Quad[5];\n"
 "  vec2 P;\n"
-"  Quad[0] = vec2(cmd[idx].P[0],cmd[idx].P[1]);\n"
-"  Quad[1] = vec2(cmd[idx].P[2],cmd[idx].P[3]);\n"
-"  Quad[2] = vec2(cmd[idx].P[4],cmd[idx].P[5]);\n"
-"  Quad[3] = vec2(cmd[idx].P[6],cmd[idx].P[7]);\n"
+"  Quad[0] = vec2(cmd[idx].CMDXA,cmd[idx].CMDYA);\n"
+"  Quad[1] = vec2(cmd[idx].CMDXB,cmd[idx].CMDYB);\n"
+"  Quad[2] = vec2(cmd[idx].CMDXC,cmd[idx].CMDYC);\n"
+"  Quad[3] = vec2(cmd[idx].CMDXD,cmd[idx].CMDYD);\n"
 "  Quad[4] = Quad[0];\n"
 "  P = vec2(Pin)/upscale;\n"
 
@@ -136,10 +143,10 @@ SHADER_VERSION_COMPUTE
 "vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
 //http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
 "  vec2 p = vec2(texel)/upscale;\n"
-"  vec2 a = vec2(pixcmd.P[0],pixcmd.P[1]);\n"
-"  vec2 b = vec2(pixcmd.P[2],pixcmd.P[3]);\n"
-"  vec2 c = vec2(pixcmd.P[4],pixcmd.P[5]);\n"
-"  vec2 d = vec2(pixcmd.P[6],pixcmd.P[7]);\n"
+"  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
+"  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
+"  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
+"  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
 "  vec2 e = b-a+vec2(1.0);\n"
 "  vec2 f = d-a+vec2(1.0);\n"
 "  vec2 g = a-b+c-d+vec2(2.0);\n"
@@ -486,11 +493,11 @@ SHADER_VERSION_COMPUTE
 "}\n"
 
 "vec4 VDP1COLOR(uint C, uint A, uint P, uint shadow, uint color) {\n"
-//"  u32 col = color;\n"
-//"  if (C == 1) col &= 0x7FFF;\n"
-//"  else col &= 0xFFFFFF;\n"
-//"  return 0x80000000 | (C << 30) | (A << 27) | (P << 24) | (shadow << 23) | col;\n"
-" return vec4(0.0);\n"
+"  uint col = color;\n"
+"  if (C == 1) col &= 0x7FFF;\n"
+"  else col &= 0xFFFFFF;\n"
+"  uint ret = 0x80000000 | (C << 30) | (A << 27) | (P << 24) | (shadow << 23) | col;\n"
+"  return vec4(float((ret>>0)&0xFFu),float((ret>>8)&0xFFu),float((ret>>16)&0xFFu),float((ret>>24)&0xFFu));\n"
 "}\n"
 
 "uint VDP1COLOR16TO24(uint temp) {\n"
@@ -681,12 +688,24 @@ SHADER_VERSION_COMPUTE
 "  vec2 texcoord = getTexCoord(texel, pixcmd);\n"
 "  if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "    vec4 color = ReadPolygonColor(pixcmd);\n"
-"    a = color.a;\n"
-"    b = color.b;\n"
-"    g = color.g;\n"
-"    r = color.r;\n"
+"    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
+//Implement Mesh shader (Duplicate for improve)
+"    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB_SHADOW
+//Implement PG_VDP1_MSB_SHADOW
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
+//Implement PG_VDP1_GOURAUDSHADING
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
+//Implement PG_VDP1_SHADOW
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
+//Implement PG_VDP1_HALF_LUMINANCE
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
+//Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
+"    }\n"
+"    a = color.a/255.0;\n"
+"    b = color.b/255.0;\n"
+"    g = color.g/255.0;\n"
+"    r = color.r/255.0;\n"
 "  }\n";
-
 
 static const char vdp1_end_f[] =
 "  finalColor = vec4(r,g,b,a);\n"

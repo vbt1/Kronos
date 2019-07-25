@@ -4679,7 +4679,6 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
   vdp1cmd_struct cmd;
   int badgeometry = 1;
-  cmdparameter vdp1cmd; //Should be better if cmdparameter == vdp1cmd_struct
   Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
@@ -4695,16 +4694,16 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if (badgeometry == 1) return;
 
-  vdp1cmd.P[0] = (s16)cmd.CMDXA + Vdp1Regs->localX;
-  vdp1cmd.P[1] = (s16)cmd.CMDYA + Vdp1Regs->localY;
-  vdp1cmd.P[2] = (s16)cmd.CMDXB + Vdp1Regs->localX;
-  vdp1cmd.P[3] = (s16)cmd.CMDYB + Vdp1Regs->localY;
-  vdp1cmd.P[4] = (s16)cmd.CMDXC + Vdp1Regs->localX;
-  vdp1cmd.P[5] = (s16)cmd.CMDYC + Vdp1Regs->localY;
-  vdp1cmd.P[6] = (s16)cmd.CMDXD + Vdp1Regs->localX;
-  vdp1cmd.P[7] = (s16)cmd.CMDYD + Vdp1Regs->localY;
+  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
+  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  cmd.CMDXB = (s16)cmd.CMDXB + Vdp1Regs->localX;
+  cmd.CMDYB = (s16)cmd.CMDYB + Vdp1Regs->localY;
+  cmd.CMDXC = (s16)cmd.CMDXC + Vdp1Regs->localX;
+  cmd.CMDYC = (s16)cmd.CMDYC + Vdp1Regs->localY;
+  cmd.CMDXD = (s16)cmd.CMDXD + Vdp1Regs->localX;
+  cmd.CMDYD = (s16)cmd.CMDYD + Vdp1Regs->localY;
   //gouraud
-  memset(vdp1cmd.G, 0, sizeof(float)*4);
+  memset(cmd.G, 0, sizeof(float)*4);
   if ((cmd.CMDPMOD & 4))
   {
     for (int i = 0; i < 4; i++){
@@ -4713,21 +4712,21 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
       char g = ((color2 & 0x03E0) >> 5) - 16;
       char b = ((color2 & 0x7C00) >> 10) - 16;
       char a = 0xFF;
-      vdp1cmd.G[i] = ((r<<3)&0xFF) | ((g<<3)&0xFF)<<8 | ((b<<3)&0xFF)<<16 | (a&0xFF)<<24;
+      cmd.G[i] = ((r<<3)&0xFF) | ((g<<3)&0xFF)<<8 | ((b<<3)&0xFF)<<16 | (a&0xFF)<<24;
     }
   }
-  vdp1cmd.priority = 0;
-  vdp1cmd.w = 1;
-  vdp1cmd.h = 1;
-  vdp1cmd.flip = 0;
-  vdp1cmd.cor = 0x0;
-  vdp1cmd.cog = 0x0;
-  vdp1cmd.cob = 0x0;
-  vdp1cmd.SPCTL = varVdp2Regs->SPCTL;
-  vdp1cmd.type = POLYGON;
+  cmd.priority = 0;
+  cmd.w = 1;
+  cmd.h = 1;
+  cmd.flip = 0;
+  cmd.cor = 0x0;
+  cmd.cog = 0x0;
+  cmd.cob = 0x0;
+  cmd.SPCTL = varVdp2Regs->SPCTL;
+  cmd.type = POLYGON;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
-  vdp1_add(&vdp1cmd);
+  vdp1_add(&cmd);
 
   // color = cmd.CMDCOLR;
   // sprite.uclipmode = (cmd.CMDPMOD >> 9) & 0x03
