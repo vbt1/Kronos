@@ -165,7 +165,11 @@ SHADER_VERSION_COMPUTE
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
 "  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
 "  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
-"  return vec2((length(a.x-p.x)+0.5)/(length(a.x-b.x)+1.0),(length(a.y-p.y)+0.5)/(length(a.y-d.y)+1.0));\n"
+"  float u = (length(a.x-p.x)+0.5)/(length(a.x-b.x)+1.0);\n"
+"  float v = (length(a.y-p.y)+0.5)/(length(a.y-d.y)+1.0);\n"
+"  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
+"  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
+"  return vec2(u,v);\n"
 "}\n"
 
 "vec2 getTexCoordDistorted(ivec2 texel, cmdparameter_struct pixcmd) {\n"
@@ -200,6 +204,8 @@ SHADER_VERSION_COMPUTE
 "  if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=u2;   v=v2;   }\n"
 "  if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=-1.0; v=-1.0; }\n"
 
+"  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
+"  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2( u, v );\n"
 "}\n"
 
