@@ -559,7 +559,7 @@ SHADER_VERSION_COMPUTE
       // 4 bpp Bank mode
 "      uint colorBank = pixcmd.CMDCOLR & 0xFFF0u;\n"
 "      uint i;\n"
-"      charAddr += pos;\n"
+"      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w)/2);\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
       // Pixel 1
 "      if (((dot >> 4) == 0) && !SPD) color = vec4(0.0);\n"
@@ -602,6 +602,7 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 4 bpp LUT mode
 "       uint temp;\n"
+"      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w))/2;\n"
 "       uint colorLut = pixcmd.CMDCOLR * 8;\n"
 "       uint i;\n"
 "       endcnt = 0;\n" //Ne sert pas mais potentiellement pb
@@ -966,6 +967,7 @@ SHADER_VERSION_COMPUTE
 
 "void main()\n"
 "{\n"
+"  vec4 lastColor = vec4(0.0);\n"
 "  cmdparameter_struct pixcmd;\n"
 "  uint discarded = 0;\n"
 "  vec4 finalColor = vec4(0.0);\n"
@@ -977,18 +979,25 @@ SHADER_VERSION_COMPUTE
 "  uint cmdIndex = lindex * 2000u;\n"
 
 "  if (nbCmd[lindex] == 0u) return;\n"
-"  int cmdindex = getCmd(texel, cmdIndex, 0u, nbCmd[lindex]);\n"
-"  if (cmdindex == -1) return;\n"
-"  pixcmd = cmd[cmdindex];\n"
-"  if (pixcmd.type == "Stringify(POLYGON)") {\n"
-"    finalColor = ReadPolygonColor(pixcmd);\n"
-"  } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
-"    vec2 texcoord = getTexCoordDistorted(texel, pixcmd);\n"
-"    finalColor = ReadSpriteColor(pixcmd, texcoord);\n"
-"  } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
-"    vec2 texcoord = getTexCoord(texel, pixcmd);\n"
-"    finalColor = ReadSpriteColor(pixcmd, texcoord);\n"
+"  uint idCmd = 0;\n"
+"  int cmdindex = 0;\n"
+"  while ((cmdindex != -1) && (lastColor == vec4(0.0)) && (idCmd<nbCmd[lindex]) ) {\n"
+"    cmdindex = getCmd(texel, cmdIndex, idCmd, nbCmd[lindex]);\n"
+"    idCmd = cmdindex + 1 - cmdIndex;\n"
+"    if (cmdindex == -1) continue;\n"
+"    pixcmd = cmd[cmdindex];\n"
+"    if (pixcmd.type == "Stringify(POLYGON)") {\n"
+"      lastColor = ReadPolygonColor(pixcmd);\n"
+"    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
+"      vec2 texcoord = getTexCoordDistorted(texel, pixcmd);\n"
+"      lastColor = ReadSpriteColor(pixcmd, texcoord);\n"
+"    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
+"      vec2 texcoord = getTexCoord(texel, pixcmd);\n"
+"      lastColor = ReadSpriteColor(pixcmd, texcoord);\n"
+"    }\n"
 "  }\n"
+"  if (lastColor == vec4(0.0)) return;\n"
+"  finalColor = lastColor;\n"
 "  if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
 //Implement Mesh shader (Duplicate for improve)
 "  } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
