@@ -159,14 +159,13 @@ SHADER_VERSION_COMPUTE
 
 
 "vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
-//http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
 "  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
 "  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
-"  float u = (length(a.x-p.x)+0.5)/(length(a.x-b.x)+1.0);\n"
-"  float v = (length(a.y-p.y)+0.5)/(length(a.y-d.y)+1.0);\n"
+"  float u = (abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0);\n"
+"  float v = (abs(a.y-p.y)+0.5)/(abs(a.y-d.y)+1.0);\n"
 "  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
 "  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2(u,v);\n"
@@ -608,7 +607,7 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 4 bpp LUT mode
 "       uint temp;\n"
-"      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w))/2;\n"
+"       charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w))/2;\n"
 "       uint colorLut = pixcmd.CMDCOLR * 8;\n"
 "       endcnt = 0;\n" //Ne sert pas mais potentiellement pb
 "       dot = Vdp1RamReadByte(charAddr);\n"
