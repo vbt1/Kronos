@@ -363,7 +363,7 @@ SHADER_VERSION_COMPUTE
 "uint Vdp1RamReadByte(uint addr) {\n"
 "  addr &= 0x7FFFFu;\n"
 "  uint read = Vdp1Ram[addr>>2];\n"
-"  return (read>>(3-(addr&0x4u)))&0xFFu;\n"
+"  return (read>>(8*(addr&0x3u)))&0xFFu;\n"
 "}\n"
 
 "uint Vdp1RamReadWord(uint addr) {\n"
