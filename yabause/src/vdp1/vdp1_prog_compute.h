@@ -138,10 +138,10 @@ SHADER_VERSION_COMPUTE
 "  P = vec2(Pin)/upscale;\n"
 
 "  if (wn_PnPoly(P, Quad) != 0u) return 1u;\n"
-"  if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) return 1u;\n"
-"  if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) return 1u;\n"
-"  if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) return 1u;\n"
-"  if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) return 1u;\n"
+"  else if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) return 1u;\n"
+"  else if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) return 1u;\n"
+"  else if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) return 1u;\n"
+"  else if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) return 1u;\n"
 "  else return 0u;\n"
 "}\n"
 
