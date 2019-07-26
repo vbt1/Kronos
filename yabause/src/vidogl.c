@@ -4211,76 +4211,60 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   case 0x0: // Only two coordinates
     rw = cmd.CMDXC - cmd.CMDXA;
     rh = cmd.CMDYC - cmd.CMDYA;
-    if (rw > 0) { rw += 1; } else { x += 1; }
-    if (rh > 0) { rh += 1; } else { y += 1; }
     break;
   case 0x5: // Upper-left
-    rw = cmd.CMDXB + 1;
-    rh = cmd.CMDYB + 1;
+    rw = cmd.CMDXB;
+    rh = cmd.CMDYB;
     break;
   case 0x6: // Upper-Center
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw / 2;
-    rw++;
-    rh++;
     break;
   case 0x7: // Upper-Right
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw;
-    rw++;
-    rh++;
     break;
   case 0x9: // Center-left
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     y = y - rh / 2;
-    rw++;
-    rh++;
     break;
   case 0xA: // Center-center
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw / 2;
     y = y - rh / 2;
-    rw++;
-    rh++;
     break;
   case 0xB: // Center-right
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw;
     y = y - rh / 2;
-    rw++;
-    rh++;
     break;
   case 0xD: // Lower-left
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     y = y - rh;
-    rw++;
-    rh++;
     break;
   case 0xE: // Lower-center
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw / 2;
     y = y - rh;
-    rw++;
-    rh++;
     break;
   case 0xF: // Lower-right
     rw = cmd.CMDXB;
     rh = cmd.CMDYB;
     x = x - rw;
     y = y - rh;
-    rw++;
-    rh++;
     break;
   default: break;
   }
 
+  cmd.CMDXA = x;
+  cmd.CMDYA = y;
   cmd.CMDXB = x + rw;
   cmd.CMDYB = y;
   cmd.CMDXC = x + rw;

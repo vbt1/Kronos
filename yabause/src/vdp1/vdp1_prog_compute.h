@@ -610,7 +610,6 @@ SHADER_VERSION_COMPUTE
 "       uint temp;\n"
 "      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w))/2;\n"
 "       uint colorLut = pixcmd.CMDCOLR * 8;\n"
-"       uint i;\n"
 "       endcnt = 0;\n" //Ne sert pas mais potentiellement pb
 "       dot = Vdp1RamReadByte(charAddr);\n"
 "       if (!END && endcnt >= 2) {\n"
