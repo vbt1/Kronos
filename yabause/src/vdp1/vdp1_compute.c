@@ -155,6 +155,7 @@ static int generateComputeBuffer(int w, int h) {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_nbcmd_);
   glBufferData(GL_SHADER_STORAGE_BUFFER, NB_COARSE_RAST * sizeof(int),NULL,GL_DYNAMIC_DRAW);
 
+printf("Generate texture %dx%d\n", w, h);
   glGenTextures(2, &compute_tex[0]);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, compute_tex[0]);
