@@ -176,7 +176,6 @@ static int generateComputeBuffer(int w, int h) {
 	clear = (int*)malloc(w*h * sizeof(int));
 	memset(clear, 0, w*h * sizeof(int));
 
-
   return 0;
 }
 
