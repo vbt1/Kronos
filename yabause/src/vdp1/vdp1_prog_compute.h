@@ -167,8 +167,8 @@ SHADER_VERSION_COMPUTE
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
 "  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
 "  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
-"  float u = (abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0);\n"
-"  float v = (abs(a.y-p.y)+0.5)/(abs(a.y-d.y)+1.0);\n"
+"  float u = clamp((abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0),0.0, 1.0) ;\n"
+"  float v = clamp((abs(a.y-p.y)+0.5)/(abs(a.y-d.y)+1.0),0.0, 1.0);\n"
 "  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
 "  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2(u,v);\n"
@@ -192,23 +192,25 @@ SHADER_VERSION_COMPUTE
 "  float k2 = cross( g, f );\n"
 "  float k1 = cross( e, f ) + cross( h, g );\n"
 "  float k0 = cross( h, e );\n"
+"  float u = 0.0;\n"
+"  float v = 0.0;\n"
 
 "  float w = k1*k1 - 4.0*k0*k2;\n"
-"  if( w<0.0 ) return vec2(0.5);\n"
-"  w = sqrt( w );\n"
+"  if( w>=0.0 ) {\n"
+"    w = sqrt( w );\n"
 
-"  float v1 = (-k1 - w)/(2.0*k2);\n"
-"  float u1 = (h.x - f.x*v1)/(e.x + g.x*v1);\n"
+"    float v1 = (-k1 - w)/(2.0*k2);\n"
+"    float u1 = (h.x - f.x*v1)/(e.x + g.x*v1);\n"
 
-"  float v2 = (-k1 + w)/(2.0*k2);\n"
-"  float u2 = (h.x - f.x*v2)/(e.x + g.x*v2);\n"
+"    float v2 = (-k1 + w)/(2.0*k2);\n"
+"    float u2 = (h.x - f.x*v2)/(e.x + g.x*v2);\n"
 
-"  float u = u1;\n"
-"  float v = v1;\n"
+"    u = u1;\n"
+"    v = v1;\n"
 
-"  if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=u2;   v=v2;   }\n"
-"  if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=-1.0; v=-1.0; }\n"
-
+"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=u2;   v=v2;   }\n"
+"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=-1.0; v=-1.0; }\n"
+"  }\n"
 "  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
 "  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2( u, v );\n"
@@ -555,7 +557,7 @@ SHADER_VERSION_COMPUTE
 "  uint colorcl = 0;\n"
 "  uint endcnt = 0;\n"
 "  uint normal_shadow = 0;\n"
-"  uint pos = (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w));\n"
+"  uint pos = (uint(pixcmd.h*uv.y - 0.5)*pixcmd.w+uint(uv.x*pixcmd.w - 0.5));\n"
 "  uint charAddr = pixcmd.CMDSRCA * 8 + pos;\n"
 "  uint dot;\n"
 "  bool SPD = ((pixcmd.CMDPMOD & 0x40u) != 0);\n"
