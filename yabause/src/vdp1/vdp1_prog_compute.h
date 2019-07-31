@@ -160,7 +160,7 @@ SHADER_VERSION_COMPUTE
 
 "vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
 "  if (((pixcmd.CMDPMOD >> 3) & 0x7u) < 2u) {\n"
-"    texel.x = texel.x&(~1);;\n"
+"    texel.x = texel.x&(~1);\n"
 "  }\n"
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
