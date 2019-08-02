@@ -557,6 +557,7 @@ SHADER_VERSION_COMPUTE
 "  uint colorcl = 0;\n"
 "  uint endcnt = 0;\n"
 "  uint normal_shadow = 0;\n"
+"  uint x = uint(uv.x*pixcmd.w - 0.5);\n"
 "  uint pos = (uint(pixcmd.h*uv.y - 0.5)*pixcmd.w+uint(uv.x*pixcmd.w - 0.5));\n"
 "  uint charAddr = pixcmd.CMDSRCA * 8 + pos;\n"
 "  uint dot;\n"
@@ -574,7 +575,7 @@ SHADER_VERSION_COMPUTE
 "      uint i;\n"
 "      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w)/2);\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
-"       if ((texel.x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
+"       if ((x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
 "       else dot = (dot)&0xFu;\n"
       // Pixel 1
 "      if ((dot == 0) && !SPD) color = vec4(0.0);\n"
@@ -599,11 +600,11 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 4 bpp LUT mode
 "       uint temp;\n"
-"       charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w))/2;\n"
+"       charAddr = pixcmd.CMDSRCA * 8 + pos/2;\n"
 "       uint colorLut = pixcmd.CMDCOLR * 8;\n"
 "       endcnt = 0;\n" //Ne sert pas mais potentiellement pb
 "       dot = Vdp1RamReadByte(charAddr);\n"
-"       if ((texel.x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
+"       if ((x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
 "       else dot = (dot)&0xFu;\n"
 "       if (!END && endcnt >= 2) {\n"
 "         color = vec4(0.0);\n"
