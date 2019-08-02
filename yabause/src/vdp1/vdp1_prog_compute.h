@@ -159,9 +159,6 @@ SHADER_VERSION_COMPUTE
 
 
 "vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
-"  if (((pixcmd.CMDPMOD >> 3) & 0x7u) < 2u) {\n"
-"    texel.x = texel.x&(~1);\n"
-"  }\n"
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
@@ -176,9 +173,6 @@ SHADER_VERSION_COMPUTE
 
 "vec2 getTexCoordDistorted(ivec2 texel, cmdparameter_struct pixcmd) {\n"
 //http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
-"  if (((pixcmd.CMDPMOD >> 3) & 0x7u) < 2u) {\n"
-"    texel.x = texel.x&(~1);;\n"
-"  }\n"
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
@@ -573,7 +567,7 @@ SHADER_VERSION_COMPUTE
       // 4 bpp Bank mode
 "      uint colorBank = pixcmd.CMDCOLR & 0xFFF0u;\n"
 "      uint i;\n"
-"      charAddr = pixcmd.CMDSRCA * 8 + (uint(pixcmd.h*uv.y)*pixcmd.w+uint(uv.x*pixcmd.w)/2);\n"
+"      charAddr = pixcmd.CMDSRCA * 8 + pos/2;\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
 "       if ((x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
 "       else dot = (dot)&0xFu;\n"
