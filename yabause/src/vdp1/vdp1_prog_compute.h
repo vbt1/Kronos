@@ -697,7 +697,6 @@ SHADER_VERSION_COMPUTE
 "    {\n"
       // 8 bpp(256 color) Bank mode
 "      uint colorBank = pixcmd.CMDCOLR & 0xFF00u;\n"
-"      uint index = pos;\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
 "      if ((dot == 0) && !SPD) {\n"
 "        color = vec4(0.0);\n"
@@ -956,9 +955,9 @@ SHADER_VERSION_COMPUTE
 static const char vdp1_end_f[] =
 "  finalColor /= 255.0;\n"
 "  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
-"    finalColor.r = clamp(finalColor.r + texcoord.y*(texcoord.x*pixcmd.G[0]+(1.0 - texcoord.x)*pixcmd.G[4]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[12] + (1-texcoord.x)*pixcmd.G[8]), 0.0, 1.0);\n"
-"    finalColor.g = clamp(finalColor.g + texcoord.y*(texcoord.x*pixcmd.G[1]+(1.0 - texcoord.x)*pixcmd.G[5]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[13] + (1-texcoord.x)*pixcmd.G[9]), 0.0, 1.0);\n"
-"    finalColor.b = clamp(finalColor.b + texcoord.y*(texcoord.x*pixcmd.G[2]+(1.0 - texcoord.x)*pixcmd.G[6]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[14] + (1-texcoord.x)*pixcmd.G[10]), 0.0, 1.0);\n"
+"    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[0],pixcmd.G[4],texcoord.x), mix(pixcmd.G[12],pixcmd.G[8],texcoord.x), texcoord.y), 0.0, 1.0);\n"
+"    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[1],pixcmd.G[5],texcoord.x), mix(pixcmd.G[13],pixcmd.G[9],texcoord.x), texcoord.y), 0.0, 1.0);\n"
+"    finalColor.b = clamp(finalColor.b + mix(mix(pixcmd.G[2],pixcmd.G[6],texcoord.x), mix(pixcmd.G[14],pixcmd.G[10],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "  }\n"
 "  imageStore(outSurface,ivec2(texel.x,size.y-texel.y),finalColor);\n"
 "}\n";
