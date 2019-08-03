@@ -955,9 +955,9 @@ SHADER_VERSION_COMPUTE
 static const char vdp1_end_f[] =
 "  finalColor /= 255.0;\n"
 "  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
-"    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[4],pixcmd.G[0],texcoord.x), mix(pixcmd.G[8],pixcmd.G[12],texcoord.x), texcoord.y), 0.0, 1.0);\n"
-"    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[5],pixcmd.G[1],texcoord.x), mix(pixcmd.G[9],pixcmd.G[13],texcoord.x), texcoord.y), 0.0, 1.0);\n"
-"    finalColor.b = clamp(finalColor.b + mix(mix(pixcmd.G[6],pixcmd.G[2],texcoord.x), mix(pixcmd.G[10],pixcmd.G[14],texcoord.x), texcoord.y), 0.0, 1.0);\n"
+"    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[8],pixcmd.G[12],texcoord.x), mix(pixcmd.G[4],pixcmd.G[0],texcoord.x), texcoord.y), 0.0, 1.0);\n"
+"    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[9],pixcmd.G[13],texcoord.x), mix(pixcmd.G[5],pixcmd.G[1],texcoord.x), texcoord.y), 0.0, 1.0);\n"
+"    finalColor.b = clamp(finalColor.b + mix(mix(pixcmd.G[10],pixcmd.G[14],texcoord.x), mix(pixcmd.G[6],pixcmd.G[2],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "  }\n"
 "  imageStore(outSurface,ivec2(texel.x,size.y-texel.y),finalColor);\n"
 "}\n";
