@@ -131,7 +131,7 @@ extern Vdp1External_struct Vdp1External;
 
 typedef struct
 {
-  u32 G[4];
+  float G[16];
   u32 priority;
   u32 w;
   u32 h;

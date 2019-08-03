@@ -38,7 +38,7 @@ SHADER_VERSION_COMPUTE
 "#endif\n"
 
 "struct cmdparameter_struct{ \n"
-"  uint G[4];\n"
+"  float G[16];\n"
 "  uint priority;\n"
 "  uint w;\n"
 "  uint h;\n"
@@ -569,7 +569,7 @@ SHADER_VERSION_COMPUTE
 "      uint i;\n"
 "      charAddr = pixcmd.CMDSRCA * 8 + pos/2;\n"
 "      dot = Vdp1RamReadByte(charAddr);\n"
-"       if ((x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
+"       if ((x & 0x1u) == 0u) dot = (dot>>4)&0xFu;\n"
 "       else dot = (dot)&0xFu;\n"
       // Pixel 1
 "      if ((dot == 0) && !SPD) color = vec4(0.0);\n"
@@ -598,7 +598,7 @@ SHADER_VERSION_COMPUTE
 "       uint colorLut = pixcmd.CMDCOLR * 8;\n"
 "       endcnt = 0;\n" //Ne sert pas mais potentiellement pb
 "       dot = Vdp1RamReadByte(charAddr);\n"
-"       if ((x & 0x1) == 0) dot = (dot>>4)&0xFu;\n"
+"       if ((x & 0x1u) == 0u) dot = (dot>>4)&0xFu;\n"
 "       else dot = (dot)&0xFu;\n"
 "       if (!END && endcnt >= 2) {\n"
 "         color = vec4(0.0);\n"
@@ -910,6 +910,7 @@ SHADER_VERSION_COMPUTE
 "  vec4 lastColor = vec4(0.0);\n"
 "  cmdparameter_struct pixcmd;\n"
 "  uint discarded = 0;\n"
+"  vec2 texcoord = vec2(0);\n"
 "  vec4 finalColor = vec4(0.0);\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
@@ -929,10 +930,10 @@ SHADER_VERSION_COMPUTE
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "      lastColor = ReadPolygonColor(pixcmd);\n"
 "    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
-"      vec2 texcoord = getTexCoordDistorted(texel, pixcmd);\n"
+"      texcoord = getTexCoordDistorted(texel, pixcmd);\n"
 "      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
 "    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
-"      vec2 texcoord = getTexCoord(texel, pixcmd);\n"
+"      texcoord = getTexCoord(texel, pixcmd);\n"
 "      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
 "    }\n"
 "  }\n"
@@ -954,6 +955,11 @@ SHADER_VERSION_COMPUTE
 
 static const char vdp1_end_f[] =
 "  finalColor /= 255.0;\n"
+"  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
+"    finalColor.r = clamp(finalColor.r + texcoord.y*(texcoord.x*pixcmd.G[0]+(1.0 - texcoord.x)*pixcmd.G[4]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[12] + (1-texcoord.x)*pixcmd.G[8]), 0.0, 1.0);\n"
+"    finalColor.g = clamp(finalColor.g + texcoord.y*(texcoord.x*pixcmd.G[1]+(1.0 - texcoord.x)*pixcmd.G[5]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[13] + (1-texcoord.x)*pixcmd.G[9]), 0.0, 1.0);\n"
+"    finalColor.b = clamp(finalColor.b + texcoord.y*(texcoord.x*pixcmd.G[2]+(1.0 - texcoord.x)*pixcmd.G[6]) + (1-texcoord.y)*(texcoord.x*pixcmd.G[14] + (1-texcoord.x)*pixcmd.G[10]), 0.0, 1.0);\n"
+"  }\n"
 "  imageStore(outSurface,ivec2(texel.x,size.y-texel.y),finalColor);\n"
 "}\n";
 
