@@ -375,7 +375,7 @@ SHADER_VERSION_COMPUTE
 "}\n"
 
 
-"void Vdp1ReadPriority(cmdparameter_struct pixcmd, inout uint priority, inout uint colorcl, inout uint normal_shadow) {\n"
+"void Vdp1ReadPriority(inout cmdparameter_struct pixcmd, inout uint priority, inout uint colorcl, inout uint normal_shadow) {\n"
 "  uint SPCLMD = pixcmd.SPCTL;\n"
 "  uint sprite_register;\n"
 "  uint reg_src = pixcmd.CMDCOLR;\n"
@@ -529,10 +529,10 @@ SHADER_VERSION_COMPUTE
 
 "vec4 VDP1COLOR(uint C, uint A, uint P, uint shadow, uint color) {\n"
 "  uint col = color;\n"
-"  if (C == 1u) col &= 0x7FFFu;\n"
+"  if (C == 1u) col &= 0x17FFFu;\n"
 "  else col &= 0xFFFFFFu;\n"
 "  uint ret = 0x80000000u | (C << 30) | (A << 27) | (P << 24) | (shadow << 23) | col;\n"
-"  return vec4(float((ret>>0)&0xFFu),float((ret>>8)&0xFFu),float((ret>>16)&0xFFu),float((ret>>24)&0xFFu));\n"
+"  return vec4(float((ret>>0)&0xFFu)/255.0,float((ret>>8)&0xFFu)/255.0,float((ret>>16)&0xFFu)/255.0,float((ret>>24)&0xFFu)/255.0);\n"
 "}\n"
 
 "uint VDP1COLOR16TO24(uint temp) {\n"
@@ -540,7 +540,7 @@ SHADER_VERSION_COMPUTE
 "}\n"
 
 "uint VDP1MSB(uint temp) {\n"
-"  return ((temp & 0x7FFFu) | (temp & 0x8000u) << 1);\n"
+"  return (temp & 0x7FFFu) | ((temp & 0x8000u) << 1);\n"
 "}\n"
 
 "vec4 ReadSpriteColor(cmdparameter_struct pixcmd, vec2 uv, ivec2 texel){\n"
@@ -953,7 +953,6 @@ SHADER_VERSION_COMPUTE
 "  }\n";
 
 static const char vdp1_end_f[] =
-"  finalColor /= 255.0;\n"
 "  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
 "    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[8],pixcmd.G[12],texcoord.x), mix(pixcmd.G[4],pixcmd.G[0],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[9],pixcmd.G[13],texcoord.x), mix(pixcmd.G[5],pixcmd.G[1],texcoord.x), texcoord.y), 0.0, 1.0);\n"
