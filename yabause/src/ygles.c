@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "frameprofile.h"
 #include "error.h"
+#include "vdp1/vdp1_compute.h"
 
 
 #define __USE_OPENGL_DEBUG__

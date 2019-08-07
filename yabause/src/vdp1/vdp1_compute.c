@@ -237,8 +237,8 @@ void vdp1_compute_init(int width, int height, float ratiow, float ratioh)
   int am = sizeof(vdp1cmd_struct) % 16;
   tex_width = width;
   tex_height = height;
-	tex_ratiow = 1.0;//ratiow;
-	tex_ratioh = 1.0;//ratioh;
+	tex_ratiow = ratiow;
+	tex_ratioh = ratioh;
   struct_size = sizeof(vdp1cmd_struct);
   if (am != 0) {
     struct_size += 16 - am;
@@ -246,7 +246,7 @@ void vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 
   work_groups_x = (tex_width*tex_ratiow) / local_size_x;
   work_groups_y = (tex_height*tex_ratioh) / local_size_y;
-  generateComputeBuffer(width*tex_ratiow, height*tex_ratioh);
+  generateComputeBuffer(tex_width*tex_ratiow, tex_height*tex_ratioh);
 	if (nbCmd == NULL)
   	nbCmd = (int*)malloc(NB_COARSE_RAST *sizeof(int));
   if (cmdVdp1 == NULL)
