@@ -178,10 +178,10 @@ SHADER_VERSION_COMPUTE
 "  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
 "  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
 "  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
-"  vec2 e = b-a+vec2(1.0);\n"
-"  vec2 f = d-a+vec2(1.0);\n"
-"  vec2 g = a-b+c-d+vec2(2.0);\n"
-"  vec2 h = p-a+vec2(1.0);\n"
+"  vec2 e = b-a;\n"
+"  vec2 f = d-a;\n"
+"  vec2 g = a-b+c-d;\n"
+"  vec2 h = p-a;\n"
 
 "  float k2 = cross( g, f );\n"
 "  float k1 = cross( e, f ) + cross( h, g );\n"
@@ -202,9 +202,8 @@ SHADER_VERSION_COMPUTE
 "    u = u1;\n"
 "    v = v1;\n"
 
-"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=u2;   v=v2;   }\n"
-"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u=-1.0; v=-1.0; }\n"
-"  }\n"
+"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { return getTexCoord(texel, pixcmd); }\n"
+"  } else return getTexCoord(texel, pixcmd);\n"
 "  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
 "  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2( u, v );\n"
