@@ -4000,7 +4000,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
     // hard/vdp2/hon/p09_20.htm#no9_21
-    uint *cclist = (uint *)&varVdp2Regs->CCRSA;
+    u32 *cclist = (u32 *)&varVdp2Regs->CCRSA;
     cclist[0] &= 0x1Fu;
   }
   //gouraud
@@ -4272,7 +4272,7 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
     // hard/vdp2/hon/p09_20.htm#no9_21
-    uint *cclist = (uint *)&varVdp2Regs->CCRSA;
+    u32 *cclist = (u32 *)&varVdp2Regs->CCRSA;
     cclist[0] &= 0x1Fu;
   }
 //printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
@@ -4654,7 +4654,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
     // hard/vdp2/hon/p09_20.htm#no9_21
-    uint *cclist = (uint *)&varVdp2Regs->CCRSA;
+    u32 *cclist = (u32 *)&varVdp2Regs->CCRSA;
     cclist[0] &= 0x1Fu;
   }
 //printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
