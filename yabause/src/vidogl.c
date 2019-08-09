@@ -4205,7 +4205,6 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.CMDXC = (s16)cmd.CMDXC;
   cmd.CMDYC = (s16)cmd.CMDYC;
 
-
   x = cmd.CMDXA;
   y = cmd.CMDYA;
   // Setup Zoom Point

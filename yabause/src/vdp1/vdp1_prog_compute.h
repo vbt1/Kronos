@@ -138,17 +138,18 @@ SHADER_VERSION_COMPUTE
 "  P = vec2(Pin)/upscale;\n"
 
 "  if (wn_PnPoly(P, Quad) != 0u) return 1u;\n"
-"  else if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) return 1u;\n"
-"  else if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) return 1u;\n"
-"  else if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) return 1u;\n"
-"  else if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) return 1u;\n"
+"  else if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) {return 2u;}\n"
+"  else if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) {return 3u;}\n"
+"  else if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) {return 4u;}\n"
+"  else if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) {return 5u;}\n"
 "  else return 0u;\n"
 "}\n"
 
-"int getCmd(ivec2 P, uint id, uint start, uint end)\n"
+"int getCmd(ivec2 P, uint id, uint start, uint end, out uint zone)\n"
 "{\n"
 "  for(uint i=id+start; i<id+end; i++) {\n"
-"   if (pixIsInside(P, i) == 1u) {\n"
+"   zone = pixIsInside(P, i);\n"
+"   if ( zone != 0u) {\n"
 "     return int(i);\n"
 "   }\n"
 "  }\n"
@@ -158,62 +159,47 @@ SHADER_VERSION_COMPUTE
 "float cross( in vec2 a, in vec2 b ) { return a.x*b.y - a.y*b.x; }\n"
 
 
-"vec2 getTexCoord(ivec2 texel, cmdparameter_struct pixcmd) {\n"
+"vec2 getTexCoord(ivec2 texel, vec2 a, vec2 b, vec2 c, vec2 d) {\n"
 "  vec2 p = vec2(texel)/upscale;\n"
-"  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
-"  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
-"  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
-"  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
-"  float u = clamp((abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0),0.0, 1.0) ;\n"
+"  float u = clamp((abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0),0.0, 1.0);\n"
 "  float v = clamp((abs(a.y-p.y)+0.5)/(abs(a.y-d.y)+1.0),0.0, 1.0);\n"
-"  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
-"  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
 "  return vec2(u,v);\n"
 "}\n"
 
-"vec2 getTexCoordDistorted(ivec2 texel, cmdparameter_struct pixcmd) {\n"
+"vec2 getTexCoordDistorted(ivec2 texel, vec2 a, vec2 b, vec2 c, vec2 d) {\n"
 //http://iquilezles.org/www/articles/ibilinear/ibilinear.htm
 "  vec2 p = vec2(texel)/upscale;\n"
-"  vec2 a = vec2(pixcmd.CMDXA,pixcmd.CMDYA);\n"
-"  vec2 b = vec2(pixcmd.CMDXB,pixcmd.CMDYB);\n"
-"  vec2 c = vec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
-"  vec2 d = vec2(pixcmd.CMDXD,pixcmd.CMDYD);\n"
 "  vec2 e = b-a;\n"
 "  vec2 f = d-a;\n"
 "  vec2 g = a-b+c-d;\n"
 "  vec2 h = p-a;\n"
-"  if (e.x == 0.0) e.x= 0.5;\n"
-"  if (e.y == 0.0) e.y= 0.5;\n"
-"  if (f.x == 0.0) f.x= 0.5;\n"
-"  if (f.y == 0.0) f.y= 0.5;\n"
-"  if (g.x == 0.0) g.x= 0.5;\n"
-"  if (g.y == 0.0) g.y= 0.5;\n"
+"  if (e.x == 0.0) { e.x = 0.5;}"
+"  if (e.y == 0.0) { e.y = 0.5;}"
+"  if (g.x == 0.0) { g.x = 0.5;}"
+"  if (g.y == 0.0) { g.y = 0.5;}"
+"  if (f.x == 0.0) { f.x = 0.5;}"
+"  if (f.y == 0.0) { f.y = 0.5;}"
 
 "  float k2 = cross( g, f );\n"
-"  float k1 = cross( e, f ) + cross( h, g );\n"
-"  float k0 = cross( h, e );\n"
-"  float u = 0.0;\n"
-"  float v = 0.0;\n"
-
-"  float w = k1*k1 - 4.0*k0*k2;\n"
-"  if( w>=0.0 ) {\n"
-"    w = sqrt( w );\n"
-
-"    float v1 = (-k1 - w)/(2.0*k2);\n"
-"    float u1 = (h.x - f.x*v1)/(e.x + g.x*v1);\n"
-
-"    float v2 = (-k1 + w)/(2.0*k2);\n"
-"    float u2 = (h.x - f.x*v2)/(e.x + g.x*v2);\n"
-
-"    u = u1;\n"
-"    v = v1;\n"
-
-"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u = u2; v = v2; }\n"
-"    if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { return getTexCoord(texel, pixcmd); }\n"
-"  }\n"
-"  if ((pixcmd.flip & 0x1u) == 0x1u) u = 1.0 - u;\n" //invert horizontally
-"  if ((pixcmd.flip & 0x2u) == 0x2u) v = 1.0 - v;\n" //invert vertically
-"  return vec2( u, v );\n"
+"  if (k2 != 0.0) {\n"
+"    float k1 = cross( e, f ) + cross( h, g );\n"
+"    float k0 = cross( h, e );\n"
+"    float u = 0.0;\n"
+"    float v = 0.0;\n"
+"    float w = k1*k1 - 4.0*k0*k2;\n"
+"    if( w>=0.0 ) {\n"
+"      w = sqrt( w );\n"
+"      float v1 = (-k1 - w)/(2.0*k2);\n"
+"      float u1 = (h.x - f.x*v1)/(e.x + g.x*v1);\n"
+"      float v2 = (-k1 + w)/(2.0*k2);\n"
+"      float u2 = (h.x - f.x*v2)/(e.x + g.x*v2);\n"
+"      u = u1;\n"
+"      v = v1;\n"
+"      if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u = u2; v = v2; }\n"
+"      if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { return getTexCoord(texel,a,b,c,d); }\n"
+"    }\n"
+"    return vec2( u, v );\n"
+"  } else return getTexCoord(texel,a,b,c,d);\n"
 "}\n"
 
 "void Vdp1ProcessSpritePixel(uint type, inout uint pixel, inout uint shadow, inout uint normalshadow, inout uint priority, inout uint colorcalc){\n"
@@ -926,38 +912,59 @@ SHADER_VERSION_COMPUTE
 
 "  if (nbCmd[lindex] == 0u) return;\n"
 "  uint idCmd = 0;\n"
+"  uint zone = 0;\n"
 "  int cmdindex = 0;\n"
 "  while ((cmdindex != -1) && (lastColor == vec4(0.0)) && (idCmd<nbCmd[lindex]) ) {\n"
-"    cmdindex = getCmd(texel, cmdIndex, idCmd, nbCmd[lindex]);\n"
+"    cmdindex = getCmd(texel, cmdIndex, idCmd, nbCmd[lindex], zone);\n"
 "    idCmd = cmdindex + 1 - cmdIndex;\n"
 "    if (cmdindex == -1) continue;\n"
 "    pixcmd = cmd[cmdindex];\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "      lastColor = ReadPolygonColor(pixcmd);\n"
 "    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
-"      texcoord = getTexCoordDistorted(texel, pixcmd);\n"
+"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA), vec2(pixcmd.CMDXB,pixcmd.CMDYB), vec2(pixcmd.CMDXC,pixcmd.CMDYC), vec2(pixcmd.CMDXD,pixcmd.CMDYD));\n"
+// "      if (zone == 2u) texcoord.y = 0.0;\n"
+// "      else if (zone == 3u) texcoord.x = 1.0;\n"
+// "      else if (zone == 4u) texcoord.y = 1.0;\n"
+// "      else if (zone == 5u) texcoord.x = 0.0;\n"
+"      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
 "      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
 "    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
-"      texcoord = getTexCoord(texel, pixcmd);\n"
+"      texcoord = getTexCoord(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA), vec2(pixcmd.CMDXB,pixcmd.CMDYB), vec2(pixcmd.CMDXC,pixcmd.CMDYC), vec2(pixcmd.CMDXD,pixcmd.CMDYD));\n"
+"      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
 "      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
+"    }\n"
+"    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
+     //Implement Mesh shader (Duplicate for improve)
+     //Normal mesh for the moment
+"      if( (texel.y & 0x01) == 0 ){ \n"
+"        if( (texel.x & 0x01) == 0 ){ \n"
+"          lastColor = vec4(0.0);\n"
+"        }\n"
+"      }else{ \n"
+"        if( (texel.x & 0x01) == 1 ){ \n"
+"          lastColor = vec4(0.0);\n"
+"        } \n"
+"      } \n"
+"    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
+//Implement PG_VDP1_MSB
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
+//Implement PG_VDP1_GOURAUDSHADING
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
+//Implement PG_VDP1_SHADOW
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
+//Implement PG_VDP1_HALF_LUMINANCE
+"    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
+//Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
 "    }\n"
 "  }\n"
 "  if (lastColor == vec4(0.0)) return;\n"
-"  finalColor = lastColor;\n"
-"  if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
-//Implement Mesh shader (Duplicate for improve)
-"  } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
-//Implement PG_VDP1_MSB
-"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
-//Implement PG_VDP1_GOURAUDSHADING
-"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
-//Implement PG_VDP1_SHADOW
-"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
-//Implement PG_VDP1_HALF_LUMINANCE
-"  } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
-//Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
-"  }\n";
-
+#ifdef SHOW_QUAD
+"  if (zone != 1u) lastColor = VDP1COLOR(0, 0, 0, 0, 0xFF);\n"
+#endif
+"  finalColor = lastColor;\n";
 static const char vdp1_end_f[] =
 "  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
 "    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[0],pixcmd.G[4],texcoord.x), mix(pixcmd.G[12],pixcmd.G[8],texcoord.x), texcoord.y), 0.0, 1.0);\n"
