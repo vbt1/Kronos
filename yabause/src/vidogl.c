@@ -4198,8 +4198,13 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if (badgeometry == 1) return;
 
-  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
-  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  cmd.CMDXA = (s16)cmd.CMDXA;
+  cmd.CMDYA = (s16)cmd.CMDYA;
+  cmd.CMDXB = (s16)cmd.CMDXB;
+  cmd.CMDYB = (s16)cmd.CMDYB;
+  cmd.CMDXC = (s16)cmd.CMDXC;
+  cmd.CMDYC = (s16)cmd.CMDYC;
+
 
   x = cmd.CMDXA;
   y = cmd.CMDYA;
@@ -4261,14 +4266,14 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   default: break;
   }
 
-  cmd.CMDXA = x;
-  cmd.CMDYA = y;
-  cmd.CMDXB = x + rw;
-  cmd.CMDYB = y;
-  cmd.CMDXC = x + rw;
-  cmd.CMDYC = y + rh;
-  cmd.CMDXD = x;
-  cmd.CMDYD = y + rh;
+  cmd.CMDXA = x  + Vdp1Regs->localX;
+  cmd.CMDYA = y + Vdp1Regs->localY;
+  cmd.CMDXB = x + rw  + Vdp1Regs->localX;
+  cmd.CMDYB = y + Vdp1Regs->localY;
+  cmd.CMDXC = x + rw  + Vdp1Regs->localX;
+  cmd.CMDYC = y + rh + Vdp1Regs->localY;
+  cmd.CMDXD = x + Vdp1Regs->localX;
+  cmd.CMDYD = y + rh + Vdp1Regs->localY;
 
   if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
     // hard/vdp2/hon/p09_20.htm#no9_21
