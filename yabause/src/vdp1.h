@@ -154,6 +154,7 @@ typedef struct
   s32 CMDYC;
   s32 CMDXD;
   s32 CMDYD;
+  s32 P[8];
   u32 CMDGRDA;
   u32 SPCTL;
 } vdp1cmd_struct;

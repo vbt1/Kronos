@@ -16,6 +16,8 @@
 #define LOCAL_SIZE_X 8
 #define LOCAL_SIZE_Y 8
 
+//#define SHOW_QUAD
+
 static const char vdp1_clear_f[] =
 SHADER_VERSION_COMPUTE
 "#ifdef GL_ES\n"
@@ -61,6 +63,7 @@ SHADER_VERSION_COMPUTE
 "  int CMDYC;\n"
 "  int CMDXD;\n"
 "  int CMDYD;\n"
+"  int P[8];\n"
 "  uint CMDGRDA;\n"
 "  uint SPCTL;\n"
 "};\n"
@@ -161,9 +164,18 @@ SHADER_VERSION_COMPUTE
 
 "vec2 getTexCoord(ivec2 texel, vec2 a, vec2 b, vec2 c, vec2 d) {\n"
 "  vec2 p = vec2(texel)/upscale;\n"
-"  float u = clamp((abs(a.x-p.x)+0.5)/(abs(a.x-b.x)+1.0),0.0, 1.0);\n"
-"  float v = clamp((abs(a.y-p.y)+0.5)/(abs(a.y-d.y)+1.0),0.0, 1.0);\n"
-"  return vec2(u,v);\n"
+"  vec2 e = b-a;\n"
+"  vec2 f = d-a;\n"
+"  vec2 h = p-a;\n"
+"  vec2 g = a-b+c-d;\n"
+"  if (e.x == 0.0) e.x = 1.0;\n"
+"  float u = 0.0;\n"
+"  float v = 0.0;\n"
+"  float k1 = cross( e, f ) + cross( h, g );\n"
+"  float k0 = cross( h, e );\n"
+"  v = clamp(-k0/k1, 0.0, 1.0);\n"
+"  u = clamp((h.x*k1+f.x*k0) / (e.x*k1-g.x*k0), 0.0, 1.0);\n"
+"  return vec2( u, v );\n"
 "}\n"
 
 "vec2 getTexCoordDistorted(ivec2 texel, vec2 a, vec2 b, vec2 c, vec2 d) {\n"
@@ -171,35 +183,29 @@ SHADER_VERSION_COMPUTE
 "  vec2 p = vec2(texel)/upscale;\n"
 "  vec2 e = b-a;\n"
 "  vec2 f = d-a;\n"
-"  vec2 g = a-b+c-d;\n"
 "  vec2 h = p-a;\n"
-"  if (e.x == 0.0) { e.x = 0.5;}"
-"  if (e.y == 0.0) { e.y = 0.5;}"
-"  if (g.x == 0.0) { g.x = 0.5;}"
-"  if (g.y == 0.0) { g.y = 0.5;}"
-"  if (f.x == 0.0) { f.x = 0.5;}"
-"  if (f.y == 0.0) { f.y = 0.5;}"
-
+"  vec2 g = a-b+c-d;\n"
+"  if (e.x == 0.0) e.x = 1.0;\n"
+"  float u = 0.0;\n"
+"  float v = 0.0;\n"
 "  float k2 = cross( g, f );\n"
-"  if (k2 != 0.0) {\n"
-"    float k1 = cross( e, f ) + cross( h, g );\n"
-"    float k0 = cross( h, e );\n"
-"    float u = 0.0;\n"
-"    float v = 0.0;\n"
+"  float k1 = cross( e, f ) + cross( h, g );\n"
+"  float k0 = cross( h, e );\n"
+"  if (abs(k2) >= 0.00001) {\n"
 "    float w = k1*k1 - 4.0*k0*k2;\n"
 "    if( w>=0.0 ) {\n"
 "      w = sqrt( w );\n"
-"      float v1 = (-k1 - w)/(2.0*k2);\n"
-"      float u1 = (h.x - f.x*v1)/(e.x + g.x*v1);\n"
-"      float v2 = (-k1 + w)/(2.0*k2);\n"
-"      float u2 = (h.x - f.x*v2)/(e.x + g.x*v2);\n"
-"      u = u1;\n"
-"      v = v1;\n"
-"      if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { u = u2; v = v2; }\n"
-"      if( v<0.0 || v>1.0 || u<0.0 || u>1.0 ) { return getTexCoord(texel,a,b,c,d); }\n"
+"      float ik2 = 0.5/k2;\n"
+"      v = (-k1 - w)*ik2; \n"
+"      if( v<0.0 || v>1.0 ) v = (-k1 + w)*ik2;\n"
+"      u = (h.x - f.x*v)/(e.x + g.x*v);\n"
+"      if( ((u<0.0) || u>(1.0)) || ((v<0.0) || v>(1.0)) ) return vec2(-1.0);\n"
 "    }\n"
-"    return vec2( u, v );\n"
-"  } else return getTexCoord(texel,a,b,c,d);\n"
+"  } else { \n"
+"    v = clamp(-k0/k1, 0.0, 1.0);\n"
+"    u = clamp((h.x*k1+f.x*k0) / (e.x*k1-g.x*k0), 0.0, 1.0);\n"
+"  }\n"
+"  return vec2( u, v );\n"
 "}\n"
 
 "void Vdp1ProcessSpritePixel(uint type, inout uint pixel, inout uint shadow, inout uint normalshadow, inout uint priority, inout uint colorcalc){\n"
@@ -920,18 +926,23 @@ SHADER_VERSION_COMPUTE
 "    if (cmdindex == -1) continue;\n"
 "    pixcmd = cmd[cmdindex];\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
-"      lastColor = ReadPolygonColor(pixcmd);\n"
+"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))lastColor = vec4(0.0);\n"
+"      else {\n"
+"        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
+"        lastColor = ReadPolygonColor(pixcmd);\n"
+"      }\n"
 "    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
-"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA), vec2(pixcmd.CMDXB,pixcmd.CMDYB), vec2(pixcmd.CMDXC,pixcmd.CMDYC), vec2(pixcmd.CMDXD,pixcmd.CMDYD));\n"
-// "      if (zone == 2u) texcoord.y = 0.0;\n"
-// "      else if (zone == 3u) texcoord.x = 1.0;\n"
-// "      else if (zone == 4u) texcoord.y = 1.0;\n"
-// "      else if (zone == 5u) texcoord.x = 0.0;\n"
-"      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
-"      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
-"      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
+"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))lastColor = vec4(0.0);\n"
+"      else {\n"
+"        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
+"        lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
+"      }\n"
 "    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
-"      texcoord = getTexCoord(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA), vec2(pixcmd.CMDXB,pixcmd.CMDYB), vec2(pixcmd.CMDXC,pixcmd.CMDYC), vec2(pixcmd.CMDXD,pixcmd.CMDYD));\n"
+"      texcoord = getTexCoord(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
 "      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
 "      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
 "      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
@@ -960,10 +971,10 @@ SHADER_VERSION_COMPUTE
 //Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
 "    }\n"
 "  }\n"
-"  if (lastColor == vec4(0.0)) return;\n"
 #ifdef SHOW_QUAD
-"  if (zone != 1u) lastColor = VDP1COLOR(0, 0, 0, 0, 0xFF);\n"
+"  if (zone > 1u) lastColor = VDP1COLOR(0, 0, 0, 0, 0xFF);\n"
 #endif
+"  if (lastColor == vec4(0.0)) return;\n"
 "  finalColor = lastColor;\n";
 static const char vdp1_end_f[] =
 "  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
