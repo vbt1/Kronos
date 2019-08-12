@@ -992,6 +992,15 @@ SHADER_VERSION_COMPUTE
 "      }\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
 //Implement PG_VDP1_SHADOW
+"      int mode = int(finalColor.b*255.0)&0x7; \n"
+"      vec4 fboColor = imageLoad(outSurface,ivec2(texel.x,size.y - 1.0 -texel.y));\n"
+"      int additional = int(fboColor.a * 255.0);\n"
+"      if( ((additional & 0xC0)==0x80) ) { \n"
+"        finalColor = vec4(fboColor.r*0.5,fboColor.g*0.5,fboColor.b*0.5,fboColor.a);\n"
+"        finalColor.b = float((int(finalColor.b*255.0)&0xF8)|mode)/255.0; \n"
+"      }else{\n"
+"        finalColor = vec4(0.0);\n"
+"      }\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
 //Implement PG_VDP1_HALF_LUMINANCE
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
