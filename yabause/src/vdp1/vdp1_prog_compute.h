@@ -907,11 +907,11 @@ SHADER_VERSION_COMPUTE
 
 "void main()\n"
 "{\n"
-"  vec4 lastColor = vec4(0.0);\n"
+"  vec4 finalColor = vec4(0.0);\n"
+"  vec4 finalColorAttr = vec4(0.0);\n"
 "  cmdparameter_struct pixcmd;\n"
 "  uint discarded = 0;\n"
 "  vec2 texcoord = vec2(0);\n"
-"  vec4 finalColor = vec4(0.0);\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
@@ -923,49 +923,64 @@ SHADER_VERSION_COMPUTE
 "  uint idCmd = 0;\n"
 "  uint zone = 0;\n"
 "  int cmdindex = 0;\n"
-"  while ((cmdindex != -1) && (lastColor == vec4(0.0)) && (idCmd<nbCmd[lindex]) ) {\n"
+"  bool useGouraud = false;\n"
+"  while ((cmdindex != -1) && (finalColor == vec4(0.0)) && (idCmd<nbCmd[lindex]) ) {\n"
 "    cmdindex = getCmd(texel, cmdIndex, idCmd, nbCmd[lindex], zone);\n"
 "    idCmd = cmdindex + 1 - cmdIndex;\n"
 "    if (cmdindex == -1) continue;\n"
 "    pixcmd = cmd[cmdindex];\n"
+"    useGouraud = ((pixcmd.CMDPMOD & 0x4u) == 0x4u);\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
-"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))lastColor = vec4(0.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))finalColor = vec4(0.0);\n"
 "      else {\n"
 "        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
 "        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
-"        lastColor = ReadPolygonColor(pixcmd);\n"
+"        finalColor = ReadPolygonColor(pixcmd);\n"
 "      }\n"
 "    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
 "      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
-"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))lastColor = vec4(0.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0))finalColor = vec4(0.0);\n"
 "      else {\n"
 "        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
 "        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
-"        lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
+"        finalColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
 "      }\n"
 "    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
 "      texcoord = getTexCoord(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
 "      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
 "      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
-"      lastColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
+"      finalColor = ReadSpriteColor(pixcmd, texcoord, texel);\n"
 "    }\n"
 "    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
      //Implement Mesh shader (Duplicate for improve)
      //Normal mesh for the moment
 "      if( (texel.y & 0x01) == 0 ){ \n"
 "        if( (texel.x & 0x01) == 0 ){ \n"
-"          lastColor = vec4(0.0);\n"
+"          finalColor = vec4(0.0);\n"
 "        }\n"
 "      }else{ \n"
 "        if( (texel.x & 0x01) == 1 ){ \n"
-"          lastColor = vec4(0.0);\n"
+"          finalColor = vec4(0.0);\n"
 "        } \n"
 "      } \n"
 "    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
 //Implement PG_VDP1_MSB
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
 //Implement PG_VDP1_GOURAUDSHADING
+"      int shadow = 0;\n"
+"      int additionnal = int(finalColor.a * 255.0)&0xF8;\n"
+"      if (additionnal == 0xC0) {\n"
+"        if (((int(finalColor.b * 255.0)&0xFE)==0x80) && (finalColor.rg == vec2(0.0))) shadow = 1;\n"
+"      }\n"
+"      if (shadow != 0) {\n"
+"        finalColorAttr.rgb = vec3(0.0);\n"
+"        finalColorAttr.a = 0.5;\n"
+"        finalColor.rgb = vec3(0.0);\n"
+"        useGouraud = false;\n"
+"      } else { \n"
+"        finalColorAttr = vec4(0.0);\n"
+"      }\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
 //Implement PG_VDP1_SHADOW
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
@@ -975,18 +990,18 @@ SHADER_VERSION_COMPUTE
 "    }\n"
 "  }\n"
 #ifdef SHOW_QUAD
-"  if (zone > 1u) lastColor = VDP1COLOR(0, 0, 0, 0, 0xFF);\n"
+"  if (zone > 1u) finalColor = VDP1COLOR(0, 0, 0, 0, 0xFF);\n"
 #endif
-"  if (lastColor == vec4(0.0)) return;\n"
-"  finalColor = lastColor;\n";
+"  if ((finalColor == vec4(0.0)) && (finalColorAttr == vec4(0.0))) return;\n"
+"  finalColor = finalColor;\n";
 static const char vdp1_end_f[] =
-"  if ((pixcmd.CMDPMOD & 0x4u) == 0x4u) {\n"
+"  if (useGouraud) {\n"
 "    finalColor.r = clamp(finalColor.r + mix(mix(pixcmd.G[0],pixcmd.G[4],texcoord.x), mix(pixcmd.G[12],pixcmd.G[8],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[1],pixcmd.G[5],texcoord.x), mix(pixcmd.G[13],pixcmd.G[9],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "    finalColor.b = clamp(finalColor.b + mix(mix(pixcmd.G[2],pixcmd.G[6],texcoord.x), mix(pixcmd.G[14],pixcmd.G[10],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "  }\n"
 "  imageStore(outSurface,ivec2(texel.x,size.y - 1.0 - texel.y),finalColor);\n"
-"  imageStore(outSurfaceAttr,ivec2(texel.x,size.y - 1.0 -texel.y),vec4(0.0));\n"
+"  imageStore(outSurfaceAttr,ivec2(texel.x,size.y - 1.0 -texel.y),finalColorAttr);\n"
 "}\n";
 
 static const char vdp1_test_f[] = "";
