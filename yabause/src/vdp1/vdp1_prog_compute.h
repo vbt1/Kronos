@@ -71,8 +71,8 @@ SHADER_VERSION_COMPUTE
 "};\n"
 
 "layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
-"layout(rgba8, binding = 0) writeonly uniform image2D outSurface;\n"
-"layout(rgba8, binding = 1) writeonly uniform image2D outSurfaceAttr;\n"
+"layout(rgba8, binding = 0) uniform image2D outSurface;\n"
+"layout(rgba8, binding = 1) uniform image2D outSurfaceAttr;\n"
 "layout(std430, binding = 2) readonly buffer VDP1RAM { uint Vdp1Ram[]; };\n"
 "layout(std430, binding = 3) readonly buffer NB_CMD { uint nbCmd[]; };\n"
 "layout(std430, binding = 4) readonly buffer CMD { \n"
@@ -966,6 +966,15 @@ SHADER_VERSION_COMPUTE
 "      } \n"
 "    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
 //Implement PG_VDP1_MSB
+"      int msb = 0;\n"
+"      finalColorAttr = imageLoad(outSurfaceAttr,ivec2(texel.x,size.y - 1.0 -texel.y));\n"
+"      int oldmsb = (int(finalColorAttr.a * 255.0))>>7;\n"
+"      int prio = int(finalColor.a * 255.0) & 0x7;\n"
+"      if ((int(finalColor.a * 255.0) & 0xC0) == 0xC0) {\n"
+"        msb = (int(finalColor.b*255.0)>>7);\n"
+"      }\n"
+"      if (msb == 0) finalColor = vec4(0.0);\n"
+"      finalColorAttr.a = float((msb | oldmsb)<<7 | prio)/255.0;\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x00u){\n" //REPLACE
 //Implement PG_VDP1_GOURAUDSHADING
 "      int shadow = 0;\n"
