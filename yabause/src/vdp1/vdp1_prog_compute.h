@@ -24,13 +24,15 @@ SHADER_VERSION_COMPUTE
 "precision highp float;\n"
 "#endif\n"
 "layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
-"layout(rgba8, binding = 0) writeonly highp uniform image2D outSurface;\n"
+"layout(rgba8, binding = 0) writeonly uniform image2D outSurface;\n"
+"layout(rgba8, binding = 1) writeonly uniform image2D outSurfaceAttr;\n"
 "void main()\n"
 "{\n"
 "  ivec2 size = imageSize(outSurface);\n"
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
 "  imageStore(outSurface,texel,vec4(0.0));\n"
+"  imageStore(outSurfaceAttr,texel,vec4(0.0));\n"
 "}\n";
 
 static const char vdp1_start_f[] =
@@ -69,13 +71,14 @@ SHADER_VERSION_COMPUTE
 "};\n"
 
 "layout(local_size_x = "Stringify(LOCAL_SIZE_X)", local_size_y = "Stringify(LOCAL_SIZE_Y)") in;\n"
-"layout(rgba8, binding = 0) writeonly highp uniform image2D outSurface;\n"
-"layout(std430, binding = 1) readonly buffer VDP1RAM { uint Vdp1Ram[]; };\n"
-"layout(std430, binding = 2) readonly buffer NB_CMD { uint nbCmd[]; };\n"
-"layout(std430, binding = 3) readonly buffer CMD { \n"
+"layout(rgba8, binding = 0) writeonly uniform image2D outSurface;\n"
+"layout(rgba8, binding = 1) writeonly uniform image2D outSurfaceAttr;\n"
+"layout(std430, binding = 2) readonly buffer VDP1RAM { uint Vdp1Ram[]; };\n"
+"layout(std430, binding = 3) readonly buffer NB_CMD { uint nbCmd[]; };\n"
+"layout(std430, binding = 4) readonly buffer CMD { \n"
 "  cmdparameter_struct cmd[];\n"
 "};\n"
-"layout(location = 4) uniform vec2 upscale;\n"
+"layout(location = 5) uniform vec2 upscale;\n"
 // from here http://geomalgorithms.com/a03-_inclusion.html
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
@@ -982,7 +985,8 @@ static const char vdp1_end_f[] =
 "    finalColor.g = clamp(finalColor.g + mix(mix(pixcmd.G[1],pixcmd.G[5],texcoord.x), mix(pixcmd.G[13],pixcmd.G[9],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "    finalColor.b = clamp(finalColor.b + mix(mix(pixcmd.G[2],pixcmd.G[6],texcoord.x), mix(pixcmd.G[14],pixcmd.G[10],texcoord.x), texcoord.y), 0.0, 1.0);\n"
 "  }\n"
-"  imageStore(outSurface,ivec2(texel.x,size.y-texel.y),finalColor);\n"
+"  imageStore(outSurface,ivec2(texel.x,size.y - 1.0 - texel.y),finalColor);\n"
+"  imageStore(outSurfaceAttr,ivec2(texel.x,size.y - 1.0 -texel.y),vec4(0.0));\n"
 "}\n";
 
 static const char vdp1_test_f[] = "";

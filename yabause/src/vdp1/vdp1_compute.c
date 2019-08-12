@@ -182,10 +182,10 @@ printf("Generate texture %dx%d\n", w, h);
 
 int vdp1_add(vdp1cmd_struct* cmd) {
 	//VDP2 looks one pixel misaligned with VDP1...
-	cmd->CMDYA = cmd->CMDYA + 1;
-  cmd->CMDYB = cmd->CMDYB + 1;
-	cmd->CMDYC = cmd->CMDYC + 1;
-	cmd->CMDYD = cmd->CMDYD + 1;
+	// cmd->CMDYA = cmd->CMDYA + 1;
+  // cmd->CMDYB = cmd->CMDYB + 1;
+	// cmd->CMDYC = cmd->CMDYC + 1;
+	// cmd->CMDYD = cmd->CMDYD + 1;
 
 	memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
 
@@ -262,6 +262,7 @@ void vdp1_clear() {
   glUseProgram(prg_vdp1[progId]);
 
 	glBindImageTexture(0, compute_tex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindImageTexture(1, compute_tex[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glDispatchCompute(work_groups_x, work_groups_y, 1); //might be better to launch only the right number of workgroup
 }
 
@@ -319,10 +320,11 @@ int* vdp1_compute(Vdp2 *varVdp2Regs) {
   glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp1Ram);
 
 	glBindImageTexture(0, compute_tex[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_vdp1ram_);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_nbcmd_);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_cmd_);
-	glUniform2f(4, tex_ratiow, tex_ratioh);
+	glBindImageTexture(1, compute_tex[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_vdp1ram_);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_nbcmd_);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo_cmd_);
+	glUniform2f(5, tex_ratiow, tex_ratioh);
 
   glDispatchCompute(work_groups_x, work_groups_y, 1); //might be better to launch only the right number of workgroup
 	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
