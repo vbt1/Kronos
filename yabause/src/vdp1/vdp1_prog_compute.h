@@ -1003,8 +1003,21 @@ SHADER_VERSION_COMPUTE
 "      }\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x02u){\n"//IS_HALF_LUMINANCE
 //Implement PG_VDP1_HALF_LUMINANCE
+"      finalColor.r = finalColor.r * 0.5;\n "
+"      finalColor.g = finalColor.g * 0.5;\n "
+"      finalColor.b = finalColor.b * 0.5;\n "
+"      finalColorAttr = vec4(0.0);\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
 //Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
+"      vec4 fboColor    = imageLoad(outSurface,ivec2(texel.x,size.y - 1.0 -texel.y));\n"
+"      int additional = int(fboColor.a * 255.0);\n"
+"      int mode = int(finalColor.b*255.0)&0x7; \n"
+"      finalColor.b = float((int(finalColor.b*255.0)&0xF8)>>3)/31.0; \n"
+"      if( (additional & 0x40) == 0 ) \n"
+"      { \n"
+"        finalColor.rgb = finalColor.rgb*0.5 + fboColor.rgb*0.5;     \n"
+"      }   \n"
+"      finalColor.b = float((int(finalColor.b*255.0)&0xF8)|mode)/255.0; \n"
 "    }\n"
 "  }\n"
 #ifdef SHOW_QUAD
