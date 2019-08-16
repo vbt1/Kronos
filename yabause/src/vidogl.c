@@ -4021,10 +4021,10 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
-
+#ifdef USE_VDP1_TEX
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
-
+#endif
   vdp1_add(&cmd);
 
   LOG_CMD("%d\n", __LINE__);
@@ -4303,10 +4303,10 @@ if ((cmd.CMDPMOD & 4))
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
-
+#ifdef USE_VDP1_TEX
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
-
+#endif
   vdp1_add(&cmd);
 
   LOG_CMD("%d\n", __LINE__);
@@ -4689,10 +4689,10 @@ if ((cmd.CMDPMOD & 4))
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = DISTORTED;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
-
+#ifdef USE_VDP1_TEX
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
-
+#endif
   vdp1_add(&cmd);
 
 #if 0

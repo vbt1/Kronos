@@ -1967,7 +1967,7 @@ int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * co
   }
   return 0;
 }
-
+#ifdef USE_VDP1_TEX
 int YglVDP1AllocateTexture(vdp1cmd_struct * input, YglTexture * output, YglTextureManager *tm) {
 
    _Ygl->needVdp1Render = 1;
@@ -1976,7 +1976,7 @@ int YglVDP1AllocateTexture(vdp1cmd_struct * input, YglTexture * output, YglTextu
    input->texH = tm->height;
    return 0;
 }
-
+#endif
 
 int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm) {
    unsigned int x, y;

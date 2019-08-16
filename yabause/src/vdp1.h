@@ -22,6 +22,7 @@
 #define VDP1_H
 
 #include "memory.h"
+//#define USE_VDP1_TEX
 
 #define VIDCORE_DEFAULT         -1
 #define VIDCORE_DUMMY           0
@@ -135,10 +136,12 @@ typedef struct
   u32 priority;
   u32 w;
   u32 h;
+#ifdef USE_VDP1_TEX
   u32 texX;
   u32 texY;
   u32 texW;
   u32 texH;
+#endif
   u32 flip;
   u32 cor;
   u32 cog;
