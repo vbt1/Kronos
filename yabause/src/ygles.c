@@ -49,6 +49,7 @@ extern int YglDrawBackScreen();
 
 static int YglCalcTextureQ( float   *pnts,float *q);
 
+static void waitVdp1End(int id);
 static void executeTMVDP1(int in, int out);
 static void releaseVDP1FB(int i);
 
@@ -1518,6 +1519,8 @@ int YglInit(int width, int height, unsigned int depth) {
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+  YglTM_vdp1[0] = YglTMInit(1024, 1024);
+  YglTM_vdp1[1] = YglTMInit(1024, 1024);
   YglTM_vdp2 = YglTMInit(1024, 1024);
 
   _Ygl->vdp1fb_exactbuf[0] = (u8*)malloc(512*704*2);
@@ -1964,6 +1967,16 @@ int YglTriangleGrowShading_in(YglSprite * input, YglTexture * output, float * co
   }
   return 0;
 }
+
+int YglVDP1AllocateTexture(vdp1cmd_struct * input, YglTexture * output, YglTextureManager *tm) {
+
+   _Ygl->needVdp1Render = 1;
+   YglTMAllocate(tm, output, input->w, input->h, &input->texX, &input->texY);
+   input->texW = tm->width;
+   input->texH = tm->height;
+   return 0;
+}
+
 
 int YglQuadGrowShading_in(YglSprite * input, YglTexture * output, float * colors, YglCache * c, int cash_flg, YglTextureManager *tm) {
    unsigned int x, y;
@@ -2705,12 +2718,11 @@ void YglEraseWriteVDP1(void) {
   u32 alpha = 0;
   int status = 0;
   GLenum DrawBuffers[4]= {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2,GL_COLOR_ATTACHMENT3};
-
-  vdp1_clear();
-
   if (_Ygl->vdp1On[_Ygl->readframe] == 0) return; //No update on the fb, no need to clear
   _Ygl->vdp1On[_Ygl->readframe] = 0;
   if (_Ygl->vdp1FrameBuff[0] == 0) return;
+
+  vdp1_clear(_Ygl->readframe);
 
   memset(_Ygl->vdp1fb_exactbuf[_Ygl->readframe], 0x0, 512*704*2);
   releaseVDP1DrawingFBMemRead(_Ygl->readframe);
@@ -2756,7 +2768,12 @@ void YglEraseWriteVDP1(void) {
 }
 
 static void executeTMVDP1(int in, int out) {
+  //if (_Ygl->needVdp1Render != 0){
+    YglTmPush(YglTM_vdp1[in]);
     YglRenderVDP1();
+    YglTmPull(YglTM_vdp1[out], 0);
+    _Ygl->needVdp1Render = 0;
+  //}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2773,7 +2790,7 @@ void YglFrameChangeVDP1(){
 void YglRenderVDP1(void) {
   FrameProfileAdd("YglRenderVDP1 start");
   FRAMELOG("YglRenderVDP1: drawframe =%d", _Ygl->drawframe);
-  _Ygl->vdp1Tex = vdp1_compute(&Vdp2Lines[0]);
+  _Ygl->vdp1Tex = vdp1_compute(&Vdp2Lines[0], _Ygl->drawframe);
   FrameProfileAdd("YglRenderVDP1 end");
 }
 
@@ -3520,9 +3537,9 @@ void YglRender(Vdp2 *varVdp2Regs) {
 
     glDrawBuffers(1, &DrawBuffers[0]);
     glClearBufferfv(GL_COLOR, 0, col);
-    YglBlitSimple(_Ygl->vdp1Tex, 0);
-    glDrawBuffers(1, &DrawBuffers[1]);
-    glClearBufferfv(GL_COLOR, 0, col);
+    YglBlitSimple(_Ygl->vdp1Tex[0], 0);
+    //glDrawBuffers(1, &DrawBuffers[1]);
+    //glClearBufferfv(GL_COLOR, 0, col);
     //YglBlitSimple(_Ygl->vdp1FrameBuff[_Ygl->readframe*2+1], 0); //VDP1 CS need to handle additional texture
     glDisable(GL_STENCIL_TEST);
     VDP1fb = &_Ygl->vdp1FrameBuff[4];

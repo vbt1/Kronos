@@ -207,6 +207,7 @@ extern PFNGLMEMORYBARRIERPROC glMemoryBarrier;
 #include "core.h"
 #include "threads.h"
 #include "vidshared.h"
+#include "vdp1.h"
 
 //#define DEBUG_BLIT
 
@@ -266,6 +267,7 @@ typedef struct {
 	GLuint pixelBufferID;
 } YglTextureManager;
 
+extern YglTextureManager * YglTM_vdp1[2];
 extern YglTextureManager * YglTM_vdp2;
 
 YglTextureManager * YglTMInit(unsigned int, unsigned int);
@@ -677,6 +679,7 @@ typedef struct {
    GLuint default_fbo;
    YglPerLineInfo bg[enBGMAX];
    int vpd1_running;
+   int needVdp1Render;
    GLint m_viewport[4];
    int min_fb_x;
    int max_fb_x;
@@ -762,6 +765,8 @@ int YglQuadGrowShading(YglSprite * input, YglTexture * output, float * colors,Yg
 void YglSetClearColor(float r, float g, float b);
 void YglStartWindow( vdp2draw_struct * info, int win0, int logwin0, int win1, int logwin1, int mode );
 void YglEndWindow( vdp2draw_struct * info );
+
+int YglVDP1AllocateTexture(vdp1cmd_struct * input, YglTexture * output, YglTextureManager *tm);
 
 void YglOnUpdateColorRamWord(u32 addr);
 void YglUpdateColorRam();

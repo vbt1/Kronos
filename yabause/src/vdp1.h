@@ -135,6 +135,10 @@ typedef struct
   u32 priority;
   u32 w;
   u32 h;
+  u32 texX;
+  u32 texY;
+  u32 texW;
+  u32 texH;
   u32 flip;
   u32 cor;
   u32 cog;

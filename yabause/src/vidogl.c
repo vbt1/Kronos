@@ -383,7 +383,7 @@ vdp2rotationparameter_struct * FASTCALL vdp2RGetParamMode03WithK(RBGDrawInfo * r
 
 
 static void FASTCALL Vdp1ReadPriority(vdp1cmd_struct *cmd, int * priority, int * colorcl, int * normal_shadow, Vdp2 *varVdp2Regs);
-static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, YglTexture *texture, Vdp2 *varVdp2Regs);
+static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglTexture *texture, Vdp2 *varVdp2Regs);
 
 INLINE u32 VDP1COLOR16TO24(u16 temp) {
   return (((u32)temp & 0x1F) << 3 | ((u32)temp & 0x3E0) << 6 | ((u32)temp & 0x7C00) << 9| ((u32)temp & 0x8000) << 1); //Blue LSB is used for MSB bit.
@@ -960,7 +960,7 @@ void Vdp1ReadTexture_in_async(void *p)
    }
 }
 
-static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, YglTexture *texture, Vdp2 *varVdp2Regs) {
+static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglTexture *texture, Vdp2 *varVdp2Regs) {
    vdp1TextureTask *task = malloc(sizeof(vdp1TextureTask));
 
    task->cmd = malloc(sizeof(vdp1cmd_struct));
@@ -971,8 +971,8 @@ static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, Ygl
    memcpy(task->texture, texture, sizeof(YglTexture));
    memcpy(task->varVdp2Regs, varVdp2Regs, sizeof(Vdp2));
 
-   task->w = sprite->w;
-   task->h = sprite->h;
+   task->w = cmd->w;
+   task->h = cmd->h;
 
    if (vdp1text_run == 0) {
      vdp1text_run = 1;
@@ -998,8 +998,8 @@ int waitVdp1Textures( int sync) {
     return (empty == 0);
 }
 #else
-static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglSprite *sprite, YglTexture *texture, Vdp2 *varVdp2Regs) {
-   Vdp1ReadTexture_in_sync(cmd, sprite->w, sprite->h, texture, varVdp2Regs);
+static void FASTCALL Vdp1ReadTexture(vdp1cmd_struct *cmd, YglTexture *texture, Vdp2 *varVdp2Regs) {
+   Vdp1ReadTexture_in_sync(cmd, cmd->w, cmd->h, texture, varVdp2Regs);
 }
 #endif
 
@@ -3474,6 +3474,8 @@ void VIDOGLVdp1Draw()
 
   FrameProfileAdd("Vdp1Command start");
 
+  YglTmPull(YglTM_vdp1[_Ygl->drawframe], 0);
+
   maxpri = 0x00;
   minpri = 0x07;
   for (i = 0; i < 8; i++)
@@ -3967,6 +3969,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   LOG_CMD("%d\n", __LINE__);
 
   vdp1cmd_struct cmd;
+  YglTexture texture;
   int badgeometry = 1;
   Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
@@ -4018,6 +4021,9 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
+  Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 
   vdp1_add(&cmd);
 
@@ -4167,6 +4173,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
   vdp1cmd_struct cmd;
+  YglTexture texture;
   int badgeometry = 1;
   s16 rw = 0, rh = 0;
   s16 x, y;
@@ -4296,6 +4303,9 @@ if ((cmd.CMDPMOD & 4))
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = NORMAL;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
+  Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 
   vdp1_add(&cmd);
 
@@ -4619,6 +4629,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   LOG_CMD("%d\n", __LINE__);
 
   vdp1cmd_struct cmd;
+  YglTexture texture;
   int badgeometry = 1;
   Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
@@ -4678,6 +4689,9 @@ if ((cmd.CMDPMOD & 4))
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = DISTORTED;
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
+  Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 
   vdp1_add(&cmd);
 
