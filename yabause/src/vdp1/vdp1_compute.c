@@ -129,7 +129,6 @@ static GLuint createProgram(int count, const GLchar** prg_strs) {
 }
 
 static int generateComputeBuffer(int w, int h) {
-	printf("Generate %d %d\n", w, h);
   if (compute_tex[0] != 0) {
     glDeleteTextures(4,&compute_tex[0]);
   }
@@ -155,7 +154,6 @@ static int generateComputeBuffer(int w, int h) {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_nbcmd_);
   glBufferData(GL_SHADER_STORAGE_BUFFER, NB_COARSE_RAST * sizeof(int),NULL,GL_DYNAMIC_DRAW);
 
-printf("Generate texture %dx%d\n", w, h);
   glGenTextures(4, &compute_tex[0]);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, compute_tex[0]);
@@ -252,11 +250,10 @@ int vdp1_add(vdp1cmd_struct* cmd) {
   maxy = (maxy > Dy)?maxy:Dy;
 
 //Add a bounding box
-       cmd->B[0] = minx*tex_ratiow;
-       cmd->B[1] = maxx*tex_ratiow;
-       cmd->B[2] = miny*tex_ratioh;
-       cmd->B[3] = maxy*tex_ratioh;
-
+  cmd->B[0] = minx*tex_ratiow;
+  cmd->B[1] = maxx*tex_ratiow;
+  cmd->B[2] = miny*tex_ratioh;
+  cmd->B[3] = maxy*tex_ratioh;
 
   int intersectX = -1;
   int intersectY = -1;
@@ -343,7 +340,7 @@ int* vdp1_compute(Vdp2 *varVdp2Regs, int id) {
 	glBindImageTexture(0, compute_tex[id*2], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glBindImageTexture(1, compute_tex[id*2+1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-#if USE_VDP1_TEX
+#ifdef USE_VDP1_TEX
 	glUniform1i(2, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, YglTM_vdp1[id]->textureID);

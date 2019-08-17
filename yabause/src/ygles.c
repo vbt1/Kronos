@@ -31,7 +31,7 @@
 #include "vdp1/vdp1_compute.h"
 
 
-#define __USE_OPENGL_DEBUG__
+//#define __USE_OPENGL_DEBUG__
 
 #define YGLDEBUG
 //#define YGLDEBUG printf
