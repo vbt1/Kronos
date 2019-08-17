@@ -251,6 +251,13 @@ int vdp1_add(vdp1cmd_struct* cmd) {
   maxy = (maxy > Cy)?maxy:Cy;
   maxy = (maxy > Dy)?maxy:Dy;
 
+//Add a bounding box
+       cmd->B[0] = minx*tex_ratiow;
+       cmd->B[1] = maxx*tex_ratiow;
+       cmd->B[2] = miny*tex_ratioh;
+       cmd->B[3] = maxy*tex_ratioh;
+
+
   int intersectX = -1;
   int intersectY = -1;
   for (int i = 0; i<NB_COARSE_RAST_X; i++) {

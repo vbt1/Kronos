@@ -10,11 +10,11 @@
 #define DISTORTED 1
 #define NORMAL 2
 
-#define NB_COARSE_RAST_X 8
-#define NB_COARSE_RAST_Y 8
+#define NB_COARSE_RAST_X 32
+#define NB_COARSE_RAST_Y 32
 
-#define LOCAL_SIZE_X 8
-#define LOCAL_SIZE_Y 8
+#define LOCAL_SIZE_X 32
+#define LOCAL_SIZE_Y 32
 
 //#define SHOW_QUAD
 
@@ -72,6 +72,7 @@ SHADER_VERSION_COMPUTE
 "  int CMDXD;\n"
 "  int CMDYD;\n"
 "  int P[8];\n"
+"  int B[4];\n"
 "  uint CMDGRDA;\n"
 "  uint SPCTL;\n"
 "};\n"
@@ -145,6 +146,7 @@ SHADER_VERSION_COMPUTE
 "uint pixIsInside (ivec2 Pin, uint idx){\n"
 "  vec2 Quad[5];\n"
 "  vec2 P;\n"
+"  if (any(lessThan(Pin, ivec2(cmd[idx].B[0],cmd[idx].B[2]))) || any(greaterThan(Pin, ivec2(cmd[idx].B[1],cmd[idx].B[3])))) return 0u;\n"
 "  Quad[0] = vec2(cmd[idx].CMDXA,cmd[idx].CMDYA);\n"
 "  Quad[1] = vec2(cmd[idx].CMDXB,cmd[idx].CMDYB);\n"
 "  Quad[2] = vec2(cmd[idx].CMDXC,cmd[idx].CMDYC);\n"
