@@ -10,11 +10,11 @@
 #define DISTORTED 1
 #define NORMAL 2
 
-#define NB_COARSE_RAST_X 32
-#define NB_COARSE_RAST_Y 32
+#define NB_COARSE_RAST_X 8
+#define NB_COARSE_RAST_Y 8
 
-#define LOCAL_SIZE_X 32
-#define LOCAL_SIZE_Y 32
+#define LOCAL_SIZE_X 8
+#define LOCAL_SIZE_Y 8
 
 //#define SHOW_QUAD
 
