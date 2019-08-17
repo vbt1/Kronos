@@ -4993,6 +4993,7 @@ if ((cmd.CMDPMOD & 4))
   cmd.cob = 0x0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
   cmd.type = POLYGON;
+  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);

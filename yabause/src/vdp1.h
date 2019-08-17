@@ -163,6 +163,7 @@ typedef struct
   s32 CMDYD;
   s32 P[8];
   s32 B[4];
+  u32 COLOR[4];
   u32 CMDGRDA;
   u32 SPCTL;
 } vdp1cmd_struct;
