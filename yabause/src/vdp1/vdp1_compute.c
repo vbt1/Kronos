@@ -201,7 +201,8 @@ int vdp1_add(vdp1cmd_struct* cmd) {
 
 	int *P = &cmd->CMDXA;
 
-	for (int i = 0; i<8; i++) P[i] = (P[i] * 2) - 1;
+	for (int i = 0; i<4; i++) P[i*2] = (P[i*2] * _Ygl->vdp1wratio * 2) - 1;
+	for (int i = 0; i<4; i++) P[i*2+1] = (P[i*2+1] * _Ygl->vdp1hratio * 2) - 1;
 
   int right = 0;
 	int rightindex = -1;
