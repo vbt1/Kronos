@@ -71,7 +71,7 @@ SHADER_VERSION_COMPUTE
 "  int CMDYC;\n"
 "  int CMDXD;\n"
 "  int CMDYD;\n"
-"  int P[8];\n"
+//"  int P[8];\n"
 "  uint B[4];\n"
 "  int COLOR[4];\n"
 "  uint CMDGRDA;\n"
@@ -148,10 +148,10 @@ SHADER_VERSION_COMPUTE
 "  vec2 Quad[5];\n"
 "  vec2 P;\n"
 "  if (any(lessThan(Pin, ivec2(cmd[idx].B[0],cmd[idx].B[2]))) || any(greaterThan(Pin, ivec2(cmd[idx].B[1],cmd[idx].B[3])))) return 0u;\n"
-"  Quad[0] = vec2(cmd[idx].P[0],cmd[idx].P[1])/2.0;\n"
-"  Quad[1] = vec2(cmd[idx].P[2],cmd[idx].P[3])/2.0;\n"
-"  Quad[2] = vec2(cmd[idx].P[4],cmd[idx].P[5])/2.0;\n"
-"  Quad[3] = vec2(cmd[idx].P[6],cmd[idx].P[7])/2.0;\n"
+"  Quad[0] = vec2(cmd[idx].CMDXA,cmd[idx].CMDYA)/2.0;\n"
+"  Quad[1] = vec2(cmd[idx].CMDXB,cmd[idx].CMDYB)/2.0;\n"
+"  Quad[2] = vec2(cmd[idx].CMDXC,cmd[idx].CMDYC)/2.0;\n"
+"  Quad[3] = vec2(cmd[idx].CMDXD,cmd[idx].CMDYD)/2.0;\n"
 "  Quad[4] = Quad[0];\n"
 "  P = vec2(Pin)/upscale;\n"
 
@@ -992,7 +992,7 @@ SHADER_VERSION_COMPUTE
 "    pixcmd = cmd[cmdindex];\n"
 "    useGouraud = ((pixcmd.CMDPMOD & 0x4u) == 0x4u);\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
-"      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA)/2.0, vec2(pixcmd.CMDXB,pixcmd.CMDYB)/2.0, vec2(pixcmd.CMDXC,pixcmd.CMDYC)/2.0, vec2(pixcmd.CMDXD,pixcmd.CMDYD)/2.0);\n"
 "      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
 "      else {\n"
 "        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
@@ -1000,7 +1000,7 @@ SHADER_VERSION_COMPUTE
 "        newColor = extractPolygonColor(pixcmd);\n"
 "      }\n"
 "    } else if (pixcmd.type == "Stringify(DISTORTED)") {\n"
-"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      texcoord = getTexCoordDistorted(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA)/2.0, vec2(pixcmd.CMDXB,pixcmd.CMDYB)/2.0, vec2(pixcmd.CMDXC,pixcmd.CMDYC)/2.0, vec2(pixcmd.CMDXD,pixcmd.CMDYD)/2.0);\n"
 "      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
 "      else {\n"
 "        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
@@ -1012,7 +1012,7 @@ SHADER_VERSION_COMPUTE
 #endif
 "      }\n"
 "    } else if (pixcmd.type == "Stringify(NORMAL)") {\n"
-"      texcoord = getTexCoord(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      texcoord = getTexCoord(texel, vec2(pixcmd.CMDXA,pixcmd.CMDYA)/2.0, vec2(pixcmd.CMDXB,pixcmd.CMDYB)/2.0, vec2(pixcmd.CMDXC,pixcmd.CMDYC)/2.0, vec2(pixcmd.CMDXD,pixcmd.CMDYD)/2.0);\n"
 "      if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
 "      if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
 #ifdef USE_VDP1_TEX

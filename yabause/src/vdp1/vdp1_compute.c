@@ -199,9 +199,9 @@ int vdp1_add(vdp1cmd_struct* cmd) {
 	// cmd->CMDYC = cmd->CMDYC + 1;
 	// cmd->CMDYD = cmd->CMDYD + 1;
 
-	memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
+	int *P = &cmd->CMDXA;
 
-	for (int i = 0; i<8; i++) cmd->P[i] = (cmd->P[i] * 2) - 1;
+	for (int i = 0; i<8; i++) P[i] = (P[i] * 2) - 1;
 
   int right = 0;
 	int rightindex = -1;
@@ -209,31 +209,32 @@ int vdp1_add(vdp1cmd_struct* cmd) {
 	int topindex = -1;
 
 	for (int i = 0; i<4; i++) {
-		if ((cmd->P[i*2]+cmd->P[((i+1)%4)*2]) > right) {
-			right = (cmd->P[i*2]+cmd->P[((i+1)%4)*2]);
+		if ((P[i*2]+P[((i+1)%4)*2]) > right) {
+			right = (P[i*2]+P[((i+1)%4)*2]);
 			rightindex = i;
 		}
 	}
-	cmd->P[rightindex*2] += 2;
-	cmd->P[((rightindex+1)%4)*2] += 2;
+	P[rightindex*2] += 2;
+	P[((rightindex+1)%4)*2] += 2;
 
 	for (int i = 0; i<4; i++) {
-		if ((cmd->P[i*2+1]+cmd->P[((i+1)%4)*2+1]) > top) {
-			top = (cmd->P[i*2+1]+cmd->P[((i+1)%4)*2+1]);
+		if ((P[i*2+1]+P[((i+1)%4)*2+1]) > top) {
+			top = (P[i*2+1]+P[((i+1)%4)*2+1]);
 			topindex = i;
 		}
 	}
-	cmd->P[topindex*2+1] += 2;
-	cmd->P[((topindex+1)%4)*2+1] += 2;
+	P[topindex*2+1] += 2;
+	P[((topindex+1)%4)*2+1] += 2;
 
-  float Ax = cmd->P[0]/2.0;
-	float Ay = cmd->P[1]/2.0;
-	float Bx = cmd->P[2]/2.0;
-	float By = cmd->P[3]/2.0;
-	float Cx = cmd->P[4]/2.0;
-	float Cy = cmd->P[5]/2.0;
-	float Dx = cmd->P[6]/2.0;
-	float Dy = cmd->P[7]/2.0;
+//Compute bounding box
+  float Ax = P[0]/2.0;
+	float Ay = P[1]/2.0;
+	float Bx = P[2]/2.0;
+	float By = P[3]/2.0;
+	float Cx = P[4]/2.0;
+	float Cy = P[5]/2.0;
+	float Dx = P[6]/2.0;
+	float Dy = P[7]/2.0;
 
   int minx = (Ax < Bx)?Ax:Bx;
   int miny = (Ay < By)?Ay:By;
