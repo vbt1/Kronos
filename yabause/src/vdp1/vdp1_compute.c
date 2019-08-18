@@ -193,11 +193,6 @@ static int generateComputeBuffer(int w, int h) {
 }
 
 int vdp1_add(vdp1cmd_struct* cmd) {
-	//VDP2 looks one pixel misaligned with VDP1...
-	// cmd->CMDYA = cmd->CMDYA + 1;
-  // cmd->CMDYB = cmd->CMDYB + 1;
-	// cmd->CMDYC = cmd->CMDYC + 1;
-	// cmd->CMDYD = cmd->CMDYD + 1;
 
 	int *P = &cmd->CMDXA;
 
