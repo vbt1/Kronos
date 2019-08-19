@@ -261,7 +261,7 @@ int vdp1_add(vdp1cmd_struct* cmd) {
         || (blkx + (tex_width/NB_COARSE_RAST_X)) < minx
         || (blky + (tex_height/NB_COARSE_RAST_Y)) < miny
         || blky > maxy)) {
-					memcpy(&cmdVdp1[(i+j*NB_COARSE_RAST_X)*2000 + ((2000-1) - nbCmd[i+j*NB_COARSE_RAST_X])], cmd, sizeof(vdp1cmd_struct));
+					memcpy(&cmdVdp1[(i+j*NB_COARSE_RAST_X)*2000 + nbCmd[i+j*NB_COARSE_RAST_X]], cmd, sizeof(vdp1cmd_struct));
           nbCmd[i+j*NB_COARSE_RAST_X]++;
       }
     }
@@ -318,7 +318,7 @@ int* vdp1_compute(Vdp2 *varVdp2Regs, int id) {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_cmd_);
   for (int i = 0; i < NB_COARSE_RAST; i++) {
     if (nbCmd[i] != 0) {
-    	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size*i*2000, nbCmd[i]*sizeof(vdp1cmd_struct), (void*)&cmdVdp1[2000*i+((2000-nbCmd[i]))]);
+    	glBufferSubData(GL_SHADER_STORAGE_BUFFER, struct_size*i*2000, nbCmd[i]*sizeof(vdp1cmd_struct), (void*)&cmdVdp1[2000*i]);
 			needRender = 1;
 		}
   }
