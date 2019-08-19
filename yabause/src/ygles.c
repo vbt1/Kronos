@@ -602,10 +602,6 @@ void YglTmPush(YglTextureManager * tm){
 }
 
 void YglTmPull(YglTextureManager * tm, u32 flg){
-  if (tm == YglTM_vdp1[0])
-    waitVdp1End(0);
-  if (tm == YglTM_vdp1[1])
-    waitVdp1End(1);
   YabThreadLock(tm->mtx);
   if (tm->texture == NULL) {
     glActiveTexture(GL_TEXTURE0);
@@ -2771,24 +2767,10 @@ void YglEraseWriteVDP1(void) {
 
 }
 
-static void waitVdp1End(int id) {
-  int end = 0;
-  if (_Ygl->syncVdp1[id] != 0) {
-    while (end == 0) {
-      int ret;
-      ret = glClientWaitSync(_Ygl->syncVdp1[id], GL_SYNC_FLUSH_COMMANDS_BIT, 20000000);
-      if ((ret == GL_CONDITION_SATISFIED) || (ret == GL_ALREADY_SIGNALED)) end = 1;
-    }
-    glDeleteSync(_Ygl->syncVdp1[id]);
-    _Ygl->syncVdp1[id] = 0;
-  }
-}
-
 static void executeTMVDP1(int in, int out) {
   //if (_Ygl->needVdp1Render != 0){
     YglTmPush(YglTM_vdp1[in]);
     YglRenderVDP1();
-    _Ygl->syncVdp1[in] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     YglTmPull(YglTM_vdp1[out], 0);
     _Ygl->needVdp1Render = 0;
   //}
@@ -3191,7 +3173,6 @@ static void releaseVDP1FB(int i) {
 }
 
 void YglUpdateVDP1FB(void) {
-  waitVdp1End(_Ygl->readframe);
   YglSetVDP1FB(_Ygl->readframe);
   releaseVDP1DrawingFBMemRead(_Ygl->readframe);
 }
