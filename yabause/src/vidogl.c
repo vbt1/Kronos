@@ -5131,10 +5131,12 @@ void VIDOGLVdp1UserClipping(u8 * ram, Vdp1 * regs)
 
 void VIDOGLVdp1SystemClipping(u8 * ram, Vdp1 * regs)
 {
-  Vdp1Regs->systemclipX1 = 0;
-  Vdp1Regs->systemclipY1 = 0;
-  Vdp1Regs->systemclipX2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x14);
-  Vdp1Regs->systemclipY2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x16);
+  vdp1cmd_struct cmd;
+  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
+  cmd.type = SYSTEM_CLIPPING;
+  vdp1_add(&cmd);
+  Vdp1Regs->systemclipX2 = cmd.CMDXC;
+  Vdp1Regs->systemclipY2 = cmd.CMDYC;
   //printf("System (0,0) (%d,%d)\n", Vdp1Regs->systemclipX2, Vdp1Regs->systemclipY2);
 }
 

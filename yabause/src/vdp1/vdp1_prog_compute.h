@@ -11,6 +11,7 @@
 #define NORMAL 2
 #define POLYLINE 3
 #define LINE 4
+#define SYSTEM_CLIPPING 5
 
 #define NB_COARSE_RAST_X 8
 #define NB_COARSE_RAST_Y 8
@@ -92,6 +93,7 @@ SHADER_VERSION_COMPUTE
 "  cmdparameter_struct cmd[];\n"
 "};\n"
 "layout(location = 6) uniform vec2 upscale;\n"
+"layout(location = 7) uniform ivec2 sysClip;\n"
 // from here http://geomalgorithms.com/a03-_inclusion.html
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
@@ -149,6 +151,7 @@ SHADER_VERSION_COMPUTE
 "uint pixIsInside (ivec2 Pin, uint idx){\n"
 "  vec2 Quad[5];\n"
 "  vec2 P;\n"
+"  if (cmd[idx].type >= "Stringify(SYSTEM_CLIPPING)") return 6u;\n"
 "  if (any(lessThan(Pin, ivec2(cmd[idx].B[0],cmd[idx].B[2]))) || any(greaterThan(Pin, ivec2(cmd[idx].B[1],cmd[idx].B[3])))) return 0u;\n"
 "  Quad[0] = vec2(cmd[idx].CMDXA,cmd[idx].CMDYA);\n"
 "  Quad[1] = vec2(cmd[idx].CMDXB,cmd[idx].CMDYB);\n"
@@ -173,7 +176,7 @@ SHADER_VERSION_COMPUTE
 "{\n"
 "  for(uint i=id+start; i<id+end; i++) {\n"
 "   zone = pixIsInside(P, i);\n"
-"   if ( zone != 0u) {\n"
+"   if (zone != 0u) {\n"
 "     return int(i);\n"
 "   }\n"
 "  }\n"
@@ -982,6 +985,7 @@ SHADER_VERSION_COMPUTE
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
 "  ivec2 index = ivec2((texel.x*"Stringify(NB_COARSE_RAST_X)")/size.x, (texel.y*"Stringify(NB_COARSE_RAST_Y)")/size.y);\n"
+"  ivec2 limit = sysClip;\n"
 "  uint lindex = index.y*"Stringify(NB_COARSE_RAST_X)"+ index.x;\n"
 "  uint cmdIndex = lindex * 2000u;\n"
 
@@ -996,6 +1000,11 @@ SHADER_VERSION_COMPUTE
 "    if (cmdindex == -1) continue;\n"
 "    idCmd = cmdindex + 1 - cmdIndex;\n"
 "    pixcmd = cmd[cmdindex];\n"
+"    if (pixcmd.type == "Stringify(SYSTEM_CLIPPING)") {\n"
+"      limit = ivec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
+"      continue;\n"
+"    }\n"
+"    if (any(greaterThan(texel,limit))) continue;\n"
 "    useGouraud = ((pixcmd.CMDPMOD & 0x4u) == 0x4u);\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
