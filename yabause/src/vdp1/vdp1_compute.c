@@ -37,29 +37,35 @@ static GLuint ssbo_vdp1ram_ = 0;
 static GLuint ssbo_nbcmd_ = 0;
 static GLuint prg_vdp1[NB_PRG] = {0};
 
-static const GLchar * a_prg_vdp1[NB_PRG][3] = {
-  //VDP1_0_PAL
+static const GLchar * a_prg_vdp1[NB_PRG][4] = {
+  //VDP1_MESH_STANDARD
 	{
 		vdp1_start_f,
-		vdp1_0_Pal_f,
+		vdp1_standard_mesh_f,
+		vdp1_continue_f,
+		vdp1_end_f
+	},
+	//VDP1_MESH_IMPROVED
+	{
+		vdp1_start_f,
+		vdp1_improved_mesh_f,
+		vdp1_continue_f,
 		vdp1_end_f
 	},
 	//CLEAR
 	{
 		vdp1_clear_f,
 		NULL,
+		NULL,
 		NULL
   },
-	//TEST_PRG
-	{
-		vdp1_start_f,
-		vdp1_test_f,
-		vdp1_end_f
-	}
 };
 
 static int getProgramId() {
-  return TEST_PRG;
+	if (_Ygl->meshmode == ORIGINAL_MESH)
+    return VDP1_MESH_STANDARD;
+	else
+	  return VDP1_MESH_IMPROVED;
 }
 
 int ErrorHandle(const char* name)
@@ -202,9 +208,9 @@ int vdp1_add(vdp1cmd_struct* cmd, int clipcmd) {
 
 	memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
 
-        for (int i = 0; i<8; i++) cmd->P[i] = cmd->P[i] * 2 - 1;
+	for (int i = 0; i<8; i++) cmd->P[i] = cmd->P[i] * 2 - 1;
 
-        int right = 0;
+	int right = 0;
 	int rightindex = -1;
 	int top = 0;
 	int topindex = -1;

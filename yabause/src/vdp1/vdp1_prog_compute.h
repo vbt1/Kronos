@@ -1068,9 +1068,9 @@ SHADER_VERSION_COMPUTE
 #endif
 "    }\n"
 "    if (newColor == vec4(0.0)) continue;\n"
-"    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n"//IS_MESH
-     //Implement Mesh shader (Duplicate for improve)
-     //Normal mesh for the moment
+"    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n";//IS_MESH
+static const char vdp1_standard_mesh_f[] =
+     //Normal mesh
 "      if( (texel.y & 0x01) == 0 ){ \n"
 "        if( (texel.x & 0x01) == 0 ){ \n"
 "          newColor = vec4(0.0);\n"
@@ -1081,7 +1081,19 @@ SHADER_VERSION_COMPUTE
 "          newColor = vec4(0.0);\n"
 "          continue;\n"
 "        } \n"
-"      } \n"
+"      } \n";
+static const char vdp1_improved_mesh_f[] =
+     //Improved mesh
+"      int alpha = 0x0;\n"
+"      int prio = 0;\n"
+"      prio = (int(newColor.a *255.0) & 0x7);\n"
+"      if ((int(newColor.a * 255.0) & 0x40) == 0) alpha = 0x08;\n"
+"      alpha = alpha | 0x40 | prio;\n"
+"      finalColorAttr.a = float(alpha)/255.0;\n"
+"      finalColorAttr.b = float(int(finalColorAttr.b*255.0)&0xFE)/255.0;\n"
+"      newColor = finalColor;\n"
+"      newColor.a = float((int(newColor.a *255.0) & 0xF8)|prio)/255.0;\n";
+static const char vdp1_continue_f[] =
 "    } else if ((pixcmd.CMDPMOD & 0x8000u)!=0x00u){\n"//IS_MSB
 //Implement PG_VDP1_MSB
 "      int msb = 0;\n"
@@ -1153,16 +1165,5 @@ static const char vdp1_end_f[] =
 "  imageStore(outSurface,ivec2(texel.x,size.y - 1.0 - texel.y),finalColor);\n"
 "  imageStore(outSurfaceAttr,ivec2(texel.x,size.y - 1.0 -texel.y),finalColorAttr);\n"
 "}\n";
-
-static const char vdp1_test_f[] = "";
-// "  uint col = color[uint(texcoord.y * colHeight)*  colWidth + uint(texcoord.x * colWidth)];\n"
-// "  a = (0x80 | 0x0)/255.0f;\n"//float((col>>24u)&0xFFu)/255.0f;\n"
-// "  b = float((col>>16u)&0xFFu)/255.0f;\n"
-// "  g = float((col>>8u)&0xFFu)/255.0f;\n"
-// "  r = float((col>>0u)&0xFFu)/255.0f;\n";
-
-static const char vdp1_0_Pal_f[] = "";
-static const char vdp1_0_Mix_f[] =
-"\n";
 
 #endif //VDP1_PROG_COMPUTE_H

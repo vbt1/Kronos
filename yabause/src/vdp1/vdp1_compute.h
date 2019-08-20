@@ -6,9 +6,9 @@
 
 enum
 {
-  VDP1_0_PAL = 0,
+  VDP1_MESH_STANDARD = 0,
+  VDP1_MESH_IMPROVED,
   CLEAR,
-  TEST_PRG,
   NB_PRG
 };
 
