@@ -4023,7 +4023,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 #endif
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 
   LOG_CMD("%d\n", __LINE__);
 #if 0
@@ -4305,7 +4305,7 @@ if ((cmd.CMDPMOD & 4))
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 #endif
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 
   LOG_CMD("%d\n", __LINE__);
 #if 0
@@ -4691,7 +4691,7 @@ if ((cmd.CMDPMOD & 4))
   YglVDP1AllocateTexture(&cmd, &texture, YglTM_vdp1[_Ygl->drawframe]);
   Vdp1ReadTexture(&cmd, &texture, varVdp2Regs);
 #endif
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 
 #if 0
   vdp1cmd_struct cmd;
@@ -4994,7 +4994,7 @@ if ((cmd.CMDPMOD & 4))
   cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 }
 
 void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
@@ -5052,7 +5052,7 @@ if ((cmd.CMDPMOD & 4))
   cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5112,7 +5112,7 @@ void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5122,7 +5122,7 @@ void VIDOGLVdp1UserClipping(u8 * ram, Vdp1 * regs)
   vdp1cmd_struct cmd;
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   cmd.type = USER_CLIPPING;
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,1);
   Vdp1Regs->userclipX1 = cmd.CMDXA;
   Vdp1Regs->userclipY1 = cmd.CMDYA;
   Vdp1Regs->userclipX2 = cmd.CMDXC;
@@ -5136,7 +5136,7 @@ void VIDOGLVdp1SystemClipping(u8 * ram, Vdp1 * regs)
   vdp1cmd_struct cmd;
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   cmd.type = SYSTEM_CLIPPING;
-  vdp1_add(&cmd);
+  vdp1_add(&cmd,1);
   Vdp1Regs->systemclipX2 = cmd.CMDXC;
   Vdp1Regs->systemclipY2 = cmd.CMDYC;
   //printf("System (0,0) (%d,%d)\n", Vdp1Regs->systemclipX2, Vdp1Regs->systemclipY2);

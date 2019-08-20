@@ -14,7 +14,7 @@ enum
 
 extern void vdp1_compute_init(int width, int height, float ratiow, float ratioh);
 extern int* vdp1_compute(Vdp2 *varVdp2Regs, int id);
-extern int vdp1_add(vdp1cmd_struct* cmd);
+extern int vdp1_add(vdp1cmd_struct* cmd, int clipcmd);
 extern void vdp1_clear(int id);
 
 #endif //VDP1_COMPUTE_H

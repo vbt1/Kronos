@@ -192,8 +192,9 @@ static int generateComputeBuffer(int w, int h) {
   return 0;
 }
 
-int vdp1_add(vdp1cmd_struct* cmd) {
-
+int vdp1_add(vdp1cmd_struct* cmd, int clipcmd) {
+	int minx, miny, maxx, maxy;
+if (clipcmd == 0) {
 	memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
 
 	for (int i = 0; i<4; i++) cmd->P[i*2] = (cmd->P[i*2] * _Ygl->vdp1wratio * 2) - 1;
@@ -231,10 +232,10 @@ int vdp1_add(vdp1cmd_struct* cmd) {
 	float Dx = cmd->P[6]/2.0;
 	float Dy = cmd->P[7]/2.0;
 
-  int minx = (Ax < Bx)?Ax:Bx;
-  int miny = (Ay < By)?Ay:By;
-  int maxx = (Ax > Bx)?Ax:Bx;
-  int maxy = (Ay > By)?Ay:By;
+  minx = (Ax < Bx)?Ax:Bx;
+  miny = (Ay < By)?Ay:By;
+  maxx = (Ax > Bx)?Ax:Bx;
+  maxy = (Ay > By)?Ay:By;
 
   minx = (minx < Cx)?minx:Cx;
   minx = (minx < Dx)?minx:Dx;
@@ -250,7 +251,7 @@ int vdp1_add(vdp1cmd_struct* cmd) {
   cmd->B[1] = maxx*tex_ratiow;
   cmd->B[2] = miny*tex_ratioh;
   cmd->B[3] = maxy*tex_ratioh;
-
+}
   int intersectX = -1;
   int intersectY = -1;
   for (int i = 0; i<NB_COARSE_RAST_X; i++) {
@@ -260,7 +261,8 @@ int vdp1_add(vdp1cmd_struct* cmd) {
       if (!(blkx > maxx
         || (blkx + (tex_width/NB_COARSE_RAST_X)) < minx
         || (blky + (tex_height/NB_COARSE_RAST_Y)) < miny
-        || blky > maxy)) {
+        || blky > maxy)
+			  || (clipcmd!=0)) {
 					memcpy(&cmdVdp1[(i+j*NB_COARSE_RAST_X)*2000 + nbCmd[i+j*NB_COARSE_RAST_X]], cmd, sizeof(vdp1cmd_struct));
           nbCmd[i+j*NB_COARSE_RAST_X]++;
       }
