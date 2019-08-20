@@ -3992,12 +3992,12 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
   cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
 
-  cmd.CMDXB = cmd.CMDXA + cmd.w;
+  cmd.CMDXB = cmd.CMDXA + cmd.w - 1;
   cmd.CMDYB = cmd.CMDYA;
-  cmd.CMDXC = cmd.CMDXA + cmd.w;
-  cmd.CMDYC = cmd.CMDYA + cmd.h;
+  cmd.CMDXC = cmd.CMDXA + cmd.w - 1;
+  cmd.CMDYC = cmd.CMDYA + cmd.h - 1;
   cmd.CMDXD = cmd.CMDXA;
-  cmd.CMDYD = cmd.CMDYA + cmd.h;
+  cmd.CMDYD = cmd.CMDYA + cmd.h - 1;
 
   if ((cmd.CMDPMOD >> 3) & 0x7u == 5) {
     // hard/vdp2/hon/p09_20.htm#no9_21
