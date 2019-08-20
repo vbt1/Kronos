@@ -1068,6 +1068,7 @@ SHADER_VERSION_COMPUTE
 #endif
 "    }\n"
 "    if (newColor == vec4(0.0)) continue;\n"
+"    if ((int(newColor.b * 255.0) & 0x1) == 0x0) useGouraud = false;\n"
 "    if ((pixcmd.CMDPMOD & 0x100u)==0x100u){\n";//IS_MESH
 static const char vdp1_standard_mesh_f[] =
      //Normal mesh
