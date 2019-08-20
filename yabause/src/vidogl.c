@@ -4997,30 +4997,17 @@ if ((cmd.CMDPMOD & 4))
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);
+}
 
-//Exporter la couleur en RGB
+void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
+{
+  LOG_CMD("%d\n", __LINE__);
 
-  //printf("%x\n", cmd.CMDPMOD);
-
-#if 0
-  u16 color;
-  YglSprite sprite;
-  YglTexture texture;
-  u16 color2;
-  int i;
-  float col[4 * 4];
-  float vert[8];
-  int gouraud = 0;
-  int priority = 0;
-  int shadow = 0;
-  int normalshadow = 0;
-  int colorcalc = 0;
   vdp1cmd_struct cmd;
-  float line_polygon[8];
+  int badgeometry = 1;
+  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-
-  int badgeometry = 1;
 
   if (((cmd.CMDXA & 0xFC00) == 0x0) || ((cmd.CMDXA & 0xFC00) == 0xFC00)) badgeometry = 0;
   if (((cmd.CMDYA & 0xFC00) == 0x0) || ((cmd.CMDYA & 0xFC00) == 0xFC00)) badgeometry = 0;
@@ -5033,89 +5020,42 @@ if ((cmd.CMDPMOD & 4))
 
   if (badgeometry == 1) return;
 
+  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
+  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  cmd.CMDXB = (s16)cmd.CMDXB + Vdp1Regs->localX;
+  cmd.CMDYB = (s16)cmd.CMDYB + Vdp1Regs->localY;
+  cmd.CMDXC = (s16)cmd.CMDXC + Vdp1Regs->localX;
+  cmd.CMDYC = (s16)cmd.CMDYC + Vdp1Regs->localY;
+  cmd.CMDXD = (s16)cmd.CMDXD + Vdp1Regs->localX;
+  cmd.CMDYD = (s16)cmd.CMDYD + Vdp1Regs->localY;
 
-  sprite.blendmode = VDP1_COLOR_CL_REPLACE;
-  sprite.dst = 0;
+//printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
 
-  vert[0] = (float)(s16)cmd.CMDXA;
-  vert[1] = (float)(s16)cmd.CMDYA;
-  vert[2] = (float)(s16)cmd.CMDXB;
-  vert[3] = (float)(s16)cmd.CMDYB;
-  vert[4] = (float)(s16)cmd.CMDXC;
-  vert[5] = (float)(s16)cmd.CMDYC;
-  vert[6] = (float)(s16)cmd.CMDXD;
-  vert[7] = (float)(s16)cmd.CMDYD;
-
-  //expandVertices(vert, sprite.vertices, !isSquare(vert));
-  memcpy(sprite.vertices, vert, sizeof(float)*8);
-  fixVerticesSize(sprite.vertices);
-
-  for (int i = 0; i<4; i++) {
-    sprite.vertices[2*i] = (sprite.vertices[2*i] + Vdp1Regs->localX) * _Ygl->vdp1wratio;
-    sprite.vertices[2*i+1] = (sprite.vertices[2*i+1] + Vdp1Regs->localY) * _Ygl->vdp1hratio;
-  }
-
-  color = cmd.CMDCOLR;
-  sprite.uclipmode = (cmd.CMDPMOD >> 9) & 0x03;
-
-  // Check if the Gouraud shading bit is set and the color mode is RGB
-  if ((cmd.CMDPMOD & 4))
-  {
-    for (i = 0; i < 4; i++)
-    {
-      color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-      col[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 3] = 1.0f;
-    }
-    gouraud = 1;
-  }
-
-  sprite.priority = 0;
-  sprite.w = 1;
-  sprite.h = 1;
-  sprite.flip = 0;
-  sprite.cor = 0x00;
-  sprite.cog = 0x00;
-  sprite.cob = 0x00;
-
-  int spd = ((cmd.CMDPMOD & 0x40) != 0);
-  if (IS_REPLACE(cmd.CMDPMOD)) {
-      sprite.blendmode = VDP1_COLOR_CL_REPLACE;
-  }
-  else if (IS_DONOT_DRAW_OR_SHADOW(cmd.CMDPMOD)) {
-    sprite.blendmode = VDP1_COLOR_CL_SHADOW;
-  }
-  else if (IS_HALF_LUMINANCE(cmd.CMDPMOD)) {
-    sprite.blendmode = VDP1_COLOR_CL_HALF_LUMINANCE;
-  }
-  else if (IS_REPLACE_OR_HALF_TRANSPARENT(cmd.CMDPMOD)) {
-    sprite.blendmode = VDP1_COLOR_CL_GROW_HALF_TRANSPARENT;
-  }
-
-  if (IS_MESH(cmd.CMDPMOD)) {
-    sprite.blendmode = VDP1_COLOR_CL_MESH; // zzzz
-  }
-  else if (IS_MSB_SHADOW(cmd.CMDPMOD)) {
-    sprite.blendmode = VDP1_COLOR_CL_MSB_SHADOW;
-  }
-
-  if (gouraud == 1)
-  {
-    YglQuadGrowShading(&sprite, &texture, col, NULL, YglTM_vdp1[_Ygl->drawframe]);
-  }
-  else {
-    YglQuadGrowShading(&sprite, &texture, NULL, NULL, YglTM_vdp1[_Ygl->drawframe]);
-  }
-
-  *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
-  #endif
-}
-
-void VIDOGLVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
+//gouraud
+memset(cmd.G, 0, sizeof(float)*16);
+if ((cmd.CMDPMOD & 4))
 {
-  LOG_CMD("%d\n", __LINE__);
+  for (int i = 0; i < 4; i++){
+    u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+    cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
+    cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
+    cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
+  }
+}
+  cmd.priority = 0;
+  cmd.w = 1;
+  cmd.h = 1;
+  cmd.flip = 0;
+  cmd.cor = 0x0;
+  cmd.cog = 0x0;
+  cmd.cob = 0x0;
+  cmd.SPCTL = varVdp2Regs->SPCTL;
+  cmd.type = POLYLINE;
+  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  vdp1_add(&cmd);
+
 #if 0
   s16 v[8];
   float line_poygon[8];

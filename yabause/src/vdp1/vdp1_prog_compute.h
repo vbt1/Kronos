@@ -9,6 +9,7 @@
 #define POLYGON 0
 #define DISTORTED 1
 #define NORMAL 2
+#define POLYLINE 3
 
 #define NB_COARSE_RAST_X 8
 #define NB_COARSE_RAST_Y 8
@@ -155,12 +156,14 @@ SHADER_VERSION_COMPUTE
 "  Quad[4] = Quad[0];\n"
 "  P = vec2(Pin)/upscale;\n"
 
-"  if (wn_PnPoly(P, Quad) != 0u) return 1u;\n"
-"  else if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) {return 2u;}\n"
-"  else if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) {return 3u;}\n"
-"  else if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) {return 4u;}\n"
-"  else if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) {return 5u;}\n"
-"  else return 0u;\n"
+"  if (cmd[idx].type < "Stringify(POLYLINE)") {\n"
+"    if (wn_PnPoly(P, Quad) != 0u) return 1u;\n"
+"  }"
+"  if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) {return 2u;}\n"
+"  if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) {return 3u;}\n"
+"  if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) {return 4u;}\n"
+"  if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) {return 5u;}\n"
+"  return 0u;\n"
 "}\n"
 
 "int getCmd(ivec2 P, uint id, uint start, uint end, out uint zone)\n"
@@ -985,7 +988,6 @@ SHADER_VERSION_COMPUTE
 "  int cmdindex = 0;\n"
 "  bool useGouraud = false;\n"
 "  while ((cmdindex != -1) && (idCmd<nbCmd[lindex]) ) {\n"
-"    vec4 fboColor = finalColor;\n"
 "    newColor = vec4(0.0);\n"
 "    cmdindex = getCmd(texel, cmdIndex, idCmd, nbCmd[lindex], zone);\n"
 "    if (cmdindex == -1) continue;\n"
@@ -993,6 +995,14 @@ SHADER_VERSION_COMPUTE
 "    pixcmd = cmd[cmdindex];\n"
 "    useGouraud = ((pixcmd.CMDPMOD & 0x4u) == 0x4u);\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
+"      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
+"      else {\n"
+"        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
+"        newColor = extractPolygonColor(pixcmd);\n"
+"      }\n"
+"    } else if (pixcmd.type == "Stringify(POLYLINE)") {\n"
 "      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
 "      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
 "      else {\n"
@@ -1068,9 +1078,9 @@ SHADER_VERSION_COMPUTE
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x01u){\n"//IS_DONOT_DRAW_OR_SHADOW
 //Implement PG_VDP1_SHADOW
 "      int mode = int(newColor.b*255.0)&0x7; \n"
-"      int additional = int(fboColor.a * 255.0);\n"
+"      int additional = int(finalColor.a * 255.0);\n"
 "      if( ((additional & 0xC0)==0x80) ) { \n"
-"        newColor = vec4(fboColor.r*0.5,fboColor.g*0.5,fboColor.b*0.5,fboColor.a);\n"
+"        newColor = vec4(finalColor.r*0.5,finalColor.g*0.5,finalColor.b*0.5,finalColor.a);\n"
 "        newColor.b = float((int(newColor.b*255.0)&0xF8)|mode)/255.0; \n"
 "      }else{\n"
 "        newColor = vec4(0.0);\n"
@@ -1084,12 +1094,12 @@ SHADER_VERSION_COMPUTE
 "      finalColorAttr = vec4(0.0);\n"
 "    } else if ((pixcmd.CMDPMOD & 0x03u)==0x03u){\n"//IS_REPLACE_OR_HALF_TRANSPARENT
 //Implement PG_VDP1_GOURAUDSHADING_HALFTRANS
-"      int additional = int(fboColor.a * 255.0);\n"
+"      int additional = int(finalColor.a * 255.0);\n"
 "      int mode = int(newColor.b*255.0)&0x7; \n"
 "      newColor.b = float((int(newColor.b*255.0)&0xF8)>>3)/31.0; \n"
 "      if( (additional & 0x40) == 0 ) \n"
 "      { \n"
-"        newColor.rgb = newColor.rgb*0.5 + fboColor.rgb*0.5;     \n"
+"        newColor.rgb = newColor.rgb*0.5 + finalColor.rgb*0.5;     \n"
 "      }   \n"
 "      newColor.b = float((int(newColor.b*255.0)&0xF8)|mode)/255.0; \n"
 "    }\n"
