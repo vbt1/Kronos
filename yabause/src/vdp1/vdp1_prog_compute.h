@@ -1088,7 +1088,7 @@ SHADER_VERSION_COMPUTE
 "      int oldmsb = (int(finalColorAttr.a * 255.0))>>7;\n"
 "      int prio = int(newColor.a * 255.0) & 0x7;\n"
 "      if ((int(newColor.a * 255.0) & 0xC0) == 0xC0) {\n"
-"        msb = (int(newColor.b*255.0)>>7);\n"
+"        msb = (int(newColor.b*255.0)&0x1);\n"
 "      }\n"
 "      if (msb == 0) {\n"
 "        newColor = vec4(0.0);\n"
