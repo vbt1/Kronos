@@ -10,6 +10,7 @@
 #define DISTORTED 1
 #define NORMAL 2
 #define POLYLINE 3
+#define LINE 4
 
 #define NB_COARSE_RAST_X 8
 #define NB_COARSE_RAST_Y 8
@@ -160,9 +161,11 @@ SHADER_VERSION_COMPUTE
 "    if (wn_PnPoly(P, Quad) != 0u) return 1u;\n"
 "  }"
 "  if (all(lessThanEqual(dist(P, Quad[0], Quad[1]), vec2(0.5, 0.5)))) {return 2u;}\n"
-"  if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) {return 3u;}\n"
-"  if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) {return 4u;}\n"
-"  if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) {return 5u;}\n"
+"  if (cmd[idx].type < "Stringify(LINE)") {\n"
+"    if (all(lessThanEqual(dist(P, Quad[1], Quad[2]), vec2(0.5, 0.5)))) {return 3u;}\n"
+"    if (all(lessThanEqual(dist(P, Quad[2], Quad[3]), vec2(0.5, 0.5)))) {return 4u;}\n"
+"    if (all(lessThanEqual(dist(P, Quad[3], Quad[0]), vec2(0.5, 0.5)))) {return 5u;}\n"
+"  }\n"
 "  return 0u;\n"
 "}\n"
 
@@ -1003,6 +1006,14 @@ SHADER_VERSION_COMPUTE
 "        newColor = extractPolygonColor(pixcmd);\n"
 "      }\n"
 "    } else if (pixcmd.type == "Stringify(POLYLINE)") {\n"
+"      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
+"      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
+"      else {\n"
+"        if ((pixcmd.flip & 0x1u) == 0x1u) texcoord.x = 1.0 - texcoord.x;\n" //invert horizontally
+"        if ((pixcmd.flip & 0x2u) == 0x2u) texcoord.y = 1.0 - texcoord.y;\n" //invert vertically
+"        newColor = extractPolygonColor(pixcmd);\n"
+"      }\n"
+"    } else if (pixcmd.type == "Stringify(LINE)") {\n"
 "      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"
 "      if ((texcoord.x == -1.0) && (texcoord.y == -1.0)) continue;\n"
 "      else {\n"

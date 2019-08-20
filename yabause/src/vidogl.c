@@ -5055,272 +5055,6 @@ if ((cmd.CMDPMOD & 4))
   //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
 
   vdp1_add(&cmd);
-
-#if 0
-  s16 v[8];
-  float line_poygon[8];
-  u16 color;
-  u16 CMDPMOD;
-  u8 alpha;
-  YglSprite polygon;
-  YglTexture texture;
-  YglCache c;
-  int priority = 0;
-  vdp1cmd_struct cmd;
-  float col[4 * 4];
-  float linecol[4 * 4];
-  int gouraud = 0;
-  u16 color2;
-  int shadow = 0;
-  int normalshadow = 0;
-  int colorcalc = 0;
-  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
-  polygon.blendmode = VDP1_COLOR_CL_REPLACE;
-  polygon.dst = 0;
-  v[0] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x0C));
-  v[1] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x0E));
-  v[2] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x10));
-  v[3] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x12));
-  v[4] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x14));
-  v[5] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x16));
-  v[6] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x18));
-  v[7] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1A));
-
-  color = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x6);
-  CMDPMOD = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x4);
-  polygon.uclipmode = (CMDPMOD >> 9) & 0x03;
-  polygon.cor = 0x00;
-  polygon.cog = 0x00;
-  polygon.cob = 0x00;
-
-  if (color & 0x8000)
-    priority = varVdp2Regs->PRISA & 0x7;
-  else
-  {
-    Vdp1ProcessSpritePixel(varVdp2Regs->SPCTL & 0xF, &color, &shadow, &normalshadow, &priority, &colorcalc);
-#ifdef WORDS_BIGENDIAN
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority ^ 1] & 0x7;
-#else
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority] & 0x7;
-#endif
-  }
-
-  polygon.priority = 8;
-  polygon.w = 1;
-  polygon.h = 1;
-  polygon.flip = 0;
-
-  if ((CMDPMOD & 4))
-  {
-    int i;
-    for (i = 0; i < 4; i++)
-    {
-      color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-      col[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 3] = 1.0f;
-    }
-    gouraud = 1;
-  }
-
-  makeLinePolygon(&v[0], &v[2], line_poygon);
-  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
-  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
-  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
-  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
-  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
-  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
-  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
-  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
-
-  if (IS_REPLACE(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_REPLACE;
-  }
-  else if (IS_DONOT_DRAW_OR_SHADOW(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_SHADOW;
-  }
-  else if (IS_HALF_LUMINANCE(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_HALF_LUMINANCE;
-  }
-  else if (IS_REPLACE_OR_HALF_TRANSPARENT(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_GROW_HALF_TRANSPARENT;
-  }
-  if (IS_MESH(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_MESH;
-  }
-  else if (IS_MSB_SHADOW(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_MSB_SHADOW;
-  }
-
-  if (gouraud) {
-    linecol[0] = col[(0 << 2) + 0];
-    linecol[1] = col[(0 << 2) + 1];
-    linecol[2] = col[(0 << 2) + 2];
-    linecol[3] = col[(0 << 2) + 3];
-    linecol[4] = col[(0 << 2) + 0];
-    linecol[5] = col[(0 << 2) + 1];
-    linecol[6] = col[(0 << 2) + 2];
-    linecol[7] = col[(0 << 2) + 3];
-    linecol[8] = col[(1 << 2) + 0];
-    linecol[9] = col[(1 << 2) + 1];
-    linecol[10] = col[(1 << 2) + 2];
-    linecol[11] = col[(1 << 2) + 3];
-    linecol[12] = col[(1 << 2) + 0];
-    linecol[13] = col[(1 << 2) + 1];
-    linecol[14] = col[(1 << 2) + 2];
-    linecol[15] = col[(1 << 2) + 3];
-    YglQuadGrowShading(&polygon, &texture, linecol, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-  else {
-    YglQuadGrowShading(&polygon, &texture, NULL, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-
-  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-  *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
-
-/*
-  if (color == 0)
-  {
-    alpha = 0;
-    priority = 0;
-  }
-  else {
-    alpha = 0xF8;
-    if (CMDPMOD & 0x100)
-    {
-      alpha = 0x80;
-    }
-  }
-
-  alpha |= priority;
-
-  if (color & 0x8000 && (varVdp2Regs->SPCTL & 0x20)) {
-    int SPCCCS = (varVdp2Regs->SPCTL >> 12) & 0x3;
-    if (SPCCCS == 0x03) {
-      int colorcl;
-      int normal_shadow;
-      Vdp1ReadPriority(&cmd, &priority, &colorcl, &normal_shadow);
-      u32 talpha = 0xF8 - ((colorcl << 3) & 0xF8);
-      talpha |= priority;
-      *texture.textdata = SAT2YAB1(talpha, color);
-    }
-    else {
-      alpha |= priority;
-      *texture.textdata = SAT2YAB1(alpha, color);
-    }
-  }
-  else {
-    Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-    *texture.textdata = Vdp1ReadPolygonColor(&cmd);
-  }
-*/
-
-
-  makeLinePolygon(&v[2], &v[4], line_poygon);
-  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
-  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
-  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
-  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
-  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
-  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
-  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
-  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
-  if (gouraud) {
-    linecol[0] = col[(1 << 2) + 0];
-    linecol[1] = col[(1 << 2) + 1];
-    linecol[2] = col[(1 << 2) + 2];
-    linecol[3] = col[(1 << 2) + 3];
-
-    linecol[4] = col[(1 << 2) + 0];
-    linecol[5] = col[(1 << 2) + 1];
-    linecol[6] = col[(1 << 2) + 2];
-    linecol[7] = col[(1 << 2) + 3];
-
-    linecol[8] = col[(2 << 2) + 0];
-    linecol[9] = col[(2 << 2) + 1];
-    linecol[10] = col[(2 << 2) + 2];
-    linecol[11] = col[(2 << 2) + 3];
-
-    linecol[12] = col[(2 << 2) + 0];
-    linecol[13] = col[(2 << 2) + 1];
-    linecol[14] = col[(2 << 2) + 2];
-    linecol[15] = col[(2 << 2) + 3];
-
-    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-  else {
-    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-
-  makeLinePolygon(&v[4], &v[6], line_poygon);
-  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
-  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
-  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
-  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
-  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
-  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
-  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
-  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
-  if (gouraud) {
-    linecol[0] = col[(2 << 2) + 0];
-    linecol[1] = col[(2 << 2) + 1];
-    linecol[2] = col[(2 << 2) + 2];
-    linecol[3] = col[(2 << 2) + 3];
-    linecol[4] = col[(2 << 2) + 0];
-    linecol[5] = col[(2 << 2) + 1];
-    linecol[6] = col[(2 << 2) + 2];
-    linecol[7] = col[(2 << 2) + 3];
-    linecol[8] = col[(3 << 2) + 0];
-    linecol[9] = col[(3 << 2) + 1];
-    linecol[10] = col[(3 << 2) + 2];
-    linecol[11] = col[(3 << 2) + 3];
-    linecol[12] = col[(3 << 2) + 0];
-    linecol[13] = col[(3 << 2) + 1];
-    linecol[14] = col[(3 << 2) + 2];
-    linecol[15] = col[(3 << 2) + 3];
-    YglCacheQuadGrowShading(&polygon, linecol, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-  else {
-    YglCacheQuadGrowShading(&polygon, NULL, &c, YglTM_vdp1[_Ygl->drawframe]);
-  }
-
-
-  if (!(v[6] == v[0] && v[7] == v[1])) {
-    makeLinePolygon(&v[6], &v[0], line_poygon);
-    polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
-    polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
-    polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
-    polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
-    polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
-    polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
-    polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
-    polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
-    if (gouraud) {
-      linecol[0] = col[(3 << 2) + 0];
-      linecol[1] = col[(3 << 2) + 1];
-      linecol[2] = col[(3 << 2) + 2];
-      linecol[3] = col[(3 << 2) + 3];
-      linecol[4] = col[(3 << 2) + 0];
-      linecol[5] = col[(3 << 2) + 1];
-      linecol[6] = col[(3 << 2) + 2];
-      linecol[7] = col[(3 << 2) + 3];
-      linecol[8] = col[(0 << 2) + 0];
-      linecol[9] = col[(0 << 2) + 1];
-      linecol[10] = col[(0 << 2) + 2];
-      linecol[11] = col[(0 << 2) + 3];
-      linecol[12] = col[(0 << 2) + 0];
-      linecol[13] = col[(0 << 2) + 1];
-      linecol[14] = col[(0 << 2) + 2];
-      linecol[15] = col[(0 << 2) + 3];
-      YglCacheQuadGrowShading(&polygon, linecol, &c, YglTM_vdp1[_Ygl->drawframe]);
-    }
-    else {
-      YglCacheQuadGrowShading(&polygon, NULL, &c, YglTM_vdp1[_Ygl->drawframe]);
-    }
-  }
-
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5328,114 +5062,59 @@ if ((cmd.CMDPMOD & 4))
 void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
   LOG_CMD("%d\n", __LINE__);
-#if 0
-  s16 v[4];
-  u16 color;
-  u16 CMDPMOD;
-  u8 alpha;
-  YglSprite polygon;
-  YglTexture texture;
-  int priority = 0;
-  float line_poygon[8];
+
   vdp1cmd_struct cmd;
-  float col[4 * 2 * 2];
-  int gouraud = 0;
-  int shadow = 0;
-  int normalshadow = 0;
-  int colorcalc = 0;
-  u16 color2;
-  polygon.cor = 0x00;
-  polygon.cog = 0x00;
-  polygon.cob = 0x00;
+  int badgeometry = 1;
   Vdp2 *varVdp2Regs = &Vdp2Lines[0];
 
-  polygon.blendmode = VDP1_COLOR_CL_REPLACE;
-  polygon.dst = 0;
-  v[0] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x0C));
-  v[1] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x0E));
-  v[2] = Vdp1Regs->localX + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x10));
-  v[3] = Vdp1Regs->localY + (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x12));
-
-  color = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x6);
-  CMDPMOD = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x4);
-  polygon.uclipmode = (CMDPMOD >> 9) & 0x03;
-
-  if (color & 0x8000)
-    priority = varVdp2Regs->PRISA & 0x7;
-  else
-  {
-    Vdp1ProcessSpritePixel(varVdp2Regs->SPCTL & 0xF, &color, &shadow, &normalshadow, &priority, &colorcalc);
-#ifdef WORDS_BIGENDIAN
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority ^ 1] & 0x7;
-#else
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority] & 0x7;
-#endif
-  }
-
-  polygon.priority = 8;
-
-  // Check if the Gouraud shading bit is set and the color mode is RGB
-  if ((CMDPMOD & 4))
-  {
-    int i;
-    for (i = 0; i < 4; i += 2)
-    {
-      color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-      col[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
-      col[(i << 2) + 3] = 1.0f;
-      col[((i + 1) << 2) + 0] = col[(i << 2) + 0];
-      col[((i + 1) << 2) + 1] = col[(i << 2) + 1];
-      col[((i + 1) << 2) + 2] = col[(i << 2) + 2];
-      col[((i + 1) << 2) + 3] = 1.0f;
-    }
-    gouraud = 1;
-  }
-
-
-  makeLinePolygon(&v[0], &v[2], line_poygon);
-  polygon.vertices[0] = line_poygon[0] * _Ygl->vdp1wratio;
-  polygon.vertices[1] = line_poygon[1] * _Ygl->vdp1hratio;
-  polygon.vertices[2] = line_poygon[2] * _Ygl->vdp1wratio;
-  polygon.vertices[3] = line_poygon[3] * _Ygl->vdp1hratio;
-  polygon.vertices[4] = line_poygon[4] * _Ygl->vdp1wratio;
-  polygon.vertices[5] = line_poygon[5] * _Ygl->vdp1hratio;
-  polygon.vertices[6] = line_poygon[6] * _Ygl->vdp1wratio;
-  polygon.vertices[7] = line_poygon[7] * _Ygl->vdp1hratio;
-
-  polygon.w = 1;
-  polygon.h = 1;
-  polygon.flip = 0;
-
-  if (IS_REPLACE(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_REPLACE;
-  }
-  else if (IS_DONOT_DRAW_OR_SHADOW(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_SHADOW;
-  }
-  else if (IS_HALF_LUMINANCE(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_HALF_LUMINANCE;
-  }
-  else if (IS_REPLACE_OR_HALF_TRANSPARENT(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_GROW_HALF_TRANSPARENT;
-  }
-  if (IS_MESH(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_MESH;
-  }
-  else if (IS_MSB_SHADOW(CMDPMOD)) {
-    polygon.blendmode = VDP1_COLOR_CL_MSB_SHADOW;
-  }
-
-  if (gouraud == 1) {
-    YglQuadGrowShading(&polygon, &texture, col, NULL, YglTM_vdp1[_Ygl->drawframe]);
-  }
-  else {
-    YglQuadGrowShading(&polygon, &texture, NULL, NULL, YglTM_vdp1[_Ygl->drawframe]);
-  }
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-  *texture.textdata = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
-#endif
+
+  if (((cmd.CMDXA & 0xFC00) == 0x0) || ((cmd.CMDXA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYA & 0xFC00) == 0x0) || ((cmd.CMDYA & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXB & 0xFC00) == 0x0) || ((cmd.CMDXB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYB & 0xFC00) == 0x0) || ((cmd.CMDYB & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXC & 0xFC00) == 0x0) || ((cmd.CMDXC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYC & 0xFC00) == 0x0) || ((cmd.CMDYC & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDXD & 0xFC00) == 0x0) || ((cmd.CMDXD & 0xFC00) == 0xFC00)) badgeometry = 0;
+  if (((cmd.CMDYD & 0xFC00) == 0x0) || ((cmd.CMDYD & 0xFC00) == 0xFC00)) badgeometry = 0;
+
+  if (badgeometry == 1) return;
+
+  cmd.CMDXA = (s16)cmd.CMDXA + Vdp1Regs->localX;
+  cmd.CMDYA = (s16)cmd.CMDYA + Vdp1Regs->localY;
+  cmd.CMDXB = (s16)cmd.CMDXB + Vdp1Regs->localX;
+  cmd.CMDYB = (s16)cmd.CMDYB + Vdp1Regs->localY;
+  cmd.CMDXC = (s16)cmd.CMDXC + Vdp1Regs->localX;
+  cmd.CMDYC = (s16)cmd.CMDYC + Vdp1Regs->localY;
+  cmd.CMDXD = (s16)cmd.CMDXD + Vdp1Regs->localX;
+  cmd.CMDYD = (s16)cmd.CMDYD + Vdp1Regs->localY;
+
+  //printf("(%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
+
+  //gouraud
+  memset(cmd.G, 0, sizeof(float)*16);
+  if ((cmd.CMDPMOD & 4))
+  {
+  for (int i = 0; i < 4; i++){
+    u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+    cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
+    cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
+    cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
+  }
+  }
+  cmd.priority = 0;
+  cmd.w = 1;
+  cmd.h = 1;
+  cmd.flip = 0;
+  cmd.cor = 0x0;
+  cmd.cog = 0x0;
+  cmd.cob = 0x0;
+  cmd.SPCTL = varVdp2Regs->SPCTL;
+  cmd.type = LINE;
+  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  //printf("%d %d %d %d %d %d %d %d\n", vdp1cmd.P[0], vdp1cmd.P[1], vdp1cmd.P[2], vdp1cmd.P[3], vdp1cmd.P[4], vdp1cmd.P[5], vdp1cmd.P[6], vdp1cmd.P[7]);
+
+  vdp1_add(&cmd);
 }
 
 //////////////////////////////////////////////////////////////////////////////
