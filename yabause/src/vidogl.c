@@ -85,8 +85,6 @@ void OSDPushMessageDirect(char * msg) {
 //#define YGL_THREAD_DEBUG yprintf
 
 
-
-
 #define COLOR_ADDt(b)      (b>0xFF?0xFF:(b<0?0:b))
 #define COLOR_ADDb(b1,b2)   COLOR_ADDt((signed) (b1) + (b2))
 #ifdef WORDS_BIGENDIAN
@@ -5121,10 +5119,14 @@ void VIDOGLVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
 void VIDOGLVdp1UserClipping(u8 * ram, Vdp1 * regs)
 {
-  Vdp1Regs->userclipX1 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0xC);
-  Vdp1Regs->userclipY1 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0xE);
-  Vdp1Regs->userclipX2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x14);
-  Vdp1Regs->userclipY2 = Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x16);
+  vdp1cmd_struct cmd;
+  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
+  cmd.type = USER_CLIPPING;
+  vdp1_add(&cmd);
+  Vdp1Regs->userclipX1 = cmd.CMDXA;
+  Vdp1Regs->userclipY1 = cmd.CMDYA;
+  Vdp1Regs->userclipX2 = cmd.CMDXC;
+  Vdp1Regs->userclipY2 = cmd.CMDYC;
 }
 
 //////////////////////////////////////////////////////////////////////////////

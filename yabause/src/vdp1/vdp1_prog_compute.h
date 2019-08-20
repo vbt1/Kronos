@@ -12,6 +12,7 @@
 #define POLYLINE 3
 #define LINE 4
 #define SYSTEM_CLIPPING 5
+#define USER_CLIPPING 6
 
 #define NB_COARSE_RAST_X 8
 #define NB_COARSE_RAST_Y 8
@@ -94,6 +95,7 @@ SHADER_VERSION_COMPUTE
 "};\n"
 "layout(location = 6) uniform vec2 upscale;\n"
 "layout(location = 7) uniform ivec2 sysClip;\n"
+"layout(location = 8) uniform ivec4 usrClip;\n"
 // from here http://geomalgorithms.com/a03-_inclusion.html
 // a Point is defined by its coordinates {int x, y;}
 //===================================================================
@@ -985,7 +987,8 @@ SHADER_VERSION_COMPUTE
 "  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);\n"
 "  if (texel.x >= size.x || texel.y >= size.y ) return;\n"
 "  ivec2 index = ivec2((texel.x*"Stringify(NB_COARSE_RAST_X)")/size.x, (texel.y*"Stringify(NB_COARSE_RAST_Y)")/size.y);\n"
-"  ivec2 limit = sysClip;\n"
+"  ivec2 syslimit = sysClip;\n"
+"  ivec4 userlimit = usrClip;\n"
 "  uint lindex = index.y*"Stringify(NB_COARSE_RAST_X)"+ index.x;\n"
 "  uint cmdIndex = lindex * 2000u;\n"
 
@@ -1001,10 +1004,22 @@ SHADER_VERSION_COMPUTE
 "    idCmd = cmdindex + 1 - cmdIndex;\n"
 "    pixcmd = cmd[cmdindex];\n"
 "    if (pixcmd.type == "Stringify(SYSTEM_CLIPPING)") {\n"
-"      limit = ivec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
+"      syslimit = ivec2(pixcmd.CMDXC,pixcmd.CMDYC);\n"
 "      continue;\n"
 "    }\n"
-"    if (any(greaterThan(texel,limit))) continue;\n"
+"    if (pixcmd.type == "Stringify(USER_CLIPPING)") {\n"
+"      userlimit = ivec4(pixcmd.CMDXA,pixcmd.CMDYA,pixcmd.CMDXC,pixcmd.CMDYC);\n"
+"      continue;\n"
+"    }\n"
+"    if (any(greaterThan(texel,syslimit*upscale))) continue;\n"
+"    if (((pixcmd.CMDPMOD >> 9) & 0x3u) == 2u) {\n"
+//Draw inside
+"      if (any(lessThan(texel,userlimit.xy*upscale)) || any(greaterThan(texel,userlimit.zw*upscale))) continue;\n"
+"    }\n"
+"    if (((pixcmd.CMDPMOD >> 9) & 0x3u) == 3u) {\n"
+//Draw outside
+"      if (all(greaterThanEqual(texel,userlimit.xy*upscale)) && all(lessThanEqual(texel,userlimit.zw*upscale))) continue;\n"
+"    }\n"
 "    useGouraud = ((pixcmd.CMDPMOD & 0x4u) == 0x4u);\n"
 "    if (pixcmd.type == "Stringify(POLYGON)") {\n"
 "      texcoord = getTexCoordPolygon(texel, vec2(pixcmd.P[0],pixcmd.P[1])/2.0, vec2(pixcmd.P[2],pixcmd.P[3])/2.0, vec2(pixcmd.P[4],pixcmd.P[5])/2.0, vec2(pixcmd.P[6],pixcmd.P[7])/2.0);\n"

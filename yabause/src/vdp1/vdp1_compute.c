@@ -346,6 +346,7 @@ int* vdp1_compute(Vdp2 *varVdp2Regs, int id) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ssbo_cmd_);
 	glUniform2f(6, tex_ratiow, tex_ratioh);
 	glUniform2i(7, Vdp1Regs->systemclipX2, Vdp1Regs->systemclipY2);
+	glUniform4i(8, Vdp1Regs->userclipX1, Vdp1Regs->userclipY1, Vdp1Regs->userclipX2, Vdp1Regs->userclipY2);
 
   glDispatchCompute(work_groups_x, work_groups_y, 1); //might be better to launch only the right number of workgroup
 	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
