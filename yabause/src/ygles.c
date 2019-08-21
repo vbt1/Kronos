@@ -284,7 +284,9 @@ void YglLoadIdentity(YglMatrix *result)
 
 
 YglTextureManager * YglTM_vdp2 = NULL;
+#ifdef USE_VDP1_TEX
 YglTextureManager * YglTM_vdp1[2] = { NULL, NULL };
+#endif
 Ygl * _Ygl;
 
 typedef struct
@@ -580,9 +582,12 @@ void YglTMReset(YglTextureManager * tm  ) {
 
 void YglTmPush(YglTextureManager * tm){
 #ifdef VDP1_TEXTURE_ASYNC
+#ifdef USE_VDP1_TEX
   if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
     waitVdp1Textures(1);
-  else WaitVdp2Async(1);
+  else
+#endif
+  WaitVdp2Async(1);
 #endif
   YabThreadLock(tm->mtx);
   glActiveTexture(GL_TEXTURE0);
@@ -621,9 +626,12 @@ static void YglTMRealloc(YglTextureManager * tm, unsigned int width, unsigned in
   int dh;
 
 #ifdef VDP1_TEXTURE_ASYNC
+#ifdef USE_VDP1_TEX
   if ((tm == YglTM_vdp1[0]) || (tm == YglTM_vdp1[1]))
     waitVdp1Textures(1);
-  else WaitVdp2Async(1);
+  else
+#endif
+  WaitVdp2Async(1);
 #endif
 
   if (tm->texture != NULL) {
@@ -1517,8 +1525,10 @@ int YglInit(int width, int height, unsigned int depth) {
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+#ifdef USE_VDP1_TEX
   YglTM_vdp1[0] = YglTMInit(1024, 1024);
   YglTM_vdp1[1] = YglTMInit(1024, 1024);
+#endif
   YglTM_vdp2 = YglTMInit(1024, 1024);
 
   _Ygl->vdp1fb_exactbuf[0] = (u8*)malloc(512*704*2);
@@ -1555,9 +1565,10 @@ int YglInit(int width, int height, unsigned int depth) {
 //////////////////////////////////////////////////////////////////////////////
 void YglDeInit(void) {
    unsigned int i,j;
-
+#ifdef USE_VDP1_TEX
    if (YglTM_vdp1[0] != NULL) YglTMDeInit(YglTM_vdp1[0]);
    if (YglTM_vdp1[1] != NULL) YglTMDeInit(YglTM_vdp1[1]);
+#endif
    if (YglTM_vdp2 != NULL)    YglTMDeInit(YglTM_vdp2);
 
 
@@ -2767,9 +2778,13 @@ void YglEraseWriteVDP1(void) {
 
 static void executeTMVDP1(int in, int out) {
   //if (_Ygl->needVdp1Render != 0){
+  #ifdef USE_VDP1_TEX
     YglTmPush(YglTM_vdp1[in]);
+ #endif
     YglRenderVDP1();
+#ifdef USE_VDP1_TEX
     YglTmPull(YglTM_vdp1[out], 0);
+#endif
     _Ygl->needVdp1Render = 0;
   //}
 }

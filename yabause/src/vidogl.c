@@ -3472,7 +3472,9 @@ void VIDOGLVdp1Draw()
 
   FrameProfileAdd("Vdp1Command start");
 
+#ifdef USE_VDP1_TEX
   YglTmPull(YglTM_vdp1[_Ygl->drawframe], 0);
+ #endif
 
   maxpri = 0x00;
   minpri = 0x07;
