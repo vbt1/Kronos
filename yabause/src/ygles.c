@@ -91,11 +91,9 @@ static void MessageCallback( GLenum source,
                       const GLchar* message,
                       const void* userParam )
 {
-#ifndef __WIN32__
-  printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+  YuiMsg("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
            ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
             type, severity, message );
-#endif
 }
 #endif
 
