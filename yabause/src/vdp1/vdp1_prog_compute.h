@@ -1116,7 +1116,7 @@ static const char vdp1_continue_f[] =
 "      }\n"
 "      if (shadow != 0) {\n"
 "        finalColorAttr.rgb = vec3(0.0);\n"
-"        finalColorAttr.a = 0.5;\n"
+"        finalColorAttr.a = float(0x80)/255.0;\n"
 "        newColor.rgb = vec3(0.0);\n"
 "        useGouraud = false;\n"
 "      } else { \n"

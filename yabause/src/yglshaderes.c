@@ -935,7 +935,7 @@ SHADER_VERSION
 "  }\n"
 "  if (shadow != 0) {\n"
 "    fragColorAttr.rgb = vec3(0.0);\n"
-"    fragColorAttr.a = 0.5;\n"
+"    fragColorAttr.a = float(0x80)/255.0;\n"
 "    fragColor.rgb = vec3(0.0);\n"
 "  } else { \n"
 "    fragColorAttr = vec4(0.0);\n"
