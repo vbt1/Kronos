@@ -3551,9 +3551,9 @@ void YglRender(Vdp2 *varVdp2Regs) {
     glDrawBuffers(1, &DrawBuffers[0]);
     glClearBufferfv(GL_COLOR, 0, col);
     YglBlitSimple(_Ygl->vdp1Tex[0], 0);
-    //glDrawBuffers(1, &DrawBuffers[1]);
-    //glClearBufferfv(GL_COLOR, 0, col);
-    //YglBlitSimple(_Ygl->vdp1FrameBuff[_Ygl->readframe*2+1], 0); //VDP1 CS need to handle additional texture
+    glDrawBuffers(1, &DrawBuffers[1]);
+    glClearBufferfv(GL_COLOR, 0, col);
+    YglBlitSimple(_Ygl->vdp1Tex[1], 0); //VDP1 CS need to handle additional texture
     glDisable(GL_STENCIL_TEST);
     VDP1fb = &_Ygl->vdp1FrameBuff[4];
 
