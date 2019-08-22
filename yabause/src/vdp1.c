@@ -183,8 +183,8 @@ int Vdp1Init(void) {
    Vdp1Regs->FBCR = 0;
    Vdp1Regs->PTMR = 0;
 
-   vdp1Ram_update_start = 0x80000;
-   vdp1Ram_update_end = 0x0;
+   vdp1Ram_update_start = 0x0;
+   vdp1Ram_update_end = 0x80000;
 
    return 0;
 }
@@ -677,7 +677,8 @@ int Vdp1LoadState(FILE *fp, UNUSED int version, int size)
 
    // Read VDP1 ram
    yread(&check, (void *)Vdp1Ram, 0x80000, 1, fp);
-
+   vdp1Ram_update_start = 0x0;
+   vdp1Ram_update_end = 0x80000;
 #ifdef IMPROVED_SAVESTATES
    yread(&check, (void *)back_framebuffer, 0x40000, 1, fp);
 
