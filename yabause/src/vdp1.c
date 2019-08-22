@@ -36,6 +36,8 @@
 #include "ygl.h"
 
 u8 * Vdp1Ram;
+int vdp1Ram_update_start;
+int vdp1Ram_update_end;
 
 VideoInterface_struct *VIDCore=NULL;
 extern VideoInterface_struct *VIDCoreList[];
@@ -69,6 +71,8 @@ u32 FASTCALL Vdp1RamReadLong(SH2_struct *context, u8* mem, u32 addr) {
 
 void FASTCALL Vdp1RamWriteByte(SH2_struct *context, u8* mem, u32 addr, u8 val) {
    addr &= 0x7FFFF;
+   if (vdp1Ram_update_start > addr) vdp1Ram_update_start = addr;
+   if (vdp1Ram_update_end < addr+1) vdp1Ram_update_end = addr + 1;
    T1WriteByte(mem, addr, val);
 }
 
@@ -76,6 +80,8 @@ void FASTCALL Vdp1RamWriteByte(SH2_struct *context, u8* mem, u32 addr, u8 val) {
 
 void FASTCALL Vdp1RamWriteWord(SH2_struct *context, u8* mem, u32 addr, u16 val) {
    addr &= 0x7FFFF;
+   if (vdp1Ram_update_start > addr) vdp1Ram_update_start = addr;
+   if (vdp1Ram_update_end < addr+2) vdp1Ram_update_end = addr + 2;
    T1WriteWord(mem, addr, val);
 }
 
@@ -83,6 +89,8 @@ void FASTCALL Vdp1RamWriteWord(SH2_struct *context, u8* mem, u32 addr, u16 val) 
 
 void FASTCALL Vdp1RamWriteLong(SH2_struct *context, u8* mem, u32 addr, u32 val) {
    addr &= 0x7FFFF;
+   if (vdp1Ram_update_start > addr) vdp1Ram_update_start = addr;
+   if (vdp1Ram_update_end < addr+4) vdp1Ram_update_end = addr + 4;
    T1WriteLong(mem, addr, val);
 }
 
@@ -174,6 +182,9 @@ int Vdp1Init(void) {
    Vdp1Regs->TVMR = 0;
    Vdp1Regs->FBCR = 0;
    Vdp1Regs->PTMR = 0;
+
+   vdp1Ram_update_start = 0x80000;
+   vdp1Ram_update_end = 0x0;
 
    return 0;
 }

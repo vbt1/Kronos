@@ -96,6 +96,9 @@ extern VideoInterface_struct *VIDCore;
 extern VideoInterface_struct VIDDummy;
 
 extern u8 * Vdp1Ram;
+extern int vdp1Ram_update_start;
+extern int vdp1Ram_update_end;
+
 
 u8 FASTCALL	Vdp1RamReadByte(SH2_struct *context, u8*, u32);
 u16 FASTCALL	Vdp1RamReadWord(SH2_struct *context, u8*, u32);
