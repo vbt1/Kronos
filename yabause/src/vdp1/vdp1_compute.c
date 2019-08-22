@@ -316,6 +316,11 @@ void vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 	return;
 }
 
+void vdp1_setup(void) {
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp1ram_);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp1Ram);
+}
+
 int* vdp1_compute(Vdp2 *varVdp2Regs, int id) {
   GLuint error;
 	int progId = getProgramId();
@@ -341,9 +346,6 @@ int* vdp1_compute(Vdp2 *varVdp2Regs, int id) {
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_nbcmd_);
   glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int)*NB_COARSE_RAST, (void*)nbCmd);
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp1ram_);
-  glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 0x80000, (void*)Vdp1Ram);
 
 	glBindImageTexture(0, compute_tex[id*2], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glBindImageTexture(1, compute_tex[id*2+1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
