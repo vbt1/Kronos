@@ -317,7 +317,6 @@ void vdp1_compute_init(int width, int height, float ratiow, float ratioh)
 }
 
 void vdp1_setup(void) {
-	printf("%x %x\n", vdp1Ram_update_start, vdp1Ram_update_end);
 	if (vdp1Ram_update_start < vdp1Ram_update_end) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vdp1ram_);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0x0, 0x80000, (void*)(&Vdp1Ram[0]));
