@@ -2822,7 +2822,7 @@ static int renderVDP1Level( YglLevel * level, int j, int* cprg, YglMatrix *mat, 
     if( level->prg[j].prgid != *cprg ) {
       *cprg = level->prg[j].prgid;
       if (*cprg == 0) return 0; //prgid 0 has no meaning
-printf("USe prg %d\n", *cprg);
+//printf("USe prg %d\n", *cprg);
       glUseProgram(level->prg[j].prg);
     }
 
