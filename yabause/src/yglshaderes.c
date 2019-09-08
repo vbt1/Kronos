@@ -938,20 +938,14 @@ int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
 "Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n"
 
 #define COLINDEX(A) \
-"int col"Stringify(A)" = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n \
-if (col"Stringify(A)" == 0) discard;\n"
+"int col"Stringify(A)" = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n"
 
-#define END_CODE(A) \
-"int modA = (int("Stringify(A)".b*255.0) | (int("Stringify(A)".a*255.0)<<8));\n \
-int mode = (modA >>3)&0x7;\n \
-if ((modA & 0x80) != 0) {\n \
-  if ((mode == 0) && ((col"Stringify(A)" & 0xF) == 0xF)) "Stringify(A)".rg = vec2(0.0); \n \
-  if ((mode == 1) && ((col"Stringify(A)" & 0xF) == 0xF)) "Stringify(A)".rg = vec2(0.0); \n \
-  if ((mode == 2) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
-  if ((mode == 3) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
-  if ((mode == 4) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
-  if ((mode == 5) && ((col"Stringify(A)" & 0x7FFF) == 0x7FFF)) "Stringify(A)".rg = vec2(0.0); \n \
-}\n"
+#define COLZERO(A) \
+"if (col"Stringify(A)" == 0) discard;\n"
+
+#define CMDPMOD(A) \
+"int mod"Stringify(A)" = (int("Stringify(A)".b*255.0) | (int("Stringify(A)".a*255.0)<<8));\n"
+
 const GLchar Yglprg_vdp1_gouraudshading_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
@@ -966,7 +960,10 @@ SHADER_VERSION
 "  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
 "  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
 COLINDEX(spriteColor)
-END_CODE(spriteColor)
+COLZERO(spriteColor)
+CMDPMOD(spriteColor)
+// SPD_CODE(spriteColor)
+// END_CODE(spriteColor)
 GOURAUD_PROCESS(spriteColor)
 "  fragColor = spriteColor;"
 "}\n";
@@ -1058,8 +1055,11 @@ SHADER_VERSION
 "  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
 "  vec4 fboColor    = texelFetch(u_fbo,ivec2(gl_FragCoord.xy),0);\n"
 COLINDEX(spriteColor)
+COLZERO(spriteColor)
 COLINDEX(fboColor)
-END_CODE(spriteColor)
+CMDPMOD(spriteColor)
+// SPD_CODE(spriteColor)
+// END_CODE(spriteColor)
 HALF_TRANPARENT_MIX(spriteColor, fboColor)
 GOURAUD_PROCESS(spriteColor)
 "  fragColor = spriteColor;"
@@ -1169,7 +1169,10 @@ SHADER_VERSION
 "  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
 "  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
 COLINDEX(spriteColor)
-END_CODE(spriteColor)
+COLZERO(spriteColor)
+CMDPMOD(spriteColor)
+// SPD_CODE(spriteColor)
+// END_CODE(spriteColor)
 GOURAUD_PROCESS(spriteColor)
 "  fragColor = spriteColor;"
 "}\n";
