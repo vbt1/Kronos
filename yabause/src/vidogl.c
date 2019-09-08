@@ -502,9 +502,11 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
       while (j < spritew)
       {
         dot = Vdp1RamReadByte(NULL, Vdp1Ram, charAddr);
-        *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot >> 4) * 2 + colorLut));
+        u16 temp = Vdp1RamReadWord(NULL, Vdp1Ram, ((dot >> 4) * 2 + colorLut));
+        *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, temp);
         j += 1;
-        *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot & 0xF) * 2 + colorLut));
+        temp = Vdp1RamReadWord(NULL, Vdp1Ram, ((dot & 0xF) * 2 + colorLut));
+        *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, temp);
         j += 1;
         charAddr += 1;
       }

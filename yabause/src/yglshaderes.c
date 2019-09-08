@@ -938,7 +938,8 @@ int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
 "Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n"
 
 #define COLINDEX(A) \
-"int col"Stringify(A)" = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n"
+"int col"Stringify(A)" = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n \
+if (col"Stringify(A)" == 0) discard;\n"
 
 #define END_CODE(A) \
 "int modA = (int("Stringify(A)".b*255.0) | (int("Stringify(A)".a*255.0)<<8));\n \
@@ -1148,18 +1149,14 @@ const GLchar * pYglprg_vdp1_mesh_v[] = { Yglprg_vdp1_mesh_v, NULL };
 const GLchar Yglprg_vdp1_mesh_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
-"precision highp float;         \n"
+"precision highp float;\n"
 "#endif\n"
-"uniform sampler2D u_sprite;      \n"
-"uniform sampler2D u_fbo;         \n"
-"in vec4 v_texcoord;         \n"
-"in vec4 v_vtxcolor;         \n"
-"out vec4 fragColor; \n "
+"uniform sampler2D u_sprite;\n"
+"in vec4 v_texcoord;\n"
+"in vec4 v_vtxcolor;\n"
+"out vec4 fragColor; \n"
 "out vec4 fragColorAttr; \n"
-"void main() {    \n"
-"  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
-"  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
-"  if( spriteColor.a == 0.0 ) discard;         \n"
+"void main() {\n"
 "  if( (int(gl_FragCoord.y) & 0x01) == 0 ){ \n"
 "    if( (int(gl_FragCoord.x) & 0x01) == 0 ){ \n"
 "       discard;"
@@ -1169,9 +1166,12 @@ SHADER_VERSION
 "       discard;"
 "    } \n"
 "  } \n"
-"  fragColorAttr = vec4(0.0);\n"
-"  fragColor.rgb  = clamp(spriteColor.rgb+v_vtxcolor.rgb,vec3(0.0),vec3(1.0));     \n"
-"  fragColor.a = spriteColor.a;  \n"
+"  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
+"  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
+COLINDEX(spriteColor)
+END_CODE(spriteColor)
+GOURAUD_PROCESS(spriteColor)
+"  fragColor = spriteColor;"
 "}\n";
 
 //utiliser un bit dans la caouche attribut pour ameliorer le blend et faire une couche a 50%
