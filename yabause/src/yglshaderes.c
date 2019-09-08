@@ -921,15 +921,36 @@ const GLchar * pYglprg_vdp1_gouraudshading_v[] = {Yglprg_vdp1_gouraudshading_v, 
 // we have a gouraud value, we can consider the pixel code is RGB otherwise gouraud effect is not guaranted (VDP1 doc p26)
 #define GOURAUD_PROCESS(A) \
 "if ((int("Stringify(A)".b*255.0) & 0x4) == 0x4) {\n \
-  int colindex = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n \
-  int R = int(clamp((float((colindex >> 00) & 0x1F)/31.0 + v_vtxcolor.r), 0.0, 1.0)*31.0);\n \
-  int G = int(clamp((float((colindex >> 05) & 0x1F)/31.0 + v_vtxcolor.g), 0.0, 1.0)*31.0);\n \
-  int B = int(clamp((float((colindex >> 10) & 0x1F)/31.0 + v_vtxcolor.b), 0.0, 1.0)*31.0);\n \
-  int MSB = (colindex & 0x8000) >> 8;\n \
+  int R = int(clamp((float((col"Stringify(A)" >> 00) & 0x1F)/31.0 + v_vtxcolor.r), 0.0, 1.0)*31.0);\n \
+  int G = int(clamp((float((col"Stringify(A)" >> 05) & 0x1F)/31.0 + v_vtxcolor.g), 0.0, 1.0)*31.0);\n \
+  int B = int(clamp((float((col"Stringify(A)" >> 10) & 0x1F)/31.0 + v_vtxcolor.b), 0.0, 1.0)*31.0);\n \
+  int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
   "Stringify(A)".r = float(R | ((G & 0x7)<<5))/255.0;\n \
   "Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n \
 }\n"
 
+#define HALF_TRANPARENT_MIX(A, B) \
+"int R = int(clamp(((float((col"Stringify(A)" >> 00) & 0x1F)/31.0) + (float((col"Stringify(B)" >> 00) & 0x1F)/31.0))*0.5, 0.0, 1.0)*31.0);\n \
+int G = int(clamp(((float((col"Stringify(A)" >> 05) & 0x1F)/31.0) + (float((col"Stringify(B)" >> 05) & 0x1F)/31.0))*0.5, 0.0, 1.0)*31.0);\n \
+int B = int(clamp(((float((col"Stringify(A)" >> 10) & 0x1F)/31.0) + (float((col"Stringify(B)" >> 10) & 0x1F)/31.0))*0.5, 0.0, 1.0)*31.0);\n \
+int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
+"Stringify(A)".r = float(R | ((G & 0x7)<<5))/255.0;\n \
+"Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n"
+
+#define COLINDEX(A) \
+"int col"Stringify(A)" = (int("Stringify(A)".r*255.0) | (int("Stringify(A)".g*255.0)<<8));\n"
+
+#define END_CODE(A) \
+"int modA = (int("Stringify(A)".b*255.0) | (int("Stringify(A)".a*255.0)<<8));\n \
+int mode = (modA >>3)&0x7;\n \
+if ((modA & 0x80) != 0) {\n \
+  if ((mode == 0) && ((col"Stringify(A)" & 0xF) == 0xF)) "Stringify(A)".rg = vec2(0.0); \n \
+  if ((mode == 1) && ((col"Stringify(A)" & 0xF) == 0xF)) "Stringify(A)".rg = vec2(0.0); \n \
+  if ((mode == 2) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
+  if ((mode == 3) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
+  if ((mode == 4) && ((col"Stringify(A)" & 0xFF) == 0xFF)) "Stringify(A)".rg = vec2(0.0); \n \
+  if ((mode == 5) && ((col"Stringify(A)" & 0x7FFF) == 0x7FFF)) "Stringify(A)".rg = vec2(0.0); \n \
+}\n"
 const GLchar Yglprg_vdp1_gouraudshading_f[] =
 SHADER_VERSION
 "#ifdef GL_ES\n"
@@ -943,6 +964,8 @@ SHADER_VERSION
 "void main() {\n"
 "  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
 "  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
+COLINDEX(spriteColor)
+END_CODE(spriteColor)
 GOURAUD_PROCESS(spriteColor)
 "  fragColor = spriteColor;"
 "}\n";
@@ -1019,34 +1042,27 @@ const GLchar Yglprg_vdp1_gouraudshading_hf_v[] =
 const GLchar * pYglprg_vdp1_gouraudshading_hf_v[] = {Yglprg_vdp1_gouraudshading_hf_v, NULL};
 
 const GLchar Yglprg_vdp1_gouraudshading_hf_f[] =
-      SHADER_VERSION
-      "#ifdef GL_ES\n"
-      "precision highp float;         \n"
-      "#endif\n"
-      "uniform highp sampler2D u_sprite;      \n"
-      "uniform highp sampler2D u_fbo;         \n"
-      "in vec4 v_texcoord;         \n"
-      "in vec4 v_vtxcolor;         \n"
-      "out vec4 fragColor; \n "
-      "void main() {    \n"
-      "  int mode;\n"
-      "  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
-      "  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
-      "  if( spriteColor.a == 0.0 ) discard;         \n"
-      "  vec4 fboColor    = texelFetch(u_fbo,ivec2(gl_FragCoord.xy),0);\n"
-      "  int additional = int(fboColor.a * 255.0);\n"
-      "  mode = int(spriteColor.b*255.0)&0x7; \n"
-      "  spriteColor.b = float((int(spriteColor.b*255.0)&0xF8)>>3)/31.0; \n"
-      "  spriteColor += vec4(v_vtxcolor.r,v_vtxcolor.g,v_vtxcolor.b,0.0);\n"
-      "  if( (additional & 0x40) == 0 ) \n"
-      "  { \n"
-      "    fragColor = spriteColor*0.5 + fboColor*0.5;     \n"
-      "    fragColor.a = spriteColor.a; \n"
-      "  }else{         \n"
-      "    fragColor = spriteColor;  \n"
-      "  }   \n"
-      "  fragColor.b = float((int(fragColor.b*255.0)&0xF8)|mode)/255.0; \n"
-      "}\n";
+SHADER_VERSION
+"#ifdef GL_ES\n"
+"precision highp float;\n"
+"#endif\n"
+"uniform sampler2D u_sprite;\n"
+"uniform sampler2D u_fbo;         \n"
+"in vec4 v_texcoord;\n"
+"in vec4 v_vtxcolor;\n"
+"out vec4 fragColor; \n"
+"out vec4 fragColorAttr; \n"
+"void main() {\n"
+"  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
+"  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
+"  vec4 fboColor    = texelFetch(u_fbo,ivec2(gl_FragCoord.xy),0);\n"
+COLINDEX(spriteColor)
+COLINDEX(fboColor)
+END_CODE(spriteColor)
+HALF_TRANPARENT_MIX(spriteColor, fboColor)
+GOURAUD_PROCESS(spriteColor)
+"  fragColor = spriteColor;"
+"}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_hf_f[] = {Yglprg_vdp1_gouraudshading_hf_f, NULL};
 
 
