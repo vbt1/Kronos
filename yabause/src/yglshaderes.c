@@ -1452,6 +1452,7 @@ refrence:
 const GLchar Yglprg_vdp2_drawfb_cram_f[] =
 "  FBCol getFB(int x){ \n"
 "  FBCol ret;\n"
+"  int msb = 0;\n"
 "  ret.color = vec4(0.0);\n"
 "  ret.prio = 0;\n"
 "  ret.meshColor = vec4(0.0);\n"
@@ -2617,9 +2618,9 @@ int initDrawShaderCode() {
 }
 
 int YglInitDrawFrameBufferShaders(int id) {
- printf ("Use prog %d\n", id); //16
+ //printf ("Use prog %d\n", id); //16
  int arrayid = id-PG_VDP2_DRAWFRAMEBUFF_NONE;
- printf ("getArray %d\n", arrayid); //16
+ //printf ("getArray %d\n", arrayid); //16
     YGLLOG("PG_VDP2_DRAWFRAMEBUFF_NONE --START--\n");
     if (YglInitShader(id, pYglprg_vdp2_blit_v, pYglprg_vdp2_blit_f[arrayid], 10, NULL, NULL, NULL) != 0) { printf("Error init prog %d\n",id); abort(); }
     Ygl_initDrawFrameBuffershader(id);
