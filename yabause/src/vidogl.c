@@ -4501,19 +4501,6 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     }
     gouraud = 1;
   }
-//Ca semble inutile ce bout de code
-  if (color & 0x8000)
-    priority = varVdp2Regs->PRISA & 0x7;
-  else
-  {
-    Vdp1ProcessSpritePixel(varVdp2Regs->SPCTL & 0xF, &color, &shadow, &normalshadow, &priority, &colorcalc);
-#ifdef WORDS_BIGENDIAN
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority ^ 1] & 0x7;
-#else
-    priority = ((u8 *)&varVdp2Regs->PRISA)[priority] & 0x7;
-#endif
-  }
-
 
   sprite.priority = 0;
   sprite.w = 1;
