@@ -2125,6 +2125,7 @@ SHADER_VERSION
 "vec4 FBShadow = vec4(0.0);\n"
 "int FBPrio = 0;\n"
 "int FBMesh = 0;\n"
+"int FBRgb = 0;\n"
 "int FBMeshPrio = 0;\n"
 "int FBMsb = 0;\n"
 "int NoVdp1 = 0;\n"
@@ -2233,7 +2234,7 @@ static const char vdp2blit_end_f[] =
 "    remPrio = remPrio - 1;\n"
 "    alpha = int(ret.Color.a*255.0)&0xF8; \n"
 "    ret.Color.a = float(alpha>>3)/31.0; \n"
-"    ret.isRGB = 0;\n" //Shall not be the case always... Need to get RGB format per pixel
+"    ret.isRGB = FBRgb;\n" //Shall not be the case always... Need to get RGB format per pixel
 "    ret.isSprite = 1;\n"
 "    ret.layer = 6;\n"
 "    if (remPrio == 0) return ret;\n"
@@ -2403,6 +2404,7 @@ static const char vdp2blit_end_f[] =
 "  testFB = tmp.color;\n"
 "  FBColor = tmp.color;\n"
 "  FBPrio = tmp.prio;\n"
+"  FBRgb = tmp.isRGB;\n"
 "  FBMsb = tmp.msb;\n"
 "  FBShadow = tmp.meshColor;\n"
 "  FBMeshPrio = tmp.meshPrio;\n"
