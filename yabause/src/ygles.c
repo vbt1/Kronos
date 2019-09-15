@@ -3716,7 +3716,6 @@ void YglRender(Vdp2 *varVdp2Regs) {
     YglBlitSimple(_Ygl->vdp1FrameBuff[_Ygl->readframe], 0);
     glDisable(GL_STENCIL_TEST);
     VDP1fb = &_Ygl->vdp1FrameBuff[2];
-    printf("Ici\n");
 
     glViewport(0, 0, _Ygl->width, _Ygl->height);
     glScissor(0, 0, _Ygl->width, _Ygl->height);
