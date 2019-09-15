@@ -3722,7 +3722,6 @@ void YglRender(Vdp2 *varVdp2Regs) {
     glScissor(0, 0, _Ygl->width, _Ygl->height);
   } else {
     VDP1fb = &_Ygl->vdp1FrameBuff[_Ygl->readframe];
-    printf("La\n");
   }
 
   if (_Ygl->vdp2_use_compute_shader == 0) {
