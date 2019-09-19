@@ -632,6 +632,23 @@ int Ygl_cleanupWindow(void * p, YglTextureManager *tm )
    return 0;
 }
 
+const GLchar Yglprg_vpd1_replace_f[] =
+SHADER_VERSION
+"#ifdef GL_ES\n"
+"precision highp float;\n"
+"#endif\n"
+"uniform sampler2D u_sprite;\n"
+"in vec4 v_texcoord;\n"
+"out vec4 fragColor; \n"
+"void main() {\n"
+"  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
+"  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
+"  int colspriteColor = (int(spriteColor.r*255.0) | (int(spriteColor.g*255.0)<<8));\n"
+"  if (colspriteColor == 0) discard;\n"
+"  fragColor = spriteColor;"
+"}\n";
+const GLchar * pYglprg_vdp1_replace_f[] = {Yglprg_vpd1_replace_f, NULL};
+
 #define MESH_PROCESS \
 "if( (int(gl_FragCoord.y) & 0x01) == 0 ){ \n \
   if( (int(gl_FragCoord.x) & 0x01) == 0 ){ \n \
@@ -693,41 +710,6 @@ int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
 "int mod"Stringify(A)" = (int("Stringify(A)".b*255.0) | (int("Stringify(A)".a*255.0)<<8));\n"
 
 
-/*------------------------------------------------------------------------------------
- *  VDP1 Normal Draw
- * ----------------------------------------------------------------------------------*/
-const GLchar Yglprg_vdp1_replace_v[] =
-SHADER_VERSION
-"uniform mat4 u_mvpMatrix;     \n"
-"uniform vec2 u_texsize;    \n"
-"layout (location = 0) in vec4 a_position;    \n"
-"layout (location = 1) in vec4 a_texcoord;    \n"
-"out  vec4 v_texcoord;    \n"
-"void main() { \n"
-"   v_texcoord  = a_texcoord; \n"
-"   v_texcoord.x  = v_texcoord.x / u_texsize.x; \n"
-"   v_texcoord.y  = v_texcoord.y / u_texsize.y; \n"
-"   gl_Position = a_position*u_mvpMatrix; \n"
-"}\n";
-const GLchar * pYglprg_vdp1_replace_v[] = {Yglprg_vdp1_replace_v, NULL};
-
-const GLchar Yglprg_vpd1_replace_f[] =
-SHADER_VERSION
-"#ifdef GL_ES\n"
-"precision highp float;\n"
-"#endif\n"
-"uniform sampler2D u_sprite;\n"
-"in vec4 v_texcoord;\n"
-"out vec4 fragColor; \n"
-"void main() {\n"
-"  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
-"  vec4 spriteColor = texelFetch(u_sprite,addr,0);\n"
-"  int colspriteColor = (int(spriteColor.r*255.0) | (int(spriteColor.g*255.0)<<8));\n"
-"  if (colspriteColor == 0) discard;\n"
-"  fragColor = spriteColor;"
-"}\n";
-const GLchar * pYglprg_vdp1_replace_f[] = {Yglprg_vpd1_replace_f, NULL};
-
 const GLchar Yglprg_vpd1_normal_mesh_f[] =
       SHADER_VERSION
       "#ifdef GL_ES\n"
@@ -747,27 +729,6 @@ const GLchar Yglprg_vpd1_normal_mesh_f[] =
       "  fragColor = FragColor;\n "
       "}  \n";
 const GLchar * pYglprg_vdp1_replace_mesh_f[] = {Yglprg_vpd1_normal_mesh_f, NULL};
-
-static int id_vdp1_replace_s_texture_size = -1;
-static int id_vdp1_replace_s_texture = -1;
-
-int Ygl_uniformVdp1Normal(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs, int id)
-{
-   YglProgram * prg;
-   prg = p;
-   glEnableVertexAttribArray(prg->vertexp);
-   glEnableVertexAttribArray(prg->texcoordp);
-   glUniform1i(id_vdp1_replace_s_texture, 0);
-   glUniform2f(id_vdp1_replace_s_texture_size, YglTM_vdp1[_Ygl->drawframe]->width, YglTM_vdp1[_Ygl->drawframe]->height);
-   return 0;
-}
-
-int Ygl_cleanupVdp1Normal(void * p, YglTextureManager *tm )
-{
-   YglProgram * prg;
-   prg = p;
-   return 0;
-}
 
 /*------------------------------------------------------------------------------------
 *  VDP1 GlowShading Operation with tessellation
@@ -790,7 +751,36 @@ SHADER_VERSION_TESS
 "}\n";
 const GLchar * pYglprg_vdp1_gouraudshading_tess_v[] = { Yglprg_vdp1_gouraudshading_tess_v, NULL };
 
+
 const GLchar Yglprg_tess_c[] =
+SHADER_VERSION_TESS
+"layout(vertices = 4) out; //<???? what does it means? \n"
+"in vec3 v_position[];  \n"
+"in vec4 v_texcoord[]; \n"
+"out vec3 tcPosition[]; \n"
+"out vec4 tcTexCoord[]; \n"
+"uniform float TessLevelInner; \n"
+"uniform float TessLevelOuter; \n"
+" \n"
+"#define ID gl_InvocationID \n"
+" \n"
+"void main()  \n"
+"{  \n"
+"	tcPosition[ID] = v_position[ID];  \n"
+"	tcTexCoord[ID] = v_texcoord[ID];  \n"
+" \n"
+"	if (ID == 0) {  \n"
+"		gl_TessLevelInner[0] = TessLevelInner;  \n"
+"		gl_TessLevelInner[1] = TessLevelInner;  \n"
+"		gl_TessLevelOuter[0] = TessLevelOuter;  \n"
+"		gl_TessLevelOuter[1] = TessLevelOuter; \n"
+"		gl_TessLevelOuter[2] = TessLevelOuter; \n"
+"		gl_TessLevelOuter[3] = TessLevelOuter; \n"
+"	} \n"
+"} \n";
+const GLchar * pYglprg_vdp1_tess_c[] = { Yglprg_tess_c, NULL };
+
+const GLchar Yglprg_gouraud_tess_c[] =
 SHADER_VERSION_TESS
 "layout(vertices = 4) out; //<???? what does it means? \n"
 "in vec3 v_position[];  \n"
@@ -819,9 +809,31 @@ SHADER_VERSION_TESS
 "		gl_TessLevelOuter[3] = TessLevelOuter; \n"
 "	} \n"
 "} \n";
-const GLchar * pYglprg_vdp1_gouraudshading_tess_c[] = { Yglprg_tess_c, NULL };
+const GLchar * pYglprg_vdp1_gouraudshading_tess_c[] = { Yglprg_gouraud_tess_c, NULL };
 
 const GLchar Yglprg_tess_e[] =
+SHADER_VERSION_TESS
+"layout(quads, equal_spacing, ccw) in; \n"
+"in vec3 tcPosition[]; \n"
+"in vec4 tcTexCoord[]; \n"
+"out vec4 teTexCoord; \n"
+"uniform mat4 u_mvpMatrix; \n"
+" \n"
+"void main() \n"
+"{ \n"
+"	float u = gl_TessCoord.x, v = gl_TessCoord.y; \n"
+"	vec3 tePosition; \n"
+"	vec3 a = mix(tcPosition[0], tcPosition[3], u); \n"
+"	vec3 b = mix(tcPosition[1], tcPosition[2], u); \n"
+"	tePosition = mix(a, b, v); \n"
+"	gl_Position = vec4(tePosition, 1)*u_mvpMatrix; \n"
+"	vec4 ta = mix(tcTexCoord[0], tcTexCoord[3], u); \n"
+"	vec4 tb = mix(tcTexCoord[1], tcTexCoord[2], u); \n"
+"	teTexCoord = mix(ta, tb, v); \n"
+"} \n";
+const GLchar * pYglprg_vdp1_tess_e[] = { Yglprg_tess_e, NULL };
+
+const GLchar Yglprg_gouraud_tess_e[] =
 SHADER_VERSION_TESS
 "layout(quads, equal_spacing, ccw) in; \n"
 "in vec3 tcPosition[]; \n"
@@ -846,9 +858,34 @@ SHADER_VERSION_TESS
 "	vec4 cb = mix(tcColor[1], tcColor[2], u); \n"
 "	teColor = mix(ca, cb, v); \n"
 "} \n";
-const GLchar * pYglprg_vdp1_gouraudshading_tess_e[] = { Yglprg_tess_e, NULL };
+const GLchar * pYglprg_vdp1_gouraudshading_tess_e[] = { Yglprg_gouraud_tess_e, NULL };
+
 
 const GLchar Yglprg_tess_g[] =
+SHADER_VERSION_TESS
+"uniform mat4 Modelview; \n"
+"uniform mat3 NormalMatrix; \n"
+"layout(triangles) in; \n"
+"layout(triangle_strip, max_vertices = 3) out; \n"
+"in vec4 teTexCoord[3]; \n"
+"out vec4 v_texcoord; \n"
+" \n"
+"void main() \n"
+"{ \n"
+"	v_texcoord = teTexCoord[0]; \n"
+"	gl_Position = gl_in[0].gl_Position; EmitVertex(); \n"
+" \n"
+"	v_texcoord = teTexCoord[1]; \n"
+"	gl_Position = gl_in[1].gl_Position; EmitVertex(); \n"
+" \n"
+"	v_texcoord = teTexCoord[2]; \n"
+"	gl_Position = gl_in[2].gl_Position; EmitVertex(); \n"
+" \n"
+"	EndPrimitive(); \n"
+"} \n";
+const GLchar * pYglprg_vdp1_tess_g[] = { Yglprg_tess_g, NULL };
+
+const GLchar Yglprg_gouraud_tess_g[] =
 SHADER_VERSION_TESS
 "uniform mat4 Modelview; \n"
 "uniform mat3 NormalMatrix; \n"
@@ -875,7 +912,8 @@ SHADER_VERSION_TESS
 " \n"
 "	EndPrimitive(); \n"
 "} \n";
-const GLchar * pYglprg_vdp1_gouraudshading_tess_g[] = { Yglprg_tess_g, NULL };
+const GLchar * pYglprg_vdp1_gouraudshading_tess_g[] = { Yglprg_gouraud_tess_g, NULL };
+
 
 // static YglVdp1CommonParam id_gt = { 0 };
 
