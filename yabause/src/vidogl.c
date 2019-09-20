@@ -6991,7 +6991,6 @@ void VIDOGLSetSettingValueMode(int type, int value) {
       if ((maj >=4) && (min >=2)) {
 #endif
         if (glPatchParameteri) {
-          YglTesserationProgramInit();
           _Ygl->polygonmode = value;
         } else {
           YuiMsg("GPU tesselation is not possible - fallback on CPU tesselation\n");

@@ -401,6 +401,8 @@ enum
       PG_VDP1_GOURAUDSHADING_HALF_LUMINANCE_MESH_IMPROVE_MSB_TESS=85,
       PG_VDP1_GOURAUDSHADING_HALFTRANS_MESH_IMPROVE_MSB_TESS=86,
 
+         PG_VDP1_VDP2 = (2*3*2*2*7), //171
+
    PG_WINDOW=120,
 
    PG_VDP2_NORMAL=130,
@@ -408,7 +410,7 @@ enum
    PG_VDP2_NORMAL_CRAM=132,
    PG_VDP2_MOSAIC_CRAM=133,
 
-   PG_VDP1_VDP2 = 134,
+
 
    PG_VDP2_DRAWFRAMEBUFF_NONE=256,
    PG_VDP2_DRAWFRAMEBUFF_LESS_NONE=(PG_VDP2_DRAWFRAMEBUFF_NONE+128),
@@ -889,7 +891,6 @@ void YglSetWindow(int id);
 
 int Ygl_uniformWindow(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs, int id);
 int YglProgramInit();
-int YglTesserationProgramInit();
 int YglProgramChange( YglLevel * level, int prgid );
 int Ygl_cleanupNormal(void * p, YglTextureManager *tm);
 

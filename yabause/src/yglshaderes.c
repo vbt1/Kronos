@@ -2533,6 +2533,8 @@ static const char vdp2blit_end_f[] =
 "} \n";
 
 GLchar * pYglprg_vdp2_blit_f[128*5][10];
+GLchar * prg_input_f[2*3*2*7*2][8];
+GLchar * prg_input_v[2*3*2*7*2][2];
 
 const GLchar * vdp2blit_palette_mode_f[2]= {
   Yglprg_vdp2_sprite_palette_only,
@@ -2571,6 +2573,7 @@ const GLchar * Yglprg_color_mode_f[4] = {
 };
 
 int initDrawShaderCode() {
+  //VDP2 programs
   for (int i = 0; i<5; i++) {
      // Sprite color calculation condition are separated by 128
     for (int j = 0; j<4; j++) {
@@ -2594,6 +2597,34 @@ int initDrawShaderCode() {
       }
     }
   }
+
+  //VDP1 Programs
+  for (int m = 0; m<2; m++) {
+    //Normal or tesselation mode
+    for (int i = 0; i<2; i++) {
+       // MSB or not MSB
+      for (int j = 0; j<3; j++) {
+       // Mesh, Mesh improve or None
+        for (int k = 0; k<2; k++) {
+          //Textured or non-textured (polygon or sprite)
+          for (int l = 0; l<7; l++) {
+            //7 color calculation mode
+            int index = l+7*(k+2*(j+3*(i+2*m)));
+            prg_input_f[index][0] = vdp1drawversion[m];
+            prg_input_f[index][1] = vdp1drawstart;
+            prg_input_f[index][2] = vdp1drawcheck[k];
+            prg_input_f[index][3] = vdp1drawmesh[j];
+            prg_input_f[index][4] = vdp1drawmsb[i];
+            prg_input_f[index][5] = vdp1drawmode[l];
+            prg_input_f[index][6] = vdp1drawend;
+            prg_input_f[index][7] =  NULL;
+
+            prg_input_v[index][0] = vdp1drawvertex[l];
+            prg_input_v[index][1] = NULL;
+          }
+        }
+      }
+    }
 }
 
 int YglInitDrawFrameBufferShaders(int id) {
@@ -2690,11 +2721,6 @@ int Ygl_cleanupAddBlend(void * p, YglTextureManager *tm)
 {
    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
    return 0;
-}
-
-int YglGetProgramId( int prg )
-{
-   return _prgid[prg];
 }
 
 int YglInitShader(int id, const GLchar * vertex[], const GLchar * frag[], int fcount, const GLchar * tc[], const GLchar * te[], const GLchar * g[] )
@@ -3076,72 +3102,6 @@ int YglProgramInit()
 
    _prgid[PG_VDP2_MOSAIC_CRAM] = _prgid[PG_VDP2_NORMAL_CRAM];
 
-   // YGLLOG("PG_VDP1_REPLACE\n");
-   // //
-   // if (YglInitShader(PG_VDP1_REPLACE, pYglprg_vdp1_replace_v, pYglprg_vdp1_replace_f,1, NULL, NULL, NULL) != 0)
-   //    return -1;
-   //
-   // id_vdp1_replace_s_texture = glGetUniformLocation(_prgid[PG_VDP1_REPLACE], (const GLchar *)"s_texture");
-   // id_vdp1_replace_s_texture_size = glGetUniformLocation(_prgid[PG_VDP1_REPLACE], (const GLchar *)"u_texsize");
-   //
-   // //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_GOURAUDSHADING\n");
-   //
-   // if (YglInitShader(PG_VDP1_GOURAUDSHADING, pYglprg_vdp1_gouraudshading_v, pYglprg_vdp1_gouraudshading_f, 1, NULL, NULL, NULL) != 0)
-   //    return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_GOURAUDSHADING], &id_g);
-   //
-   // //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_MSB_SHADOW\n");
-   //
-   // //
-   // if (YglInitShader(PG_VDP1_MSB_SHADOW, pYglprg_vdp1_msb_shadow_v, pYglprg_vdp1_msb_shadow_f, 1, NULL, NULL, NULL) != 0)
-   //    return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MSB_SHADOW], &id_msb_s);
-   //
-   // //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_SHADOW\n");
-   //
-   // //
-   // if (YglInitShader(PG_VDP1_SHADOW, pYglprg_vdp1_shadow_v, pYglprg_vdp1_shadow_f, 1, NULL, NULL, NULL) != 0)
-   //   return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_SHADOW], &shadow);
-   //
-   // //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_GOURAUDSHADING_HALFTRANS\n");
-
-   // if (YglInitShader(PG_VDP1_GOURAUDSHADING_HALFTRANS, pYglprg_vdp1_gouraudshading_hf_v, pYglprg_vdp1_gouraudshading_hf_f, 1, NULL, NULL, NULL) != 0)
-   //    return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_GOURAUDSHADING_HALFTRANS], &id_ght);
-
-   //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_HALF_LUMINANCE\n");
-   //
-   // if (YglInitShader(PG_VDP1_HALF_LUMINANCE, pYglprg_vdp1_half_luminance_v, pYglprg_vdp1_half_luminance_f, 1, NULL, NULL, NULL) != 0)
-   //   return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_HALF_LUMINANCE], &half_luminance);
-
-   //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_MESH\n");
-   //
-   // if (YglInitShader(PG_VDP1_MESH, pYglprg_vdp1_mesh_v, pYglprg_vdp1_mesh_f, 1, NULL, NULL, NULL) != 0)
-   //   return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MESH], &mesh);
-   //
-   // //-----------------------------------------------------------------------------------------------------------
-   // YGLLOG("PG_VDP1_MESH_IMPROVE\n");
-   //
-   // if (YglInitShader(PG_VDP1_MESH_IMPROVE, pYglprg_vdp1_mesh_v, pYglprg_vdp1_mesh_improve_f, 1, NULL, NULL, NULL) != 0)
-   //   return -1;
-   //
-   // Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MESH_IMPROVE], &mesh_improve);
-
    YGLLOG("PG_WINDOW\n");
    //
    if (YglInitShader(PG_WINDOW, pYglprg_window_v, pYglprg_window_f, 1, NULL, NULL, NULL) != 0)
@@ -3161,114 +3121,7 @@ int YglProgramInit()
    _Ygl->windowpg.tex0 = glGetUniformLocation(_prgid[PG_WINDOW], (const GLchar *)"s_win0");
    _Ygl->windowpg.tex1 = glGetUniformLocation(_prgid[PG_WINDOW], (const GLchar *)"s_win1");
 
-  //  YGLLOG("PG_VDP1_STARTUSERCLIP\n");
-  //  //
-  //  if (YglInitShader(PG_VDP1_STARTUSERCLIP, pYglprg_userclip_v, pYglprg_userclip_f, 1, NULL, NULL, NULL) != 0)
-  //     return -1;
-  //
-  // _prgid[PG_VDP1_ENDUSERCLIP] = _prgid[PG_VDP1_STARTUSERCLIP];
-
    return 0;
-}
-
-int YglTesserationProgramInit()
-{
-  // //-----------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_GOURAUDSHADING_TESS\n");
-  //   if (YglInitShader(PG_VDP1_GOURAUDSHADING_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_gouraudshading_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_GOURAUDSHADING_TESS], &grow_tess);
-  //
-  // //-----------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_MSB_SHADOW_TESS\n");
-  //   if (YglInitShader(PG_VDP1_MSB_SHADOW_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_msb_shadow_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MSB_SHADOW_TESS], &id_msb_tess);
-  //
-  //   //---------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_MESH_TESS\n");
-  //   if (YglInitShader(PG_VDP1_MESH_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_mesh_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MESH_TESS], &mesh_tess);
-  //
-  //   //---------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_MESH_IMPROVE_MSB_TESS\n");
-  //   if (YglInitShader(PG_VDP1_MESH_IMPROVE_MSB_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_mesh_improve_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_MESH_IMPROVE_MSB_TESS], &mesh_tess_improve);
-  //
-  //
-  //   //---------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_GOURAUDSHADING_HALFTRANS_TESS\n");
-  //   if (YglInitShader(PG_VDP1_GOURAUDSHADING_HALFTRANS_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_gouraudshading_hf_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_GOURAUDSHADING_HALFTRANS_TESS], &id_ght_tess);
-  //
-  //   //---------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_HALF_LUMINANCE_TESS\n");
-  //   if (YglInitShader(PG_VDP1_HALF_LUMINANCE_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_half_luminance_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   Ygl_Vdp1CommonGetUniformId(_prgid[PG_VDP1_HALF_LUMINANCE_TESS], &half_luminance_tess);
-  //
-  //   //---------------------------------------------------------------------------------------------------------
-  //   YGLLOG("PG_VDP1_SHADOW_TESS\n");
-  //   if (YglInitShader(PG_VDP1_SHADOW_TESS,
-  //     pYglprg_vdp1_gouraudshading_tess_v,
-  //     pYglprg_vdp1_shadow_f,
-  //     1,
-  //     pYglprg_vdp1_gouraudshading_tess_c,
-  //     pYglprg_vdp1_gouraudshading_tess_e,
-  //     pYglprg_vdp1_gouraudshading_tess_g) != 0)
-  //     return -1;
-  //
-  //   shadow_tess.sprite = glGetUniformLocation(_prgid[PG_VDP1_SHADOW_TESS], (const GLchar *)"u_sprite");
-  //   shadow_tess.tessLevelInner = glGetUniformLocation(_prgid[PG_VDP1_SHADOW_TESS], (const GLchar *)"TessLevelInner");
-  //   shadow_tess.tessLevelOuter = glGetUniformLocation(_prgid[PG_VDP1_SHADOW_TESS], (const GLchar *)"TessLevelOuter");
-  //   shadow_tess.fbo = glGetUniformLocation(_prgid[PG_VDP1_SHADOW_TESS], (const GLchar *)"u_fbo");
-
-  return 0;
 }
 
 void initVDPProg(YglProgram* prog, int id) {
