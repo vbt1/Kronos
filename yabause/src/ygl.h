@@ -893,7 +893,7 @@ s Shadow Flag
 
 */
 INLINE u32 VDP1COLOR(u16 CMDPMOD, u16 CMDCOLR) {
-  return CMDCOLR | (CMDPMOD<<16);
+  return CMDCOLR;
 }
 
 INLINE u32 VDP2COLOR(int id, u32 alpha, u32 priority, u32 cc_on, u32 cramindex) {

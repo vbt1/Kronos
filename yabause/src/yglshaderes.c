@@ -647,14 +647,12 @@ int Ygl_cleanupWindow(void * p, YglTextureManager *tm )
 
 // we have a gouraud value, we can consider the pixel code is RGB otherwise gouraud effect is not guaranted (VDP1 doc p26)
 #define GOURAUD_PROCESS(A) \
-"if ((int("Stringify(A)".b*255.0) & 0x4) == 0x4) {\n \
-  int R = int(clamp((float((col"Stringify(A)" >> 00) & 0x1F)/31.0 + v_vtxcolor.r), 0.0, 1.0)*31.0);\n \
-  int G = int(clamp((float((col"Stringify(A)" >> 05) & 0x1F)/31.0 + v_vtxcolor.g), 0.0, 1.0)*31.0);\n \
-  int B = int(clamp((float((col"Stringify(A)" >> 10) & 0x1F)/31.0 + v_vtxcolor.b), 0.0, 1.0)*31.0);\n \
-  int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
-  "Stringify(A)".r = float(R | ((G & 0x7)<<5))/255.0;\n \
-  "Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n \
-}\n"
+"int R = int(clamp((float((col"Stringify(A)" >> 00) & 0x1F)/31.0 + v_vtxcolor.r), 0.0, 1.0)*31.0);\n \
+int G = int(clamp((float((col"Stringify(A)" >> 05) & 0x1F)/31.0 + v_vtxcolor.g), 0.0, 1.0)*31.0);\n \
+int B = int(clamp((float((col"Stringify(A)" >> 10) & 0x1F)/31.0 + v_vtxcolor.b), 0.0, 1.0)*31.0);\n \
+int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
+"Stringify(A)".r = float(R | ((G & 0x7)<<5))/255.0;\n \
+"Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n"
 
 #define HALF_TRANPARENT_MIX(A, B) \
 "if ((col"Stringify(B)" & 0x8000) != 0) { \
@@ -1185,8 +1183,8 @@ const GLchar Yglprg_vdp2_sprite_type_0[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
-"  } else {\n"
 "    ret.code = ret.code & 0x7FFF;\n"
+"  } else {\n"
 "    ret.prio = (ret.code >> 14) & 0x3;\n"
 "    ret.cc = (ret.code >> 11) & 0x7;\n"
 "    ret.code = ret.code & 0x7FF;\n"
@@ -1210,6 +1208,7 @@ const GLchar Yglprg_vdp2_sprite_type_1[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 13) & 0x7;\n"
 "    ret.cc = (ret.code >> 11) & 0x3;\n"
@@ -1234,6 +1233,7 @@ const GLchar Yglprg_vdp2_sprite_type_2[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 14) & 0x1;\n"
 "    ret.cc = (ret.code >> 11) & 0x7;\n"
@@ -1259,6 +1259,7 @@ const GLchar Yglprg_vdp2_sprite_type_3[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 13) & 0x3;\n"
 "    ret.cc = (ret.code >> 11) & 0x3;\n"
@@ -1284,6 +1285,7 @@ const GLchar Yglprg_vdp2_sprite_type_4[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 13) & 0x3;\n"
 "    ret.cc = (ret.code >> 10) & 0x7;\n"
@@ -1309,6 +1311,7 @@ const GLchar Yglprg_vdp2_sprite_type_5[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 12) & 0x7;\n"
 "    ret.cc = (ret.code >> 11) & 0x1;\n"
@@ -1334,6 +1337,7 @@ const GLchar Yglprg_vdp2_sprite_type_6[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 12) & 0x7;\n"
 "    ret.cc = (ret.code >> 10) & 0x3;\n"
@@ -1359,6 +1363,7 @@ const GLchar Yglprg_vdp2_sprite_type_7[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 12) & 0x7;\n"
 "    ret.cc = (ret.code >> 9) & 0x7;\n"
@@ -1384,6 +1389,7 @@ const GLchar Yglprg_vdp2_sprite_type_8[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 7) & 0x1;\n"
 "    ret.code = ret.code & 0x7F;\n"
@@ -1407,6 +1413,7 @@ const GLchar Yglprg_vdp2_sprite_type_9[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 7) & 0x1;\n"
 "    ret.cc = (ret.code >> 6) & 0x1;\n"
@@ -1431,6 +1438,7 @@ const GLchar Yglprg_vdp2_sprite_type_A[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 6) & 0x3;\n"
 "    ret.code = ret.code & 0x3F;\n"
@@ -1454,6 +1462,7 @@ const GLchar Yglprg_vdp2_sprite_type_B[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.cc = (ret.code >> 6) & 0x3;\n"
 "    ret.code = ret.code & 0x3F;\n"
@@ -1477,6 +1486,7 @@ const GLchar Yglprg_vdp2_sprite_type_C[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 7) & 0x1;\n"
 "    ret.code = ret.code & 0xFF;\n"
@@ -1500,6 +1510,7 @@ const GLchar Yglprg_vdp2_sprite_type_D[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 7) & 0x1;\n"
 "    ret.cc = (ret.code >> 6) & 0x1;\n"
@@ -1524,6 +1535,7 @@ const GLchar Yglprg_vdp2_sprite_type_E[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.prio = (ret.code >> 6) & 0x3;\n"
 "    ret.code = ret.code & 0xFF;\n"
@@ -1547,6 +1559,7 @@ const GLchar Yglprg_vdp2_sprite_type_F[] =
 "    ret.isRGB = 1;\n"
 "    ret.cc = 0;\n"
 "    ret.color.rgb = getRGB(ret.code).rgb;\n"
+"    ret.code = ret.code & 0x7FFF;\n"
 "  } else {\n"
 "    ret.cc = (ret.code >> 6) & 0x3;\n"
 "    ret.code = ret.code & 0xFF;\n"
@@ -2857,7 +2870,6 @@ int YglBlitTexture(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* 
     glBindFragDataLocation(vdp2blit_prg, 4, "fourthColor");
 #endif
     glBindFragDataLocation(vdp2blit_prg, 0, "finalColor");
-
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_texture0"), 0);
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_texture1"), 1);
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_texture2"), 2);
@@ -2867,7 +2879,6 @@ int YglBlitTexture(YglPerLineInfo *bg, int* prioscreens, int* modescreens, int* 
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_back"), 7);
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_lncl"), 8);
   glUniform1i(glGetUniformLocation(vdp2blit_prg, "s_cc_win"), 13);
-
   glUniform1iv(glGetUniformLocation(vdp2blit_prg, "mode"), 7, modescreens);
   glUniform1iv(glGetUniformLocation(vdp2blit_prg, "isRGB"), 6, isRGB);
   glUniform1iv(glGetUniformLocation(vdp2blit_prg, "isBlur"), 7, isBlur);
