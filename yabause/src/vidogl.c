@@ -434,6 +434,7 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
   int normal_shadow = 0;
   u32 charAddr = cmd->CMDSRCA * 8;
   u32 dot;
+  u8 SPD = ((cmd->CMDPMOD & 0x40) != 0);
   u8 END = ((cmd->CMDPMOD & 0x80) != 0);
   u8 MSB = ((cmd->CMDPMOD & 0x8000) != 0);
   u8 MSB_SHADOW = 0;
@@ -474,10 +475,12 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
       j = 0;
       while (j < spritew) {
         dot = Vdp1RamReadByte(NULL, Vdp1Ram, charAddr);
-        if (((dot >> 4) == 0x0F) && !END) *texture->textdata++ = 0x00;
+        if (((dot >> 4) == 0) && !SPD) *texture->textdata++ = 0x00;
+        else if (((dot >> 4) == 0x0F) && !END) *texture->textdata++ = 0x00;
         else *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot >> 4) | colorBank));
         j += 1;
-        if (((dot & 0xF) == 0x0F) && !END) *texture->textdata++ = 0x00;
+        if (((dot & 0xF) == 0) && !SPD) *texture->textdata++ = 0x00;
+        else if (((dot & 0xF) == 0x0F) && !END) *texture->textdata++ = 0x00;
         else *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot & 0xF) | colorBank));
         j += 1;
         charAddr += 1;
@@ -504,6 +507,10 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
         if (!END && endcnt >= 2) {
           *texture->textdata++ = 0;
         }
+        else if (((dot >> 4) == 0) && !SPD)
+        {
+          *texture->textdata++ = 0;
+        }
         else if (((dot >> 4) == 0x0F) && !END) // 6. Commandtable end code
         {
           *texture->textdata++ = 0;
@@ -515,6 +522,10 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
         }
         j += 1;
         if (!END && endcnt >= 2)
+        {
+          *texture->textdata++ = 0x00;
+        }
+        else if (((dot & 0xF) == 0) && !SPD)
         {
           *texture->textdata++ = 0x00;
         }
@@ -547,7 +558,8 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
       {
         dot = Vdp1RamReadByte(NULL, Vdp1Ram, charAddr);
         charAddr++;
-        if ((dot == 0xFF) && !END) *texture->textdata++ = 0x00;
+        if ((dot == 0) && !SPD) *texture->textdata++ = 0x00;
+        else if ((dot == 0xFF) && !END) *texture->textdata++ = 0x00;
         else *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot & 0x3F) | colorBank));
       }
       texture->textdata += texture->w;
@@ -566,7 +578,8 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
       {
         dot = Vdp1RamReadByte(NULL, Vdp1Ram, charAddr);
         charAddr++;
-        if ((dot == 0xFF) && !END) *texture->textdata++ = 0x00;
+        if ((dot == 0) && !SPD) *texture->textdata++ = 0x00;
+        else if ((dot == 0xFF) && !END) *texture->textdata++ = 0x00;
         else *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, ((dot & 0x7F) | colorBank));
       }
       texture->textdata += texture->w;
@@ -583,7 +596,8 @@ static void FASTCALL Vdp1ReadTexture_in_sync(vdp1cmd_struct *cmd, int spritew, i
       for (j = 0; j < spritew; j++) {
         dot = Vdp1RamReadByte(NULL, Vdp1Ram, charAddr);
         charAddr++;
-        if ((dot == 0xFF) && !END) *texture->textdata++ = 0x0;
+        if ((dot == 0) && !SPD) *texture->textdata++ = 0x00;
+        else if ((dot == 0xFF) && !END) *texture->textdata++ = 0x0;
         else *texture->textdata++ = VDP1COLOR(cmd->CMDPMOD, (dot | colorBank));
       }
       texture->textdata += texture->w;
@@ -4393,6 +4407,8 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   sprite.cor = 0x00;
   sprite.cog = 0x00;
   sprite.cob = 0x00;
+
+  int spd = ((cmd.CMDPMOD & 0x40) != 0);
 
   sprite.blendmode = getCCProgramId(cmd.CMDPMOD);
 
