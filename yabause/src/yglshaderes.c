@@ -29,7 +29,7 @@
 #include "bicubic_shader.h"
 #include "scanline_shader.h"
 
-#define YGLLOG
+#define YGLLOG //YuiMsg
 
 #define QuoteIdent(ident) #ident
 #define Stringify(macro) QuoteIdent(macro)
@@ -91,12 +91,14 @@ int Ygl_uniformVdp1CommonParam(void * p, YglTextureManager *tm, Vdp2 *varVdp2Reg
   prg = p;
   glEnableVertexAttribArray(prg->vertexp);
   glEnableVertexAttribArray(prg->texcoordp);
-  if (prg->vertexAttribute != NULL)
-  {
-    glEnableVertexAttribArray(prg->vaid);
-  }
-  else{
-    glDisableVertexAttribArray(prg->vaid);
+  if (prg->vaid > 0) {
+    if (prg->vertexAttribute != NULL)
+    {
+      glEnableVertexAttribArray(prg->vaid);
+    }
+    else{
+      glDisableVertexAttribArray(prg->vaid);
+    }
   }
 
   glUniform2f(prg->ids->texsize, YglTM_vdp1[_Ygl->drawframe]->width, YglTM_vdp1[_Ygl->drawframe]->height);
@@ -134,7 +136,9 @@ int Ygl_uniformVdp1CommonParam(void * p, YglTextureManager *tm, Vdp2 *varVdp2Reg
 int Ygl_cleanupVdp1CommonParam(void * p, YglTextureManager *tm){
   YglProgram * prg;
   prg = p;
-  glDisableVertexAttribArray(prg->vaid);
+  if (prg->vaid > 0) {
+    glDisableVertexAttribArray(prg->vaid);
+  }
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, 0);
   glActiveTexture(GL_TEXTURE2);
@@ -683,7 +687,7 @@ int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
   int MSB = (col"Stringify(A)" & 0x8000) >> 8;\n \
   "Stringify(A)".r = float(R | ((G & 0x7)<<5))/255.0;\n \
   "Stringify(A)".g = float((G>>3) | (B<<2) | MSB)/255.0;\n \
-}\n"
+} else discard;\n"
 
 
 #define COLINDEX(A) \
@@ -869,11 +873,11 @@ int Ygl_uniformEndUserClip(void * p, YglTextureManager *tm, Vdp2 *varVdp2Regs, i
 
 int Ygl_cleanupEndUserClip(void * p, YglTextureManager *tm ){return 0;}
 
-const GLchar* version_core_3_3[] = {
+const GLchar version_core_3_3[] = {
 SHADER_VERSION
 };
 
-const GLchar* version_core_4_2[] = {
+const GLchar version_core_4_2[] = {
 SHADER_VERSION_TESS
 };
 
@@ -882,13 +886,14 @@ const GLchar* vdp1drawversion[2]= {
   version_core_4_2
 };
 
-const GLchar* vdp1drawstart[] = {
+const GLchar vdp1drawstart[] = {
   "#ifdef GL_ES\n"
   "precision highp float;\n"
   "#endif\n"
   "uniform sampler2D u_sprite;\n"
   "uniform sampler2D u_fbo;\n"
   "in vec4 v_texcoord;\n"
+  "in vec4 v_vtxcolor; \n"
   "out vec4 fragColor; \n"
   "void main() {\n"
   "  ivec2 addr = ivec2(vec2(textureSize(u_sprite, 0)) * v_texcoord.st / v_texcoord.q); \n"
@@ -997,21 +1002,22 @@ const GLchar* vdp1drawmode[7]= {
 };
 
 //ENd of shaders
-const GLchar* vdp1drawend = {
-  "};\n"
+const GLchar vdp1drawend[] = {
+  "}\n"
 };
 
 //Common Vertex shader
-const GLchar* vdp1drawvertex = {
-  "layout (location = 0) in vec3 a_position; \n"
+const GLchar vdp1drawvertex_normal[] = {
+  "layout (location = 0) in vec4 a_position; \n"
   "layout (location = 1) in vec4 a_texcoord; \n"
   "layout (location = 2) in vec4 a_grcolor;  \n"
   "uniform vec2 u_texsize;    \n"
+  "uniform mat4 u_mvpMatrix; \n"
   "out vec3 v_position;  \n"
   "out vec4 v_texcoord; \n"
   "out vec4 v_vtxcolor; \n"
   "void main() {     \n"
-  "   v_position  = a_position; \n"
+  "   gl_Position  = a_position*u_mvpMatrix; \n"
   "   v_vtxcolor  = a_grcolor;  \n"
   "   v_texcoord  = a_texcoord; \n"
   "   v_texcoord.x  = v_texcoord.x / u_texsize.x; \n"
@@ -1019,6 +1025,28 @@ const GLchar* vdp1drawvertex = {
   "}\n"
 };
 
+const GLchar vdp1drawvertex_tess[] = {
+  "layout (location = 0) in vec4 a_position; \n"
+  "layout (location = 1) in vec4 a_texcoord; \n"
+  "layout (location = 2) in vec4 a_grcolor;  \n"
+  "uniform vec2 u_texsize;    \n"
+  "uniform mat4 u_mvpMatrix; \n"
+  "out vec3 v_position;  \n"
+  "out vec4 v_texcoord; \n"
+  "out vec4 v_vtxcolor; \n"
+  "void main() {     \n"
+  "   v_position  = (a_position*u_mvpMatrix).xyz; \n"
+  "   v_vtxcolor  = a_grcolor;  \n"
+  "   v_texcoord  = a_texcoord; \n"
+  "   v_texcoord.x  = v_texcoord.x / u_texsize.x; \n"
+  "   v_texcoord.y  = v_texcoord.y / u_texsize.y; \n"
+  "}\n"
+};
+
+const GLchar* vdp1drawvertex[2]= {
+  vdp1drawvertex_normal,
+  vdp1drawvertex_tess
+};
 
 /*------------------------------------------------------------------------------------
  *  VDP2 Draw Frame buffer Operation
@@ -2114,6 +2142,9 @@ static const char vdp2blit_end_f[] =
 GLchar * pYglprg_vdp2_blit_f[128*5][10];
 GLchar * prg_input_f[2*3*2*7*2][8];
 GLchar * prg_input_v[2*3*2*7*2][3];
+GLchar * prg_input_c[2*3*2*7*2];
+GLchar * prg_input_e[2*3*2*7*2];
+GLchar * prg_input_g[2*3*2*7*2];
 
 const GLchar * vdp2blit_palette_mode_f[2]= {
   Yglprg_vdp2_sprite_palette_only,
@@ -2199,8 +2230,18 @@ int initDrawShaderCode() {
             prg_input_f[index][7] =  NULL;
 
             prg_input_v[index][0] = vdp1drawversion[m];
-            prg_input_v[index][1] = vdp1drawvertex;
+            prg_input_v[index][1] = vdp1drawvertex[m];
             prg_input_v[index][2] = NULL;
+
+            if(m!=1) {
+              prg_input_c[index] = NULL;
+              prg_input_e[index] = NULL;
+              prg_input_g[index] = NULL;
+            } else {
+              prg_input_c[index] = Yglprg_gouraud_tess_c;
+              prg_input_e[index] = Yglprg_gouraud_tess_e;
+              prg_input_g[index] = Yglprg_gouraud_tess_g;
+            }
           }
         }
       }
@@ -2213,7 +2254,7 @@ int YglInitDrawFrameBufferShaders(int id) {
  int arrayid = id-PG_VDP2_DRAWFRAMEBUFF_NONE;
  //printf ("getArray %d\n", arrayid); //16
   YGLLOG("PG_VDP2_DRAWFRAMEBUFF_NONE --START--\n");
-  if (YglInitShader(id, pYglprg_vdp2_blit_v, pYglprg_vdp2_blit_f[arrayid], 9, NULL, NULL, NULL) != 0) { printf("Error init prog %d\n",id); abort(); }
+  if (YglInitShader(id, pYglprg_vdp2_blit_v, 1, pYglprg_vdp2_blit_f[arrayid], 9, NULL, NULL, NULL) != 0) { printf("Error init prog %d\n",id); abort(); }
 
   if ( arrayid < 0 || arrayid >= MAX_FRAME_BUFFER_UNIFORM) {
     abort();
@@ -2304,7 +2345,7 @@ int Ygl_cleanupAddBlend(void * p, YglTextureManager *tm)
    return 0;
 }
 
-int YglInitShader(int id, const GLchar * vertex[], const GLchar * frag[], int fcount, const GLchar * tc[], const GLchar * te[], const GLchar * g[] )
+int YglInitShader(int id, const GLchar * vertex[], int vcount, const GLchar * frag[], int fcount, const GLchar * tc[], const GLchar * te[], const GLchar * g[] )
 {
     GLint compiled,linked;
     GLuint vshader;
@@ -2317,7 +2358,7 @@ int YglInitShader(int id, const GLchar * vertex[], const GLchar * frag[], int fc
     if (_prgid[id] == 0 ) return -1;
     vshader = glCreateShader(GL_VERTEX_SHADER);
     fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(vshader, 1, vertex, NULL);
+    glShaderSource(vshader, vcount, vertex, NULL);
     glCompileShader(vshader);
     glGetShaderiv(vshader, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE) {
@@ -2403,7 +2444,7 @@ int YglProgramInit()
 
    initDrawShaderCode();
    //
-   if (YglInitShader(PG_VDP2_NORMAL, pYglprg_vdp2_normal_v, pYglprg_vdp2_normal_f, 1, NULL, NULL, NULL) != 0)
+   if (YglInitShader(PG_VDP2_NORMAL, pYglprg_vdp2_normal_v, 1, pYglprg_vdp2_normal_f, 1, NULL, NULL, NULL) != 0)
       return -1;
 //vdp2 normal looks not to be setup as it should
   id_normal_s_texture = glGetUniformLocation(_prgid[PG_VDP2_NORMAL], (const GLchar *)"s_texture");
@@ -2417,7 +2458,7 @@ int YglProgramInit()
 
    YGLLOG("PG_VDP2_NORMAL_CRAM\n");
 
-  if (YglInitShader(PG_VDP2_NORMAL_CRAM, pYglprg_vdp2_normal_v, pYglprg_normal_cram_f, 1, NULL, NULL, NULL) != 0)
+  if (YglInitShader(PG_VDP2_NORMAL_CRAM, pYglprg_vdp2_normal_v, 1, pYglprg_normal_cram_f, 1, NULL, NULL, NULL) != 0)
     return -1;
 
   id_normal_cram_s_texture = glGetUniformLocation(_prgid[PG_VDP2_NORMAL_CRAM], (const GLchar *)"s_texture");
@@ -2436,7 +2477,7 @@ int YglProgramInit()
 
 #if 0
   YGLLOG("PG_VDP2_MOSAIC\n");
-  if (YglInitShader(PG_VDP2_MOSAIC, pYglprg_vdp1_replace_v, pYglprg_mosaic_f, NULL, NULL, NULL) != 0)
+  if (YglInitShader(PG_VDP2_MOSAIC, pYglprg_vdp1_replace_v, 1, pYglprg_mosaic_f, NULL, NULL, NULL) != 0)
     return -1;
   id_mosaic_s_texture = glGetUniformLocation(_prgid[PG_VDP2_MOSAIC], (const GLchar *)"s_texture");
   id_mosaic = glGetUniformLocation(_prgid[PG_VDP2_MOSAIC], (const GLchar *)"u_mosaic");
@@ -2449,7 +2490,7 @@ int YglProgramInit()
 
    YGLLOG("PG_WINDOW\n");
    //
-   if (YglInitShader(PG_WINDOW, pYglprg_window_v, pYglprg_window_f, 1, NULL, NULL, NULL) != 0)
+   if (YglInitShader(PG_WINDOW, pYglprg_window_v, 1, pYglprg_window_f, 1, NULL, NULL, NULL) != 0)
       return -1;
 
    _Ygl->windowpg.prgid=_prgid[PG_WINDOW];
@@ -2474,10 +2515,11 @@ void initVDPProg(YglProgram* prog, int id) {
   int init = 0;
   prog->vaid = 0;
   prog->id = 0;
-  // YGLLOG("Compile program %d\n",id);
+
   if (_prgid[id] == 0) {
+    YGLLOG("Compile program %d\n",id);
     init = 1;
-//    YglInitShader(id, prg_input[id].vertexshader, prg_input[id].fragmentshader, prg_input[id].fcount, prg_input[id].tc,prg_input[id].te,prg_input[id].g);
+    YglInitShader(id, prg_input_v[id-PG_VDP1_START], 2, prg_input_f[id-PG_VDP1_START], 7, prg_input_c[id-PG_VDP1_START],prg_input_e[id-PG_VDP1_START],prg_input_g[id-PG_VDP1_START]);
   }
   if (_prgid[id] == 0) {
     YuiMsg("Prog %d is not able to compile\n", id);
@@ -2490,11 +2532,15 @@ void initVDPProg(YglProgram* prog, int id) {
     _ids[id].fbo = glGetUniformLocation(_prgid[id], (const GLchar *)"u_fbo");
     _ids[id].texsize = glGetUniformLocation(_prgid[id], (const GLchar *)"u_texsize");
     _ids[id].mtxModelView = glGetUniformLocation(_prgid[id], (const GLchar *)"u_mvpMatrix");
-    _ids[id].mtxTexture = glGetUniformLocation(_prgid[id], (const GLchar *)"u_texMatrix");
     _ids[id].tex0 = glGetUniformLocation(_prgid[id], (const GLchar *)"s_texture");
+    _ids[id].vaid = glGetAttribLocation(_prgid[id], (const GLchar *)"a_grcolor");
+    _ids[id].vertexp = glGetAttribLocation(_prgid[id], (const GLchar *)"a_position");
+    _ids[id].texcoordp = glGetAttribLocation(_prgid[id], (const GLchar *)"a_texcoord");
   }
   prog->prgid=id;
   prog->prg=_prgid[id];
+  prog->vaid = _ids[id].vaid;
+  prog->mtxModelView = _ids[id].mtxModelView;
   switch(id) {
     case PG_VDP1_STARTUSERCLIP:
     case PG_VDP1_ENDUSERCLIP:
@@ -2506,10 +2552,9 @@ void initVDPProg(YglProgram* prog, int id) {
     default:
       prog->setupUniform = Ygl_uniformVdp1CommonParam;
       prog->cleanupUniform = Ygl_cleanupVdp1CommonParam;
-      prog->vertexp = 0;//glGetUniformLocation(_prgid[id], (const GLchar *)"a_position");
-      prog->texcoordp = 1;//glGetUniformLocation(_prgid[id], (const GLchar *)"a_texcoord");
+      prog->vertexp = _ids[id].vertexp;
+      prog->texcoordp = _ids[id].texcoordp;
   }
-  //prog->vaid = prg_input[id].vaid;
   prog->ids = &_ids[id];
   // YGLLOG("Compile program %d success\n",id);
 }
