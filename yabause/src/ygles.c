@@ -3216,7 +3216,6 @@ static void YglUpdateVDP1FB(void) {
   waitVdp1End(_Ygl->drawframe);
   if (_Ygl->vdp1IsNotEmpty != 0) {
     GLenum DrawBuffers[2]= {GL_COLOR_ATTACHMENT0,GL_COLOR_ATTACHMENT1};
-    printf("Update VDP1 write\n");
     _Ygl->vdp1On[_Ygl->drawframe] = 1;
     YglGenFrameBuffer();
     glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1fbo);
