@@ -30,7 +30,7 @@
 #include "error.h"
 #include "vdp1/vdp1_compute.h"
 
-//#define __USE_OPENGL_DEBUG__
+#define __USE_OPENGL_DEBUG__
 
 #define YGLDEBUG
 //#define YGLDEBUG printf
@@ -541,7 +541,7 @@ YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tm->pixelBufferID);
   glBufferData(GL_PIXEL_UNPACK_BUFFER, tm->width * tm->height * 4, NULL, GL_DYNAMIC_DRAW);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
+  YuiMsg("%s %d\n", __FUNCTION__, __LINE__);
   glGenTextures(1, &tm->textureID);
   glBindTexture(GL_TEXTURE_2D, tm->textureID);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tm->width, tm->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -549,13 +549,15 @@ YglTextureManager * YglTMInit(unsigned int w, unsigned int h) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glBindTexture(GL_TEXTURE_2D, tm->textureID);
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tm->pixelBufferID);
-  tm->texture = (unsigned int *)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, tm->width * tm->height * 4, GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
-  YglGetColorRamPointer();
+YuiMsg("%s %d %d %d\n", __FUNCTION__, __LINE__, tm->width, tm->height);
+  // glBindTexture(GL_TEXTURE_2D, tm->textureID);
+  // glBindBuffer(GL_PIXEL_UNPACK_BUFFER, tm->pixelBufferID);
+  // tm->texture = (unsigned int *)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, tm->width * tm->height * 4, GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+  // glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+// YuiMsg("%s %d\n", __FUNCTION__, __LINE__);
+//   YglGetColorRamPointer();
+// YuiMsg("%s %d\n", __FUNCTION__, __LINE__);
+  YuiMsg("End Init\n");
 
   return tm;
 }
@@ -748,7 +750,7 @@ static u32* getVdp1DrawingFBMemWrite() {
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->vdp1AccessFB);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _Ygl->vdp1AccessTex, 0);
   glViewport(0,0,_Ygl->rwidth,_Ygl->rheight);
-  YglBlitVDP1(_Ygl->vdp1FrameBuff, _Ygl->width, _Ygl->height, 0);
+  YglBlitVDP1(_Ygl->vdp1FrameBuff[_Ygl->drawframe], _Ygl->width, _Ygl->height, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, _Ygl->default_fbo);
 
   glBindTexture(GL_TEXTURE_2D, _Ygl->vdp1AccessTex);
@@ -1173,8 +1175,8 @@ int YglGenerateScreenBuffer(){
   }
 
   //Generate fbo and texture fr rbh compute shader
-  if (_Ygl->rbg_compute_fbotex != 0) {
-    glDeleteTextures(2,&_Ygl->rbg_compute_fbotex);
+  if (_Ygl->rbg_compute_fbotex[0] != 0) {
+    glDeleteTextures(2, _Ygl->rbg_compute_fbotex);
   }
   glGenTextures(2, &_Ygl->rbg_compute_fbotex[0]);
   glBindTexture(GL_TEXTURE_2D, _Ygl->rbg_compute_fbotex[0]);
