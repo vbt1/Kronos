@@ -166,6 +166,12 @@ typedef struct
   u32 COLOR[4];
   u32 CMDGRDA;
   u32 SPCTL;
+  u32 x0;
+  u32 y0;
+  u32 x1;
+  u32 y1;
+  float offset;
+  u32 temp[3];
 } vdp1cmd_struct;
 
 int Vdp1Init(void);

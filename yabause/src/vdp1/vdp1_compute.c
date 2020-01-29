@@ -321,79 +321,92 @@ int vdp1_add(vdp1cmd_struct* cmd, int clipcmd) {
 	if (clipcmd == 0) {
 		vdp1GenerateBuffer(cmd);
     int border = 0;
-		if (cmd->type == NORMAL) border = 0;
-		memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
 
-		for (int i = 0; i<8; i++) cmd->P[i] = cmd->P[i] * 2;
 
-		int right = 0;
-		int rightindex = -1;
-		for (int i = 0; i<4; i++) {
-			if (cmd->P[i*2] >= right) {
-				right = cmd->P[i*2];
-				rightindex = i;
+			if (cmd->type == NORMAL) border = 0;
+			memcpy(cmd->P,&cmd->CMDXA,8*sizeof(int));
+
+			for (int i = 0; i<8; i++) cmd->P[i] = cmd->P[i] * 2;
+
+			int right = 0;
+			int rightindex = -1;
+			for (int i = 0; i<4; i++) {
+				if (cmd->P[i*2] >= right) {
+					right = cmd->P[i*2];
+					rightindex = i;
+				}
 			}
-		}
-		right = 0;
-		int rightindexsec = -1;
-		for (int i = 0; i<4; i++) {
-			if ((cmd->P[i*2] >= right) && (i!=rightindex)) {
-				right = cmd->P[i*2];
-				rightindexsec = i;
+			right = 0;
+			int rightindexsec = -1;
+			for (int i = 0; i<4; i++) {
+				if ((cmd->P[i*2] >= right) && (i!=rightindex)) {
+					right = cmd->P[i*2];
+					rightindexsec = i;
+				}
 			}
-		}
-		cmd->P[rightindex*2] += 2*border;
-		cmd->P[rightindexsec*2] += 2*border;
+			cmd->P[rightindex*2] += 2*border;
+			cmd->P[rightindexsec*2] += 2*border;
 
-		int top = 0;
-		int topindex = -1;
-		for (int i = 0; i<4; i++) {
-			if (cmd->P[i*2+1] >= top) {
-				top = cmd->P[i*2+1];
-				topindex = i;
+			int top = 0;
+			int topindex = -1;
+			for (int i = 0; i<4; i++) {
+				if (cmd->P[i*2+1] >= top) {
+					top = cmd->P[i*2+1];
+					topindex = i;
+				}
 			}
-		}
-		top = 0;
-		int topindexsec = -1;
-		for (int i = 0; i<4; i++) {
-			if ((cmd->P[i*2+1] >= top) && (i!=topindex)) {
-				top = cmd->P[i*2+1];
-				topindexsec = i;
+			top = 0;
+			int topindexsec = -1;
+			for (int i = 0; i<4; i++) {
+				if ((cmd->P[i*2+1] >= top) && (i!=topindex)) {
+					top = cmd->P[i*2+1];
+					topindexsec = i;
+				}
 			}
+
+	    cmd->P[topindex*2+1] += 2*border;
+			cmd->P[topindexsec*2+1] += 2*border;
+
+		  float Ax = cmd->P[0]/2.0;
+			float Ay = cmd->P[1]/2.0;
+			float Bx = cmd->P[2]/2.0;
+			float By = cmd->P[3]/2.0;
+			float Cx = cmd->P[4]/2.0;
+			float Cy = cmd->P[5]/2.0;
+			float Dx = cmd->P[6]/2.0;
+			float Dy = cmd->P[7]/2.0;
+
+		  minx = (Ax < Bx)?Ax:Bx;
+		  miny = (Ay < By)?Ay:By;
+		  maxx = (Ax > Bx)?Ax:Bx;
+		  maxy = (Ay > By)?Ay:By;
+
+		  minx = (minx < Cx)?minx:Cx;
+		  minx = (minx < Dx)?minx:Dx;
+		  miny = (miny < Cy)?miny:Cy;
+		  miny = (miny < Dy)?miny:Dy;
+		  maxx = (maxx > Cx)?maxx:Cx;
+		  maxx = (maxx > Dx)?maxx:Dx;
+		  maxy = (maxy > Cy)?maxy:Cy;
+		  maxy = (maxy > Dy)?maxy:Dy;
+
+		//Add a bounding box
+		if ((cmd->type != D_LINE) && (cmd->type != D_POLY_LINE)) {
+		  cmd->B[0] = minx*tex_ratiow;
+		  cmd->B[1] = (maxx+1)*tex_ratiow;
+		  cmd->B[2] = miny*tex_ratioh;
+		  cmd->B[3] = (maxy+1)*tex_ratioh;
+		} else {
+			minx = (cmd->x0 < cmd->x1)?cmd->x0:cmd->x1;
+		  miny = (cmd->y0 < cmd->y1)?cmd->y0:cmd->y1;
+		  maxx = (cmd->x0 > cmd->x1)?cmd->x0:cmd->x1;
+		  maxy = (cmd->y0 > cmd->y1)?cmd->y0:cmd->y1;
+
+			cmd->B[0] = minx;
+			cmd->B[1] = maxx + 1;
+			cmd->B[2] = miny;
+			cmd->B[3] = maxy + 1;
 		}
-
-    cmd->P[topindex*2+1] += 2*border;
-		cmd->P[topindexsec*2+1] += 2*border;
-
-	  float Ax = cmd->P[0]/2.0;
-		float Ay = cmd->P[1]/2.0;
-		float Bx = cmd->P[2]/2.0;
-		float By = cmd->P[3]/2.0;
-		float Cx = cmd->P[4]/2.0;
-		float Cy = cmd->P[5]/2.0;
-		float Dx = cmd->P[6]/2.0;
-		float Dy = cmd->P[7]/2.0;
-
-	  minx = (Ax < Bx)?Ax:Bx;
-	  miny = (Ay < By)?Ay:By;
-	  maxx = (Ax > Bx)?Ax:Bx;
-	  maxy = (Ay > By)?Ay:By;
-
-	  minx = (minx < Cx)?minx:Cx;
-	  minx = (minx < Dx)?minx:Dx;
-	  miny = (miny < Cy)?miny:Cy;
-	  miny = (miny < Dy)?miny:Dy;
-	  maxx = (maxx > Cx)?maxx:Cx;
-	  maxx = (maxx > Dx)?maxx:Dx;
-	  maxy = (maxy > Cy)?maxy:Cy;
-	  maxy = (maxy > Dy)?maxy:Dy;
-
-	//Add a bounding box
-	  cmd->B[0] = minx*tex_ratiow;
-	  cmd->B[1] = (maxx+1)*tex_ratiow;
-	  cmd->B[2] = miny*tex_ratioh;
-	  cmd->B[3] = (maxy+1)*tex_ratioh;
-
 	}
   int intersectX = -1;
   int intersectY = -1;

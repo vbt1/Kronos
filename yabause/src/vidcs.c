@@ -47,6 +47,9 @@
 
 #define DEBUG_BAD_COORD //YuiMsg
 
+#define LOG_LINE //YuiMsg
+#define POLY_LOG_LINE //YuiMsg
+
 #define  CONVERTCMD(A) {\
   s32 toto = (A);\
   if (((A)&0x7000) != 0) (A) |= 0xF000;\
@@ -223,9 +226,21 @@ void VIDCSVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = NORMAL;
 
+for (int i = 0; i<cmd.h+1; i++) {
+  cmd.type = D_LINE;
+  cmd.x0 = cmd.CMDXA;
+  cmd.y0 = cmd.CMDYA + i;
+  cmd.x1 = cmd.CMDXA + cmd.w + 1;
+  cmd.y1 = cmd.CMDYA + i;
+
+  cmd.offset = (float)i/(float)(cmd.h);
   vdp1_add(&cmd,0);
+}
+
+  // cmd.type = NORMAL;
+  //
+  // vdp1_add(&cmd,0);
 
   LOG_CMD("%d\n", __LINE__);
 }
@@ -348,8 +363,20 @@ if ((cmd.CMDPMOD & 4))
 }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = SCALED;
-  vdp1_add(&cmd,0);
+
+  for (int i = 0; i<(cmd.CMDYC - cmd.CMDYA)+1; i++) {
+    cmd.type = D_LINE;
+    cmd.x0 = cmd.CMDXA;
+    cmd.y0 = cmd.CMDYA + i;
+    cmd.x1 = cmd.CMDXB + 1;
+    cmd.y1 = cmd.CMDYB + i;
+
+    cmd.offset = (float)i/(float)(cmd.CMDYD - cmd.CMDYA);
+    vdp1_add(&cmd,0);
+  }
+
+  // cmd.type = SCALED;
+  // vdp1_add(&cmd,0);
 
   LOG_CMD("%d\n", __LINE__);
 }
@@ -436,8 +463,62 @@ if ((cmd.CMDPMOD & 4))
 }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = getBestMode(&cmd);
-  vdp1_add(&cmd,0);
+
+  int Ax = cmd.CMDXD - cmd.CMDXA;
+  int Ay = cmd.CMDYD - cmd.CMDYA;
+  int Bx = cmd.CMDXC - cmd.CMDXB;
+  int By = cmd.CMDYC - cmd.CMDYB;
+
+  int lA = ceil(sqrt(Ax*Ax+Ay*Ay));
+  int lB = ceil(sqrt(Bx*Bx+By*By));
+
+  int nbStep = lA;
+  if (lB >= lA)
+    nbStep = lB;
+
+  int stepDivid = (nbStep == 0)?1:nbStep;
+  float uAx = (float)Ax/(float)lA;
+  float uAy = (float)Ay/(float)lA;
+  float uAstep = (float)lA / (float)stepDivid;
+
+  float uBx = (float)Bx/(float)lB;
+  float uBy = (float)By/(float)lB;
+  float uBstep = (float)lB / (float)stepDivid;
+
+  LOG_LINE("Draw [%d,%d] [%d,%d] [%d,%d] [%d,%d]\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
+  LOG_LINE("uA (%f %f %f) uB (%f %f %f) Div %d\n", uAx, uAy, uAstep, uBx, uBy, uBstep, stepDivid);
+
+  for (int i = 0; i<nbStep+1; i++) {
+    int startx = ceil(cmd.CMDXA + i * uAstep * uAx);
+    int endx = ceil(cmd.CMDXB + i * uBstep * uBx);
+    int starty = ceil(cmd.CMDYA + i * uAstep * uAy);
+    int endy = ceil(cmd.CMDYB + i * uBstep * uBy);
+
+    cmd.x0 = startx;
+    cmd.y0 = starty;
+    cmd.x1 = endx;
+    cmd.y1 = endy;
+
+    if ((startx == endx) && (starty == endy)){
+      LOG_LINE("Point!!!!!\n");
+    }
+    else if (startx == endx){
+      LOG_LINE("Vertical Line!!!!!\n");
+    }
+    else if (starty == endy){
+      LOG_LINE("Horizontal Line!!!!!\n");
+    }
+    cmd.type = D_LINE;
+
+    cmd.offset = (float)i/(float)(stepDivid);
+
+    LOG_LINE("D_LINE: %d,%d => %d,%d %f\n", cmd.x0, cmd.y0, cmd.x1, cmd.y1, cmd.offset);
+
+    vdp1_add(&cmd,0);
+  }
+
+  // cmd.type = getBestMode(&cmd);
+  // vdp1_add(&cmd,0);
   return;
 }
 
@@ -485,116 +566,169 @@ void VIDCSVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   cmd.cog = 0x0;
   cmd.cob = 0x0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = POLYGON;
-  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
 
-  vdp1_add(&cmd,0);
+  int Ax = cmd.CMDXD - cmd.CMDXA;
+  int Ay = cmd.CMDYD - cmd.CMDYA;
+  int Bx = cmd.CMDXC - cmd.CMDXB;
+  int By = cmd.CMDYC - cmd.CMDYB;
+
+  int lA = ceil(sqrt(Ax*Ax+Ay*Ay));
+  int lB = ceil(sqrt(Bx*Bx+By*By));
+
+  int nbStep = lA;
+  if (lB >= lA)
+    nbStep = lB;
+
+  int stepDivid = (nbStep == 0)?1:nbStep;
+  float uAx = (float)Ax/(float)lA;
+  float uAy = (float)Ay/(float)lA;
+  float uAstep = (float)lA / (float)stepDivid;
+
+  float uBx = (float)Bx/(float)lB;
+  float uBy = (float)By/(float)lB;
+  float uBstep = (float)lB / (float)stepDivid;
+
+  POLY_LOG_LINE("Draw [%d,%d] [%d,%d] [%d,%d] [%d,%d]\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
+  POLY_LOG_LINE("uA (%f %f %f) uB (%f %f %f) Div %d\n", uAx, uAy, uAstep, uBx, uBy, uBstep, stepDivid);
+  u32 col = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  for (int i = 0; i<nbStep+1; i++) {
+    int startx = ceil(cmd.CMDXA + i * uAstep * uAx);
+    int endx = ceil(cmd.CMDXB + i * uBstep * uBx);
+    int starty = ceil(cmd.CMDYA + i * uAstep * uAy);
+    int endy = ceil(cmd.CMDYB + i * uBstep * uBy);
+
+    cmd.x0 = startx;
+    cmd.y0 = starty;
+    cmd.x1 = endx;
+    cmd.y1 = endy;
+
+    if ((startx == endx) && (starty == endy)){
+      LOG_LINE("Point!!!!!\n");
+    }
+    else if (startx == endx){
+      LOG_LINE("Vertical Line!!!!!\n");
+    }
+    else if (starty == endy){
+      LOG_LINE("Horizontal Line!!!!!\n");
+    }
+    cmd.type = D_POLY_LINE;
+
+    cmd.offset = (float)i/(float)(stepDivid);
+
+    POLY_LOG_LINE("D_POLY_LINE: %d,%d => %d,%d %f\n", cmd.x0, cmd.y0, cmd.x1, cmd.y1, cmd.offset);
+    cmd.COLOR[0] = col;
+    vdp1_add(&cmd,0);
+  }
+  //
+  // cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  // cmd.type = POLYGON;
+  // vdp1_add(&cmd,0);
 }
 
 void VIDCSVdp1PolylineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
-  LOG_CMD("%d\n", __LINE__);
-
-  vdp1cmd_struct cmd;
-  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
-
-  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-
-  CONVERTCMD(cmd.CMDXA);
-  CONVERTCMD(cmd.CMDYA);
-  CONVERTCMD(cmd.CMDXB);
-  CONVERTCMD(cmd.CMDYB);
-  CONVERTCMD(cmd.CMDXC);
-  CONVERTCMD(cmd.CMDYC);
-  CONVERTCMD(cmd.CMDXD);
-  CONVERTCMD(cmd.CMDYD);
-
-  cmd.CMDXA += Vdp1Regs->localX;
-  cmd.CMDYA += Vdp1Regs->localY;
-  cmd.CMDXB += Vdp1Regs->localX;
-  cmd.CMDYB += Vdp1Regs->localY;
-  cmd.CMDXC += Vdp1Regs->localX;
-  cmd.CMDYC += Vdp1Regs->localY;
-  cmd.CMDXD += Vdp1Regs->localX;
-  cmd.CMDYD += Vdp1Regs->localY;
-
-//gouraud
-memset(cmd.G, 0, sizeof(float)*16);
-if ((cmd.CMDPMOD & 4))
-{
-  for (int i = 0; i < 4; i++){
-    u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-    cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
-    cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
-    cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
-  }
-}
-  cmd.priority = 0;
-  cmd.w = 1;
-  cmd.h = 1;
-  cmd.flip = 0;
-  cmd.cor = 0x0;
-  cmd.cog = 0x0;
-  cmd.cob = 0x0;
-  cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = POLYLINE;
-  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
-
-  vdp1_add(&cmd,0);
+//   LOG_CMD("%d\n", __LINE__);
+//
+//   vdp1cmd_struct cmd;
+//   Vdp2 *varVdp2Regs = &Vdp2Lines[0];
+//
+//   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
+//
+//   CONVERTCMD(cmd.CMDXA);
+//   CONVERTCMD(cmd.CMDYA);
+//   CONVERTCMD(cmd.CMDXB);
+//   CONVERTCMD(cmd.CMDYB);
+//   CONVERTCMD(cmd.CMDXC);
+//   CONVERTCMD(cmd.CMDYC);
+//   CONVERTCMD(cmd.CMDXD);
+//   CONVERTCMD(cmd.CMDYD);
+//
+//   cmd.CMDXA += Vdp1Regs->localX;
+//   cmd.CMDYA += Vdp1Regs->localY;
+//   cmd.CMDXB += Vdp1Regs->localX;
+//   cmd.CMDYB += Vdp1Regs->localY;
+//   cmd.CMDXC += Vdp1Regs->localX;
+//   cmd.CMDYC += Vdp1Regs->localY;
+//   cmd.CMDXD += Vdp1Regs->localX;
+//   cmd.CMDYD += Vdp1Regs->localY;
+//
+// //gouraud
+// memset(cmd.G, 0, sizeof(float)*16);
+// if ((cmd.CMDPMOD & 4))
+// {
+//   for (int i = 0; i < 4; i++){
+//     u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+//     cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
+//     cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
+//     cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
+//   }
+// }
+//   cmd.priority = 0;
+//   cmd.w = 1;
+//   cmd.h = 1;
+//   cmd.flip = 0;
+//   cmd.cor = 0x0;
+//   cmd.cog = 0x0;
+//   cmd.cob = 0x0;
+//   cmd.SPCTL = varVdp2Regs->SPCTL;
+//   cmd.type = POLYLINE;
+//   cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+//
+//   vdp1_add(&cmd,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 void VIDCSVdp1LineDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 {
-  LOG_CMD("%d\n", __LINE__);
-
-  vdp1cmd_struct cmd;
-  Vdp2 *varVdp2Regs = &Vdp2Lines[0];
-
-  Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
-
-  CONVERTCMD(cmd.CMDXA);
-  CONVERTCMD(cmd.CMDYA);
-  CONVERTCMD(cmd.CMDXB);
-  CONVERTCMD(cmd.CMDYB);
-  CONVERTCMD(cmd.CMDXC);
-  CONVERTCMD(cmd.CMDYC);
-  CONVERTCMD(cmd.CMDXD);
-  CONVERTCMD(cmd.CMDYD);
-
-  cmd.CMDXA += Vdp1Regs->localX;
-  cmd.CMDYA += Vdp1Regs->localY;
-  cmd.CMDXB += Vdp1Regs->localX;
-  cmd.CMDYB += Vdp1Regs->localY;
-  cmd.CMDXC += Vdp1Regs->localX;
-  cmd.CMDYC += Vdp1Regs->localY;
-  cmd.CMDXD += Vdp1Regs->localX;
-  cmd.CMDYD += Vdp1Regs->localY;
-
-  //gouraud
-  memset(cmd.G, 0, sizeof(float)*16);
-  if ((cmd.CMDPMOD & 4))
-  {
-  for (int i = 0; i < 4; i++){
-    u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
-    cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
-    cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
-    cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
-  }
-  }
-  cmd.priority = 0;
-  cmd.w = 1;
-  cmd.h = 1;
-  cmd.flip = 0;
-  cmd.cor = 0x0;
-  cmd.cog = 0x0;
-  cmd.cob = 0x0;
-  cmd.SPCTL = varVdp2Regs->SPCTL;
-  cmd.type = LINE;
-  cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
-
-  vdp1_add(&cmd,0);
+  // LOG_CMD("%d\n", __LINE__);
+  //
+  // vdp1cmd_struct cmd;
+  // Vdp2 *varVdp2Regs = &Vdp2Lines[0];
+  //
+  // Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
+  //
+  // CONVERTCMD(cmd.CMDXA);
+  // CONVERTCMD(cmd.CMDYA);
+  // CONVERTCMD(cmd.CMDXB);
+  // CONVERTCMD(cmd.CMDYB);
+  // CONVERTCMD(cmd.CMDXC);
+  // CONVERTCMD(cmd.CMDYC);
+  // CONVERTCMD(cmd.CMDXD);
+  // CONVERTCMD(cmd.CMDYD);
+  //
+  // cmd.CMDXA += Vdp1Regs->localX;
+  // cmd.CMDYA += Vdp1Regs->localY;
+  // cmd.CMDXB += Vdp1Regs->localX;
+  // cmd.CMDYB += Vdp1Regs->localY;
+  // cmd.CMDXC += Vdp1Regs->localX;
+  // cmd.CMDYC += Vdp1Regs->localY;
+  // cmd.CMDXD += Vdp1Regs->localX;
+  // cmd.CMDYD += Vdp1Regs->localY;
+  //
+  // //gouraud
+  // memset(cmd.G, 0, sizeof(float)*16);
+  // if ((cmd.CMDPMOD & 4))
+  // {
+  // for (int i = 0; i < 4; i++){
+  //   u16 color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
+  //   cmd.G[(i << 2) + 0] = (float)((color2 & 0x001F)) / (float)(0x1F) - 0.5f;
+  //   cmd.G[(i << 2) + 1] = (float)((color2 & 0x03E0) >> 5) / (float)(0x1F) - 0.5f;
+  //   cmd.G[(i << 2) + 2] = (float)((color2 & 0x7C00) >> 10) / (float)(0x1F) - 0.5f;
+  // }
+  // }
+  // cmd.priority = 0;
+  // cmd.w = 1;
+  // cmd.h = 1;
+  // cmd.flip = 0;
+  // cmd.cor = 0x0;
+  // cmd.cog = 0x0;
+  // cmd.cob = 0x0;
+  // cmd.SPCTL = varVdp2Regs->SPCTL;
+  // cmd.type = LINE;
+  // cmd.COLOR[0] = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
+  //
+  // vdp1_add(&cmd,0);
 }
 
 //////////////////////////////////////////////////////////////////////////////
