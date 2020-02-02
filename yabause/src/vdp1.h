@@ -171,7 +171,8 @@ typedef struct
   u32 x1;
   u32 y1;
   float offset;
-  u32 temp[3];
+  int id;
+  u32 temp[2];
 } vdp1cmd_struct;
 
 int Vdp1Init(void);

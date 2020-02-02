@@ -101,6 +101,8 @@ extern int VIDOGLIsFullscreen(void);
 extern int VIDOGLVdp1Reset(void);
 extern void VIDOGLVdp1Draw();
 
+static int idCMD = 0;
+
 void VIDCSVdp1Draw();
 void VIDCSVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer);
 void VIDCSVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer);
@@ -162,6 +164,7 @@ YglCSRender
 //////////////////////////////////////////////////////////////////////////////
 void VIDCSVdp1Draw()
 {
+  idCMD = 0;
   VIDOGLVdp1Draw();
   vdp1_setup();
 
@@ -226,6 +229,7 @@ void VIDCSVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
+  cmd.id = idCMD++;
 
 for (int i = 0; i<cmd.h+1; i++) {
   cmd.type = D_LINE;
@@ -363,7 +367,7 @@ if ((cmd.CMDPMOD & 4))
 }
   cmd.priority = 0;
   cmd.SPCTL = varVdp2Regs->SPCTL;
-
+  cmd.id = idCMD++;
   for (int i = 0; i<(cmd.CMDYC - cmd.CMDYA)+1; i++) {
     cmd.type = D_LINE;
     cmd.x0 = cmd.CMDXA;
@@ -487,7 +491,7 @@ if ((cmd.CMDPMOD & 4))
 
   LOG_LINE("Draw [%d,%d] [%d,%d] [%d,%d] [%d,%d]\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
   LOG_LINE("uA (%f %f %f) uB (%f %f %f) Div %d\n", uAx, uAy, uAstep, uBx, uBy, uBstep, stepDivid);
-
+  cmd.id = idCMD++;
   for (int i = 0; i<nbStep+1; i++) {
     int startx = ceil(cmd.CMDXA + i * uAstep * uAx);
     int endx = ceil(cmd.CMDXB + i * uBstep * uBx);
@@ -590,6 +594,7 @@ void VIDCSVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   POLY_LOG_LINE("Draw [%d,%d] [%d,%d] [%d,%d] [%d,%d]\n", cmd.CMDXA, cmd.CMDYA, cmd.CMDXB, cmd.CMDYB, cmd.CMDXC, cmd.CMDYC, cmd.CMDXD, cmd.CMDYD);
   POLY_LOG_LINE("uA (%f %f %f) uB (%f %f %f) Div %d\n", uAx, uAy, uAstep, uBx, uBy, uBstep, stepDivid);
+  cmd.id = idCMD++;
   u32 col = Vdp1ReadPolygonColor(&cmd,varVdp2Regs);
   for (int i = 0; i<nbStep+1; i++) {
     int startx = ceil(cmd.CMDXA + i * uAstep * uAx);
@@ -617,6 +622,7 @@ void VIDCSVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
     POLY_LOG_LINE("D_POLY_LINE: %d,%d => %d,%d %f\n", cmd.x0, cmd.y0, cmd.x1, cmd.y1, cmd.offset);
     cmd.COLOR[0] = col;
+    cmd.id = idCMD++;
     vdp1_add(&cmd,0);
   }
   //
@@ -760,6 +766,7 @@ void VIDCSVdp1SystemClipping(u8 * ram, Vdp1 * regs)
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   if (((cmd.CMDXC+1) == Vdp1Regs->systemclipX2) && (Vdp1Regs->systemclipY2 == (cmd.CMDYC+1))) return;
   cmd.type = SYSTEM_CLIPPING;
+  cmd.id = idCMD++;
   vdp1_add(&cmd,1);
   Vdp1Regs->systemclipX2 = cmd.CMDXC+1;
   Vdp1Regs->systemclipY2 = cmd.CMDYC+1;
