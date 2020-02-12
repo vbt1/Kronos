@@ -3885,6 +3885,8 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
     return; //bad command
   }
 
+  yabsys.vdp1cycles += 70 + (sprite.w * sprite.h * 3) + (sprite.w * 5);
+
   sprite.flip = (cmd.CMDCTRL & 0x30) >> 4;
 
   vert[0] = (float)x;
@@ -3929,6 +3931,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if ((cmd.CMDPMOD & 4))
   {
+    yabsys.vdp1cycles += 232;
     for (int i = 0; i < 4; i++)
     {
       color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
@@ -4095,6 +4098,8 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   vert[6] = (float)x;
   vert[7] = (float)(y + rh);
 
+  yabsys.vdp1cycles += 70 + (rw * rh * 3) + (rw * 5);
+
   expandVertices(vert, sprite.vertices, 0);
 
   for (int i =0; i<4; i++) {
@@ -4125,6 +4130,7 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   if ((CMDPMOD & 4))
   {
+    yabsys.vdp1cycles += 232;
     for (i = 0; i < 4; i++)
     {
       color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
@@ -4310,6 +4316,10 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   vert[6] = (float)(s16)cmd.CMDXD;
   vert[7] = (float)(s16)cmd.CMDYD;
 
+  int w = (sqrt((cmd.CMDXA - cmd.CMDXB)*(cmd.CMDXA - cmd.CMDXB)) + sqrt((cmd.CMDXD - cmd.CMDXC)*(cmd.CMDXD - cmd.CMDXC)))/2;
+  int h = (sqrt((cmd.CMDYA - cmd.CMDYD)*(cmd.CMDYA - cmd.CMDYD)) + sqrt((cmd.CMDYB - cmd.CMDYC)*(cmd.CMDYB - cmd.CMDYC)))/2;
+  yabsys.vdp1cycles += 70 + (w * h * 3) + (w * 5);
+
   square = isSquare(vert);
   triangle = isTriangle(vert);
   sprite.dst = !square && !triangle;
@@ -4346,6 +4356,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   // Check if the Gouraud shading bit is set and the color mode is RGB
   if ((cmd.CMDPMOD & 4))
   {
+    yabsys.vdp1cycles += 232;
     for (i = 0; i < 4; i++)
     {
       color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
@@ -4528,6 +4539,10 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   vert[6] = (float)(s16)cmd.CMDXD;
   vert[7] = (float)(s16)cmd.CMDYD;
 
+  int w = (sqrt((cmd.CMDXA - cmd.CMDXB)*(cmd.CMDXA - cmd.CMDXB)) + sqrt((cmd.CMDXD - cmd.CMDXC)*(cmd.CMDXD - cmd.CMDXC)))/2;
+  int h = (sqrt((cmd.CMDYA - cmd.CMDYD)*(cmd.CMDYA - cmd.CMDYD)) + sqrt((cmd.CMDYB - cmd.CMDYC)*(cmd.CMDYB - cmd.CMDYC)))/2;
+  yabsys.vdp1cycles += 16 + (w * h) + (w * 2);
+
   //expandVertices(vert, sprite.vertices, !isSquare(vert));
   memcpy(sprite.vertices, vert, sizeof(float)*8);
   fixVerticesSize(sprite.vertices);
@@ -4543,6 +4558,7 @@ void VIDOGLVdp1PolygonDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   // Check if the Gouraud shading bit is set and the color mode is RGB
   if ((cmd.CMDPMOD & 4))
   {
+    yabsys.vdp1cycles += 232;
     for (i = 0; i < 4; i++)
     {
       color2 = Vdp1RamReadWord(NULL, Vdp1Ram, (Vdp1RamReadWord(NULL, Vdp1Ram, Vdp1Regs->addr + 0x1C) << 3) + (i << 1));
