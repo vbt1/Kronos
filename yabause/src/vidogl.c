@@ -3882,6 +3882,7 @@ void VIDOGLVdp1NormalSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
   sprite.w = ((cmd.CMDSIZE >> 8) & 0x3F) * 8;
   sprite.h = cmd.CMDSIZE & 0xFF;
   if (sprite.w == 0 || sprite.h == 0) {
+    yabsys.vdp1cycles += 70;
     return; //bad command
   }
 
