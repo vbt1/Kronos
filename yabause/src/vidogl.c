@@ -3995,6 +3995,7 @@ void VIDOGLVdp1ScaledSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   if (cmd.CMDSIZE == 0) {
+    yabsys.vdp1cycles += 70;
     return; // BAD Command
   }
 
@@ -4281,6 +4282,7 @@ void VIDOGLVdp1DistortedSpriteDraw(u8 * ram, Vdp1 * regs, u8* back_framebuffer)
 
   Vdp1ReadCommand(&cmd, Vdp1Regs->addr, Vdp1Ram);
   if (cmd.CMDSIZE == 0) {
+    yabsys.vdp1cycles += 70;
     return; // BAD Command
   }
 
