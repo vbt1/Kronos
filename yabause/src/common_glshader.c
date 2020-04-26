@@ -519,6 +519,11 @@ static const GLchar Yglprg_vdp2_common_start[] =
 " ret.b = float(((colindex & 0x7C00) >> 10) & 0x1F)/31.0;\n"
 " return ret;\n"
 "}\n"
+
+"vec4 getColoredPixel(int idx){ \n"
+"  return texelFetch( s_color,  ivec2( idx ,0 )  , 0 );"
+"}\n"
+
 "vec2 getVec2(int colindex) {\n"
 " vec2 ret;\n"
 " ret.x = float(colindex & 0xFF)/255.0;\n"
@@ -546,7 +551,7 @@ static const GLchar Yglprg_vdp2_common_draw[] =
 "    if( mesh.isRGB == 0 ){ \n"// index color?
 "      if( mesh.code != 0 || meshdepth != 0){\n"
 "        mesh.code = mesh.code + u_color_ram_offset; \n"
-"        meshcol = texelFetch( s_color,  ivec2( mesh.code ,0 )  , 0 );\n"
+"        meshcol = getColoredPixel(mesh.code); \n"
 "      } else { \n"
 "        meshcol = vec4(0.0);\n"
 "      }\n"
@@ -569,7 +574,7 @@ static const GLchar Yglprg_vdp2_common_draw[] =
 "  if( ret.isRGB == 0 ){  // index color? \n"
 "    if( ret.code != 0 || depth != 0){\n"
 "      ret.code = ret.code + u_color_ram_offset; \n"
-"      txcol = texelFetch( s_color,  ivec2( ret.code ,0 )  , 0 );\n"
+"      txcol = getColoredPixel(ret.code); \n"
 "      tmpColor = txcol;\n"
 "      if (txcol.a != 0.0) msb = 1;\n"
 "      else msb = 0;\n"
